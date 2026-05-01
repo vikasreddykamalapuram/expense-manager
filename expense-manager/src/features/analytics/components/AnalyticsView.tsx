@@ -12,7 +12,7 @@ import { useTransactions } from '../../../shared/hooks/useTransactions';
 import { StatCard } from '../../../shared/components/ui/StatCard';
 import { EmptyState } from '../../../shared/components/ui/EmptyState';
 import {
-  formatCurrency, formatDate, formatMonth, formatWeek,
+  formatCurrency, formatCurrencyCompact, formatDate, formatMonth, formatWeek,
   getCurrentMonth, getCurrentYear, getCurrentWeek,
   getPreviousMonth, getNextMonth,
   getPreviousWeek, getNextWeek,
@@ -45,7 +45,7 @@ const TREND_RANGE_OPTIONS: { value: TrendRange; label: string }[] = [
 
 const MONTH_NAMES_SHORT = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
-export function MonthlyView() {
+export function AnalyticsView() {
   const [viewMode, setViewMode] = useState<ViewMode>('monthly');
   const [selectedMonth, setSelectedMonth] = useState(getCurrentMonth());
   const [selectedYear, setSelectedYear] = useState(getCurrentYear());
@@ -502,7 +502,7 @@ export function MonthlyView() {
                   </defs>
                   <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
                   <XAxis dataKey="label" tick={{ fontSize: 10, fill: '#64748b' }} interval="preserveStartEnd" />
-                  <YAxis tick={{ fontSize: 11, fill: '#64748b' }} />
+                  <YAxis tickFormatter={(v) => formatCurrencyCompact(v, settings)} tick={{ fontSize: 10, fill: '#64748b' }} width={65} />
                   <Tooltip formatter={(value) => formatCurrency(Number(value), settings)} contentStyle={tooltipStyle} />
                   <Legend />
                   <Area type="monotone" dataKey="income" stroke="#10b981" strokeWidth={2} fill="url(#gradIncome)" name="Income" />
@@ -524,7 +524,7 @@ export function MonthlyView() {
                 <AreaChart data={trendData}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
                   <XAxis dataKey="label" tick={{ fontSize: 10, fill: '#64748b' }} interval="preserveStartEnd" />
-                  <YAxis tick={{ fontSize: 11, fill: '#64748b' }} />
+                  <YAxis tickFormatter={(v) => formatCurrencyCompact(v, settings)} tick={{ fontSize: 10, fill: '#64748b' }} width={65} />
                   <Tooltip
                     formatter={(value, name) => {
                       const cat = trendTopCategories.find((c) => c.categoryId === name);
@@ -588,7 +588,7 @@ export function MonthlyView() {
                 <BarChart data={monthlyBreakdown} barGap={4}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
                   <XAxis dataKey="month" tick={{ fontSize: 11, fill: '#64748b' }} />
-                  <YAxis tick={{ fontSize: 11, fill: '#64748b' }} />
+                  <YAxis tickFormatter={(v) => formatCurrencyCompact(v, settings)} tick={{ fontSize: 10, fill: '#64748b' }} width={65} />
                   <Tooltip formatter={(value) => formatCurrency(Number(value), settings)} contentStyle={tooltipStyle} />
                   <Legend />
                   <Bar dataKey="income" fill="#10b981" radius={[3, 3, 0, 0]} name="Income" />
@@ -606,7 +606,7 @@ export function MonthlyView() {
                 <BarChart data={comparisonData} barGap={8}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
                   <XAxis dataKey="label" tick={{ fontSize: 12, fill: '#64748b' }} />
-                  <YAxis tick={{ fontSize: 12, fill: '#64748b' }} />
+                  <YAxis tickFormatter={(v) => formatCurrencyCompact(v, settings)} tick={{ fontSize: 10, fill: '#64748b' }} width={65} />
                   <Tooltip formatter={(value) => formatCurrency(Number(value), settings)} contentStyle={tooltipStyle} />
                   <Legend />
                   <Bar dataKey="previous" fill="#94a3b8" radius={[4, 4, 0, 0]} name="Previous" />

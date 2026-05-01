@@ -7,6 +7,16 @@ export const formatCurrency = (amount: number, settings: Settings): string => {
   })}`;
 };
 
+/** Compact format for chart Y-axis labels (e.g., ₹4.2L, ₹50K, ₹800) */
+export const formatCurrencyCompact = (amount: number, settings: Settings): string => {
+  const abs = Math.abs(amount);
+  const sign = amount < 0 ? '-' : '';
+  if (abs >= 10000000) return `${sign}${settings.currencySymbol}${(abs / 10000000).toFixed(1)}Cr`;
+  if (abs >= 100000) return `${sign}${settings.currencySymbol}${(abs / 100000).toFixed(1)}L`;
+  if (abs >= 1000) return `${sign}${settings.currencySymbol}${(abs / 1000).toFixed(1)}K`;
+  return `${sign}${settings.currencySymbol}${abs.toFixed(0)}`;
+};
+
 export const formatDate = (dateStr: string, format: string = 'DD/MM/YYYY'): string => {
   const date = new Date(dateStr);
   const day = date.getDate().toString().padStart(2, '0');
