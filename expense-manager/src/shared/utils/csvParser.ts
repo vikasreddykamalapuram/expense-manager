@@ -351,12 +351,18 @@ export function detectTransactionType(
   // Transfer types
   if (['transfer-in', 'transfer-out', 'transfer', 'xfer'].includes(typeLower)) return 'transfer';
 
+  // Balance adjustments — not real income/expense
+  if (typeLower.includes('modified') || typeLower.includes('balance adj') || typeLower.includes('adjustment'))
+    return 'transfer';
+  const catLower = categoryValue.toLowerCase();
+  if (catLower.includes('modified bal') || catLower.includes('balance adj') || catLower.includes('balance adjustment'))
+    return 'transfer';
+
   // Explicit type column
   if (['income', 'credit', 'cr', 'credited', 'earning', 'inflow'].includes(typeLower)) return 'income';
   if (['expense', 'debit', 'dr', 'debited', 'spending', 'outflow', 'exp'].includes(typeLower)) return 'expense';
 
   // Check category for income hints
-  const catLower = categoryValue.toLowerCase();
   if (['salary', 'income', 'refund', 'cashback', 'interest', 'dividend', 'bonus', 'reimbursement'].some(
     (k) => catLower.includes(k)
   )) {

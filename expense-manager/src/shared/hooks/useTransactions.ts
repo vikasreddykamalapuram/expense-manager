@@ -71,6 +71,14 @@ export function useTransactions() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [transactions, filters, categories]);
 
+  // Helper: check if a category is a balance-modification category (not real income/expense)
+  const isBalanceAdjustment = (categoryId: string): boolean => {
+    const cat = findCategory(categoryId);
+    if (!cat) return false;
+    const name = cat.name.toLowerCase();
+    return name.includes('modified bal') || name.includes('balance adj') || name.includes('balance adjustment');
+  };
+
   // Shared helper: build byCategory from a filtered set of transactions
   // Groups by TRANSACTION type (not category type) to ensure expense breakdown
   // only includes expense transaction amounts and income breakdown only income amounts.
@@ -85,6 +93,7 @@ export function useTransactions() {
 
     txns.forEach((t) => {
       if (t.type !== 'income' && t.type !== 'expense') return; // skip transfers
+      if (isBalanceAdjustment(t.categoryId)) return; // skip balance adjustments
       const map = t.type === 'expense' ? expenseMap : incomeMap;
       const cat = findCategory(t.categoryId);
       const effectiveId = cat?.parentId || t.categoryId;
@@ -139,11 +148,11 @@ export function useTransactions() {
       );
 
       const totalIncome = monthTxns
-        .filter((t) => t.type === 'income')
+        .filter((t) => t.type === 'income' && !isBalanceAdjustment(t.categoryId))
         .reduce((sum, t) => sum + t.amount, 0);
 
       const totalExpense = monthTxns
-        .filter((t) => t.type === 'expense')
+        .filter((t) => t.type === 'expense' && !isBalanceAdjustment(t.categoryId))
         .reduce((sum, t) => sum + t.amount, 0);
 
       const byCategory = buildByCategory(monthTxns, totalIncome, totalExpense);
@@ -161,11 +170,11 @@ export function useTransactions() {
       );
 
       const totalIncome = yearTxns
-        .filter((t) => t.type === 'income')
+        .filter((t) => t.type === 'income' && !isBalanceAdjustment(t.categoryId))
         .reduce((sum, t) => sum + t.amount, 0);
 
       const totalExpense = yearTxns
-        .filter((t) => t.type === 'expense')
+        .filter((t) => t.type === 'expense' && !isBalanceAdjustment(t.categoryId))
         .reduce((sum, t) => sum + t.amount, 0);
 
       const byCategory = buildByCategory(yearTxns, totalIncome, totalExpense);
@@ -182,11 +191,11 @@ export function useTransactions() {
       );
 
       const totalIncome = rangeTxns
-        .filter((t) => t.type === 'income')
+        .filter((t) => t.type === 'income' && !isBalanceAdjustment(t.categoryId))
         .reduce((sum, t) => sum + t.amount, 0);
 
       const totalExpense = rangeTxns
-        .filter((t) => t.type === 'expense')
+        .filter((t) => t.type === 'expense' && !isBalanceAdjustment(t.categoryId))
         .reduce((sum, t) => sum + t.amount, 0);
 
       const byCategory = buildByCategory(rangeTxns, totalIncome, totalExpense);
@@ -200,10 +209,10 @@ export function useTransactions() {
 
   const totalBalance = useMemo(() => {
     const income = transactions
-      .filter((t) => t.type === 'income')
+      .filter((t) => t.type === 'income' && !isBalanceAdjustment(t.categoryId))
       .reduce((sum, t) => sum + t.amount, 0);
     const expense = transactions
-      .filter((t) => t.type === 'expense')
+      .filter((t) => t.type === 'expense' && !isBalanceAdjustment(t.categoryId))
       .reduce((sum, t) => sum + t.amount, 0);
     return { income, expense, balance: income - expense };
   }, [transactions]);

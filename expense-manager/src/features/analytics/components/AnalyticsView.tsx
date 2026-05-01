@@ -585,98 +585,135 @@ export function AnalyticsView() {
             <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
               <h3 className="mb-4 text-base font-semibold text-gray-900">Monthly Trend — {selectedYear}</h3>
               <ResponsiveContainer width="100%" height={300}>
-                <BarChart data={monthlyBreakdown} barGap={2} barCategoryGap="15%">
+                <BarChart data={monthlyBreakdown} barGap={4}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-                  <XAxis dataKey="month" tick={{ fontSize: 11, fill: '#64748b' }} />
-                  <YAxis tickFormatter={(v) => formatCurrencyCompact(v, settings)} tick={{ fontSize: 10, fill: '#64748b' }} width={70} domain={[0, 'auto']} />
+                  <XAxis dataKey="month" tick={{ fontSize: 12, fill: '#64748b' }} />
+                  <YAxis tick={{ fontSize: 12, fill: '#64748b' }} />
                   <Tooltip formatter={(value) => formatCurrency(Number(value), settings)} contentStyle={tooltipStyle} />
                   <Legend />
-                  <Bar dataKey="income" fill="#10b981" name="Income" maxBarSize={40} radius={[3, 3, 0, 0]}>
-                    {monthlyBreakdown.map((_, i) => <Cell key={i} fill="#10b981" />)}
-                  </Bar>
-                  <Bar dataKey="expense" fill="#ef4444" name="Expense" maxBarSize={40} radius={[3, 3, 0, 0]}>
-                    {monthlyBreakdown.map((_, i) => <Cell key={i} fill="#ef4444" />)}
-                  </Bar>
+                  <Bar dataKey="income" fill="#22c55e" name="Income" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="expense" fill="#ef4444" name="Expense" radius={[4, 4, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             </div>
           )}
 
           {/* Comparison with previous period (weekly/monthly/yearly only) */}
-          {comparisonData.length > 0 && (
+          {comparisonData.length > 0 && prevStats && (
             <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
               <h3 className="mb-4 text-base font-semibold text-gray-900">vs {prevPeriodLabel}</h3>
-              <ResponsiveContainer width="100%" height={280}>
-                <BarChart data={comparisonData} barGap={4} barCategoryGap="20%">
-                  <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-                  <XAxis dataKey="label" tick={{ fontSize: 12, fill: '#64748b' }} />
-                  <YAxis tickFormatter={(v) => formatCurrencyCompact(v, settings)} tick={{ fontSize: 10, fill: '#64748b' }} width={70} domain={['auto', 'auto']} />
-                  <Tooltip formatter={(value) => formatCurrency(Number(value), settings)} contentStyle={tooltipStyle} />
-                  <Legend />
-                  <Bar dataKey="previous" fill="#94a3b8" name="Previous" maxBarSize={50} radius={[4, 4, 0, 0]}>
-                    {comparisonData.map((_, i) => <Cell key={i} fill="#94a3b8" />)}
-                  </Bar>
-                  <Bar dataKey="current" fill="#3b82f6" name="Current" maxBarSize={50} radius={[4, 4, 0, 0]}>
-                    {comparisonData.map((_, i) => <Cell key={i} fill="#3b82f6" />)}
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
+              <div className="space-y-6">
+                {comparisonData.map((item) => {
+                  const maxVal = Math.max(Math.abs(item.current), Math.abs(item.previous), 1);
+                  const currentPct = (Math.abs(item.current) / maxVal) * 100;
+                  const previousPct = (Math.abs(item.previous) / maxVal) * 100;
+                  const diff = item.current - item.previous;
+                  const diffPct = item.previous !== 0 ? ((diff / Math.abs(item.previous)) * 100).toFixed(1) : '—';
+                  const isPositiveChange = item.label === 'Expenses' ? diff <= 0 : diff >= 0;
+                  return (
+                    <div key={item.label}>
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-sm font-medium text-gray-700">{item.label}</span>
+                        <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${isPositiveChange ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-700'}`}>
+                          {diff >= 0 ? '+' : ''}{diffPct}%
+                        </span>
+                      </div>
+                      <div className="space-y-1.5">
+                        <div className="flex items-center gap-3">
+                          <span className="text-xs text-gray-400 w-16">Current</span>
+                          <div className="flex-1 h-6 bg-gray-100 rounded-full overflow-hidden">
+                            <div className="h-full rounded-full bg-blue-500 transition-all duration-500" style={{ width: `${currentPct}%` }} />
+                          </div>
+                          <span className="text-xs font-medium text-gray-700 w-28 text-right">{formatCurrency(item.current, settings)}</span>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <span className="text-xs text-gray-400 w-16">Previous</span>
+                          <div className="flex-1 h-6 bg-gray-100 rounded-full overflow-hidden">
+                            <div className="h-full rounded-full bg-gray-400 transition-all duration-500" style={{ width: `${previousPct}%` }} />
+                          </div>
+                          <span className="text-xs font-medium text-gray-700 w-28 text-right">{formatCurrency(item.previous, settings)}</span>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           )}
 
           {/* Category breakdowns */}
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-            {expenseCategories.length > 0 && (
-              <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
-                <h3 className="mb-4 text-base font-semibold text-gray-900">Expense Breakdown</h3>
-                <ResponsiveContainer width="100%" height={200}>
-                  <PieChart>
-                    <Pie data={expenseCategories} dataKey="amount" nameKey="categoryName" cx="50%" cy="50%" innerRadius={45} outerRadius={75} paddingAngle={3}>
-                      {expenseCategories.map((entry, index) => (
-                        <Cell key={entry.categoryId} fill={entry.color || CHART_COLORS[index]} />
-                      ))}
-                    </Pie>
-                    <Tooltip formatter={(value) => formatCurrency(Number(value), settings)} />
-                  </PieChart>
-                </ResponsiveContainer>
-                <div className="mt-4 space-y-2">
-                  {expenseCategories.map((cat) => (
-                    <div key={cat.categoryId} className="flex items-center gap-2 text-sm">
-                      <div className="h-3 w-3 rounded-full" style={{ backgroundColor: cat.color }} />
-                      <span className="flex-1 text-gray-600">{cat.categoryName}</span>
-                      <span className="font-medium text-gray-900">{formatCurrency(cat.amount, settings)}</span>
-                      <span className="text-xs text-gray-400">({cat.percentage}%)</span>
+            {expenseCategories.length > 0 && (() => {
+              const total = expenseCategories.reduce((s, c) => s + c.amount, 0);
+              let cumulative = 0;
+              const stops = expenseCategories.map((cat, index) => {
+                const start = cumulative;
+                cumulative += (cat.amount / total) * 100;
+                return `${cat.color || CHART_COLORS[index % CHART_COLORS.length]} ${start}% ${cumulative}%`;
+              });
+              const gradient = `conic-gradient(${stops.join(', ')})`;
+              return (
+                <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+                  <h3 className="mb-4 text-base font-semibold text-gray-900">Expense Breakdown</h3>
+                  <div className="flex justify-center mb-4">
+                    <div className="relative" style={{ width: 160, height: 160 }}>
+                      <div className="w-full h-full rounded-full" style={{ background: gradient }} />
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <div className="w-20 h-20 rounded-full bg-white flex items-center justify-center">
+                          <span className="text-xs font-semibold text-gray-500">{formatCurrency(total, settings)}</span>
+                        </div>
+                      </div>
                     </div>
-                  ))}
+                  </div>
+                  <div className="space-y-2">
+                    {expenseCategories.map((cat, index) => (
+                      <div key={cat.categoryId} className="flex items-center gap-2 text-sm">
+                        <div className="h-3 w-3 rounded-full flex-shrink-0" style={{ backgroundColor: cat.color || CHART_COLORS[index % CHART_COLORS.length] }} />
+                        <span className="flex-1 text-gray-600 truncate">{cat.categoryName}</span>
+                        <span className="font-medium text-gray-900">{formatCurrency(cat.amount, settings)}</span>
+                        <span className="text-xs text-gray-400">({cat.percentage}%)</span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
-              </div>
-            )}
+              );
+            })()}
 
-            {incomeCategories.length > 0 && (
-              <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
-                <h3 className="mb-4 text-base font-semibold text-gray-900">Income Breakdown</h3>
-                <ResponsiveContainer width="100%" height={200}>
-                  <PieChart>
-                    <Pie data={incomeCategories} dataKey="amount" nameKey="categoryName" cx="50%" cy="50%" innerRadius={45} outerRadius={75} paddingAngle={3}>
-                      {incomeCategories.map((entry, index) => (
-                        <Cell key={entry.categoryId} fill={entry.color || CHART_COLORS[index]} />
-                      ))}
-                    </Pie>
-                    <Tooltip formatter={(value) => formatCurrency(Number(value), settings)} />
-                  </PieChart>
-                </ResponsiveContainer>
-                <div className="mt-4 space-y-2">
-                  {incomeCategories.map((cat) => (
-                    <div key={cat.categoryId} className="flex items-center gap-2 text-sm">
-                      <div className="h-3 w-3 rounded-full" style={{ backgroundColor: cat.color }} />
-                      <span className="flex-1 text-gray-600">{cat.categoryName}</span>
-                      <span className="font-medium text-gray-900">{formatCurrency(cat.amount, settings)}</span>
-                      <span className="text-xs text-gray-400">({cat.percentage}%)</span>
+            {incomeCategories.length > 0 && (() => {
+              const total = incomeCategories.reduce((s, c) => s + c.amount, 0);
+              let cumulative = 0;
+              const stops = incomeCategories.map((cat, index) => {
+                const start = cumulative;
+                cumulative += (cat.amount / total) * 100;
+                return `${cat.color || CHART_COLORS[index % CHART_COLORS.length]} ${start}% ${cumulative}%`;
+              });
+              const gradient = `conic-gradient(${stops.join(', ')})`;
+              return (
+                <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+                  <h3 className="mb-4 text-base font-semibold text-gray-900">Income Breakdown</h3>
+                  <div className="flex justify-center mb-4">
+                    <div className="relative" style={{ width: 160, height: 160 }}>
+                      <div className="w-full h-full rounded-full" style={{ background: gradient }} />
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <div className="w-20 h-20 rounded-full bg-white flex items-center justify-center">
+                          <span className="text-xs font-semibold text-gray-500">{formatCurrency(total, settings)}</span>
+                        </div>
+                      </div>
                     </div>
-                  ))}
+                  </div>
+                  <div className="space-y-2">
+                    {incomeCategories.map((cat, index) => (
+                      <div key={cat.categoryId} className="flex items-center gap-2 text-sm">
+                        <div className="h-3 w-3 rounded-full flex-shrink-0" style={{ backgroundColor: cat.color || CHART_COLORS[index % CHART_COLORS.length] }} />
+                        <span className="flex-1 text-gray-600 truncate">{cat.categoryName}</span>
+                        <span className="font-medium text-gray-900">{formatCurrency(cat.amount, settings)}</span>
+                        <span className="text-xs text-gray-400">({cat.percentage}%)</span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
-              </div>
-            )}
+              );
+            })()}
           </div>
         </>
       )}
