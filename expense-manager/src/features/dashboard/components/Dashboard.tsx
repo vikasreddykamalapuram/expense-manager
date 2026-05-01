@@ -105,8 +105,12 @@ export function Dashboard() {
                     boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)',
                   }}
                 />
-                <Bar dataKey="income" fill="#22c55e" radius={[4, 4, 0, 0]} name="Income" />
-                <Bar dataKey="expense" fill="#ef4444" radius={[4, 4, 0, 0]} name="Expense" />
+                <Bar dataKey="income" fill="#22c55e" name="Income" radius={[4, 4, 0, 0]}>
+                  {monthlyData.map((_, i) => <Cell key={i} fill="#22c55e" />)}
+                </Bar>
+                <Bar dataKey="expense" fill="#ef4444" name="Expense" radius={[4, 4, 0, 0]}>
+                  {monthlyData.map((_, i) => <Cell key={i} fill="#ef4444" />)}
+                </Bar>
               </BarChart>
             </ResponsiveContainer>
           </div>

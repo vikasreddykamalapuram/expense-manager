@@ -591,8 +591,12 @@ export function AnalyticsView() {
                   <YAxis tickFormatter={(v) => formatCurrencyCompact(v, settings)} tick={{ fontSize: 10, fill: '#64748b' }} width={70} domain={[0, 'auto']} />
                   <Tooltip formatter={(value) => formatCurrency(Number(value), settings)} contentStyle={tooltipStyle} />
                   <Legend />
-                  <Bar dataKey="income" fill="#10b981" radius={[3, 3, 0, 0]} name="Income" maxBarSize={40} />
-                  <Bar dataKey="expense" fill="#ef4444" radius={[3, 3, 0, 0]} name="Expense" maxBarSize={40} />
+                  <Bar dataKey="income" fill="#10b981" name="Income" maxBarSize={40} radius={[3, 3, 0, 0]}>
+                    {monthlyBreakdown.map((_, i) => <Cell key={i} fill="#10b981" />)}
+                  </Bar>
+                  <Bar dataKey="expense" fill="#ef4444" name="Expense" maxBarSize={40} radius={[3, 3, 0, 0]}>
+                    {monthlyBreakdown.map((_, i) => <Cell key={i} fill="#ef4444" />)}
+                  </Bar>
                 </BarChart>
               </ResponsiveContainer>
             </div>
@@ -609,8 +613,12 @@ export function AnalyticsView() {
                   <YAxis tickFormatter={(v) => formatCurrencyCompact(v, settings)} tick={{ fontSize: 10, fill: '#64748b' }} width={70} domain={['auto', 'auto']} />
                   <Tooltip formatter={(value) => formatCurrency(Number(value), settings)} contentStyle={tooltipStyle} />
                   <Legend />
-                  <Bar dataKey="previous" fill="#94a3b8" radius={[4, 4, 0, 0]} name="Previous" maxBarSize={50} />
-                  <Bar dataKey="current" fill="#3b82f6" radius={[4, 4, 0, 0]} name="Current" maxBarSize={50} />
+                  <Bar dataKey="previous" fill="#94a3b8" name="Previous" maxBarSize={50} radius={[4, 4, 0, 0]}>
+                    {comparisonData.map((_, i) => <Cell key={i} fill="#94a3b8" />)}
+                  </Bar>
+                  <Bar dataKey="current" fill="#3b82f6" name="Current" maxBarSize={50} radius={[4, 4, 0, 0]}>
+                    {comparisonData.map((_, i) => <Cell key={i} fill="#3b82f6" />)}
+                  </Bar>
                 </BarChart>
               </ResponsiveContainer>
             </div>
