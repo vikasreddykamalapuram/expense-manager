@@ -128,6 +128,47 @@ export function SettingsPage() {
         </div>
       </div>
 
+      {/* Profiles */}
+      <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+        <h3 className="mb-4 text-base font-semibold text-gray-900">Profiles</h3>
+        <p className="text-xs text-gray-500 mb-3">
+          Use profiles to separate data — e.g., personal vs imported data. Switch profiles from the header.
+        </p>
+        <div className="space-y-2">
+          {state.profiles.map((p) => (
+            <div
+              key={p.id}
+              className={`flex items-center gap-3 rounded-lg border p-3 ${
+                p.id === state.activeProfileId ? 'border-primary-300 bg-primary-50' : 'border-gray-200'
+              }`}
+            >
+              <span className="text-lg">{p.icon}</span>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-gray-900 truncate">{p.name}</p>
+                <p className="text-[11px] text-gray-400">
+                  {p.id === state.activeProfileId && <span className="text-primary-600 font-medium">Active · </span>}
+                  Created {new Date(p.createdAt).toLocaleDateString()}
+                </p>
+              </div>
+              {p.id !== 'default' && p.id !== state.activeProfileId && (
+                <button
+                  onClick={() => {
+                    if (confirm(`Delete profile "${p.name}"? All data in this profile will be lost.`)) {
+                      const updated = storageService.deleteProfile(p.id);
+                      dispatch({ type: 'SET_PROFILES', payload: updated });
+                    }
+                  }}
+                  className="rounded p-1.5 text-gray-400 hover:bg-danger-50 hover:text-danger-600 transition-colors"
+                  title="Delete profile"
+                >
+                  <Trash2 size={14} />
+                </button>
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
+
       {/* Data Management */}
       <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
         <h3 className="mb-4 text-base font-semibold text-gray-900">Data Management</h3>

@@ -1,10 +1,14 @@
 import { NavLink, Outlet } from 'react-router-dom';
 import {
   LayoutDashboard, ArrowLeftRight, PlusCircle, CalendarDays,
-  Settings, Wallet, Menu, X, Landmark, Tag,
+  Settings, Wallet, Menu, X, Landmark, Tag, ChevronDown,
+  Plus,
 } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
+import { v4 as uuidv4 } from 'uuid';
 import { classNames } from '../utils/helpers';
+import { useAppContext } from '../../context/AppContext';
+import { storageService } from '../services/storageService';
 
 const navItems = [
   { path: '/', icon: LayoutDashboard, label: 'Dashboard' },
@@ -17,7 +21,49 @@ const navItems = [
 ];
 
 export function Layout() {
+  const { state, dispatch } = useAppContext();
+  const { profiles, activeProfileId } = state;
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
+  const [showNewProfile, setShowNewProfile] = useState(false);
+  const [newProfileName, setNewProfileName] = useState('');
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  const activeProfile = profiles.find((p) => p.id === activeProfileId) || profiles[0];
+
+  // Close dropdown on outside click
+  useEffect(() => {
+    const handle = (e: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setProfileDropdownOpen(false);
+        setShowNewProfile(false);
+        setNewProfileName('');
+      }
+    };
+    document.addEventListener('mousedown', handle);
+    return () => document.removeEventListener('mousedown', handle);
+  }, []);
+
+  const handleSwitchProfile = (profileId: string) => {
+    dispatch({ type: 'SWITCH_PROFILE', payload: profileId });
+    setProfileDropdownOpen(false);
+  };
+
+  const handleCreateProfile = () => {
+    if (!newProfileName.trim()) return;
+    const profile = {
+      id: uuidv4(),
+      name: newProfileName.trim(),
+      icon: '📊',
+      createdAt: new Date().toISOString(),
+    };
+    const updatedProfiles = storageService.addProfile(profile);
+    dispatch({ type: 'SET_PROFILES', payload: updatedProfiles });
+    dispatch({ type: 'SWITCH_PROFILE', payload: profile.id });
+    setNewProfileName('');
+    setShowNewProfile(false);
+    setProfileDropdownOpen(false);
+  };
 
   return (
     <div className="flex h-screen bg-gray-50">
@@ -97,6 +143,78 @@ export function Layout() {
             <Menu size={20} />
           </button>
           <div className="flex-1" />
+
+          {/* Profile Switcher */}
+          <div className="relative" ref={dropdownRef}>
+            <button
+              onClick={() => setProfileDropdownOpen(!profileDropdownOpen)}
+              className="flex items-center gap-2 rounded-lg border border-gray-200 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+            >
+              <span>{activeProfile?.icon || '💰'}</span>
+              <span className="max-w-[120px] truncate">{activeProfile?.name || 'Personal'}</span>
+              <ChevronDown size={14} className={classNames(
+                'text-gray-400 transition-transform',
+                profileDropdownOpen ? 'rotate-180' : ''
+              )} />
+            </button>
+
+            {profileDropdownOpen && (
+              <div className="absolute right-0 top-full mt-1 w-64 rounded-xl border border-gray-200 bg-white shadow-lg z-50">
+                <div className="p-2">
+                  <p className="px-2 py-1 text-[10px] font-semibold uppercase tracking-wider text-gray-400">Profiles</p>
+                  {profiles.map((p) => (
+                    <button
+                      key={p.id}
+                      onClick={() => handleSwitchProfile(p.id)}
+                      className={classNames(
+                        'flex w-full items-center gap-2 rounded-lg px-2 py-2 text-sm transition-colors',
+                        p.id === activeProfileId
+                          ? 'bg-primary-50 text-primary-700 font-medium'
+                          : 'text-gray-700 hover:bg-gray-50'
+                      )}
+                    >
+                      <span className="text-base">{p.icon}</span>
+                      <span className="flex-1 text-left truncate">{p.name}</span>
+                      {p.id === activeProfileId && (
+                        <span className="h-2 w-2 rounded-full bg-primary-500" />
+                      )}
+                    </button>
+                  ))}
+                </div>
+                <div className="border-t border-gray-100 p-2">
+                  {showNewProfile ? (
+                    <div className="flex gap-1">
+                      <input
+                        type="text"
+                        value={newProfileName}
+                        onChange={(e) => setNewProfileName(e.target.value)}
+                        onKeyDown={(e) => e.key === 'Enter' && handleCreateProfile()}
+                        placeholder="Profile name..."
+                        className="flex-1 rounded-lg border border-gray-300 px-2 py-1.5 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
+                        autoFocus
+                      />
+                      <button
+                        onClick={handleCreateProfile}
+                        disabled={!newProfileName.trim()}
+                        className="rounded-lg bg-primary-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-primary-700 disabled:opacity-50"
+                      >
+                        Add
+                      </button>
+                    </div>
+                  ) : (
+                    <button
+                      onClick={() => setShowNewProfile(true)}
+                      className="flex w-full items-center gap-2 rounded-lg px-2 py-2 text-sm text-gray-600 hover:bg-gray-50"
+                    >
+                      <Plus size={16} />
+                      New Profile
+                    </button>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+
           <div className="flex items-center gap-2">
             <div className="h-8 w-8 rounded-full bg-gradient-to-br from-primary-400 to-primary-600 flex items-center justify-center">
               <span className="text-xs font-bold text-white">V</span>

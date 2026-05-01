@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useReducer, useEffect, ReactNode } from 'react';
-import { Transaction, TransactionFilters, Settings, Budget, Category, Account } from '../shared/types';
+import { Transaction, TransactionFilters, Settings, Budget, Category, Account, Profile } from '../shared/types';
 import { storageService } from '../shared/services/storageService';
 import { DEFAULT_SETTINGS } from '../shared/constants/categories';
 
@@ -11,6 +11,8 @@ interface AppState {
   categories: Category[];
   accounts: Account[];
   filters: TransactionFilters;
+  profiles: Profile[];
+  activeProfileId: string;
   isLoading: boolean;
 }
 
@@ -35,6 +37,8 @@ type AppAction =
   | { type: 'ADD_ACCOUNT'; payload: Account }
   | { type: 'UPDATE_ACCOUNT'; payload: { id: string; updates: Partial<Account> } }
   | { type: 'DELETE_ACCOUNT'; payload: string }
+  | { type: 'SET_PROFILES'; payload: Profile[] }
+  | { type: 'SWITCH_PROFILE'; payload: string }
   | { type: 'IMPORT_DATA'; payload: { transactions: Transaction[]; settings: Settings; budgets: Budget[]; categories: Category[]; accounts: Account[] } };
 
 const initialFilters: TransactionFilters = {
@@ -48,6 +52,8 @@ const initialState: AppState = {
   budgets: [],
   categories: [],
   accounts: [],
+  profiles: [],
+  activeProfileId: 'default',
   filters: initialFilters,
   isLoading: true,
 };
@@ -135,6 +141,27 @@ function appReducer(state: AppState, action: AppAction): AppState {
       storageService.saveAccounts(remainingAccounts);
       return { ...state, accounts: remainingAccounts };
     }
+    case 'SET_PROFILES':
+      return { ...state, profiles: action.payload };
+    case 'SWITCH_PROFILE': {
+      storageService.setActiveProfile(action.payload);
+      // Load all data for the new profile
+      const pTransactions = storageService.getTransactions();
+      const pSettings = storageService.getSettings();
+      const pBudgets = storageService.getBudgets();
+      const pCategories = storageService.getAllCategories();
+      const pAccounts = storageService.getAccounts();
+      return {
+        ...state,
+        activeProfileId: action.payload,
+        transactions: pTransactions,
+        settings: pSettings,
+        budgets: pBudgets,
+        categories: pCategories,
+        accounts: pAccounts,
+        filters: initialFilters,
+      };
+    }
     case 'IMPORT_DATA':
       return {
         ...state,
@@ -161,12 +188,15 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [state, dispatch] = useReducer(appReducer, initialState);
 
   useEffect(() => {
+    storageService.initProfile();
+    const profiles = storageService.getProfiles();
     const transactions = storageService.getTransactions();
     const settings = storageService.getSettings();
     const budgets = storageService.getBudgets();
     const categories = storageService.getAllCategories();
     const accounts = storageService.getAccounts();
 
+    dispatch({ type: 'SET_PROFILES', payload: profiles });
     dispatch({ type: 'SET_TRANSACTIONS', payload: transactions });
     dispatch({ type: 'SET_SETTINGS', payload: settings });
     dispatch({ type: 'SET_BUDGETS', payload: budgets });

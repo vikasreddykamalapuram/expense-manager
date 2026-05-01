@@ -123,7 +123,8 @@ const MONTH_MAP: Record<string, number> = {
 };
 
 export function detectDateFormat(samples: string[]): DateFormat {
-  const validSamples = samples.filter((s) => s && s.trim().length > 0).slice(0, 20);
+  // Scan ALL samples (not just first 20) to catch format-breaking rows
+  const validSamples = samples.filter((s) => s && s.trim().length > 0);
   if (validSamples.length === 0) return 'unknown';
 
   // Check for named month formats first
@@ -139,30 +140,31 @@ export function detectDateFormat(samples: string[]): DateFormat {
     return validSamples[0].trim().includes('/') ? 'YYYY/MM/DD' : 'YYYY-MM-DD';
   }
 
-  // DD/MM/YYYY vs MM/DD/YYYY — check if any first part > 12 (must be DD)
+  // DD/MM/YYYY vs MM/DD/YYYY — check if any second part > 12 across ALL data
   const slashDates = validSamples.filter((s) => /^\d{1,2}\/\d{1,2}\/\d{2,4}$/.test(s.trim()));
-  if (slashDates.length === validSamples.length) {
+  if (slashDates.length > 0 && slashDates.length >= validSamples.length * 0.9) {
     const firstParts = slashDates.map((s) => parseInt(s.split('/')[0]));
     const secondParts = slashDates.map((s) => parseInt(s.split('/')[1]));
     const yearParts = slashDates.map((s) => s.split('/')[2]);
 
     if (yearParts[0]?.length === 2) {
-      if (firstParts.some((p) => p > 12)) return 'DD/MM/YY';
       if (secondParts.some((p) => p > 12)) return 'MM/DD/YY';
-      return 'DD/MM/YY'; // default for Indian locale
+      if (firstParts.some((p) => p > 12)) return 'DD/MM/YY';
+      return 'DD/MM/YY';
     }
-    if (firstParts.some((p) => p > 12)) return 'DD/MM/YYYY';
+    // If second part ever exceeds 12, first part must be month → MM/DD/YYYY
     if (secondParts.some((p) => p > 12)) return 'MM/DD/YYYY';
-    return 'DD/MM/YYYY'; // default for Indian locale
+    if (firstParts.some((p) => p > 12)) return 'DD/MM/YYYY';
+    return 'MM/DD/YYYY'; // US locale default (common in iPhone apps)
   }
 
   // DD-MM-YYYY vs MM-DD-YYYY
   const dashDates = validSamples.filter((s) => /^\d{1,2}-\d{1,2}-\d{2,4}$/.test(s.trim()));
-  if (dashDates.length === validSamples.length) {
+  if (dashDates.length > 0 && dashDates.length >= validSamples.length * 0.9) {
     const firstParts = dashDates.map((s) => parseInt(s.split('-')[0]));
     const secondParts = dashDates.map((s) => parseInt(s.split('-')[1]));
-    if (firstParts.some((p) => p > 12)) return 'DD-MM-YYYY';
     if (secondParts.some((p) => p > 12)) return 'MM-DD-YYYY';
+    if (firstParts.some((p) => p > 12)) return 'DD-MM-YYYY';
     return 'DD-MM-YYYY';
   }
 
@@ -255,6 +257,34 @@ export function parseDate(dateStr: string, format: DateFormat): string | null {
   } catch {
     return null;
   }
+}
+
+/** Try the primary format first, then fallback to all other formats */
+const ALL_FORMATS: DateFormat[] = [
+  'MM/DD/YYYY', 'DD/MM/YYYY', 'YYYY-MM-DD', 'YYYY/MM/DD',
+  'DD-MM-YYYY', 'MM-DD-YYYY', 'DD/MM/YY', 'MM/DD/YY',
+  'DD MMM YYYY', 'MMM DD, YYYY',
+];
+
+export function parseDateWithFallback(dateStr: string, primaryFormat: DateFormat): string | null {
+  // Try primary format first
+  const primary = parseDate(dateStr, primaryFormat);
+  if (primary) return primary;
+
+  // Try all other formats as fallback
+  for (const fmt of ALL_FORMATS) {
+    if (fmt === primaryFormat) continue;
+    const result = parseDate(dateStr, fmt);
+    if (result) return result;
+  }
+
+  // Last resort: native Date parse
+  try {
+    const d = new Date(dateStr.trim());
+    if (!isNaN(d.getTime())) return d.toISOString().split('T')[0];
+  } catch { /* ignore */ }
+
+  return null;
 }
 
 // --- Amount Parsing ---
@@ -437,9 +467,9 @@ export function processCSVImport(
     const row = csv.rows[i];
     const warnings: string[] = [];
 
-    // Parse date
+    // Parse date — try primary format first, then fallback to all others
     const rawDate = row[dateIdx] || '';
-    const date = parseDate(rawDate, dateFormat);
+    const date = parseDateWithFallback(rawDate, dateFormat);
     if (!date) {
       skipped.push({ rowIndex: i + 1, reason: `Invalid date: "${rawDate}"`, rawRow: row });
       continue;

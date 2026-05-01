@@ -1,10 +1,99 @@
-import { Transaction, Budget, Settings, Category, Account } from '../types';
+import { Transaction, Budget, Settings, Category, Account, Profile } from '../types';
 import { STORAGE_KEYS, DEFAULT_SETTINGS, ALL_CATEGORIES } from '../constants/categories';
 
+const PROFILE_LIST_KEY = 'em_profiles';
+const ACTIVE_PROFILE_KEY = 'em_active_profile';
+const DEFAULT_PROFILE_ID = 'default';
+
 class StorageService {
+  private profileId: string = DEFAULT_PROFILE_ID;
+
+  // --- Profile Management ---
+
+  private getProfileKey(baseKey: string): string {
+    if (this.profileId === DEFAULT_PROFILE_ID) return baseKey;
+    return `${baseKey}_p_${this.profileId}`;
+  }
+
+  getProfiles(): Profile[] {
+    try {
+      const data = localStorage.getItem(PROFILE_LIST_KEY);
+      const profiles: Profile[] = data ? JSON.parse(data) : [];
+      // Ensure default profile exists
+      if (!profiles.find((p) => p.id === DEFAULT_PROFILE_ID)) {
+        profiles.unshift({
+          id: DEFAULT_PROFILE_ID,
+          name: 'Personal',
+          icon: '💰',
+          createdAt: new Date().toISOString(),
+        });
+        localStorage.setItem(PROFILE_LIST_KEY, JSON.stringify(profiles));
+      }
+      return profiles;
+    } catch {
+      return [{
+        id: DEFAULT_PROFILE_ID,
+        name: 'Personal',
+        icon: '💰',
+        createdAt: new Date().toISOString(),
+      }];
+    }
+  }
+
+  addProfile(profile: Profile): Profile[] {
+    const profiles = this.getProfiles();
+    if (profiles.some((p) => p.id === profile.id)) return profiles;
+    profiles.push(profile);
+    localStorage.setItem(PROFILE_LIST_KEY, JSON.stringify(profiles));
+    return profiles;
+  }
+
+  updateProfile(id: string, updates: Partial<Profile>): Profile[] {
+    const profiles = this.getProfiles().map((p) =>
+      p.id === id ? { ...p, ...updates } : p
+    );
+    localStorage.setItem(PROFILE_LIST_KEY, JSON.stringify(profiles));
+    return profiles;
+  }
+
+  deleteProfile(id: string): Profile[] {
+    if (id === DEFAULT_PROFILE_ID) return this.getProfiles(); // can't delete default
+    // Remove all profile data
+    Object.values(STORAGE_KEYS).forEach((key) => {
+      localStorage.removeItem(`${key}_p_${id}`);
+    });
+    const profiles = this.getProfiles().filter((p) => p.id !== id);
+    localStorage.setItem(PROFILE_LIST_KEY, JSON.stringify(profiles));
+    // Switch to default if active profile was deleted
+    if (this.profileId === id) {
+      this.setActiveProfile(DEFAULT_PROFILE_ID);
+    }
+    return profiles;
+  }
+
+  getActiveProfileId(): string {
+    try {
+      return localStorage.getItem(ACTIVE_PROFILE_KEY) || DEFAULT_PROFILE_ID;
+    } catch {
+      return DEFAULT_PROFILE_ID;
+    }
+  }
+
+  setActiveProfile(profileId: string): void {
+    this.profileId = profileId;
+    localStorage.setItem(ACTIVE_PROFILE_KEY, profileId);
+  }
+
+  getCurrentProfileId(): string {
+    return this.profileId;
+  }
+
+  initProfile(): void {
+    this.profileId = this.getActiveProfileId();
+  }
   private getItem<T>(key: string, fallback: T): T {
     try {
-      const data = localStorage.getItem(key);
+      const data = localStorage.getItem(this.getProfileKey(key));
       return data ? JSON.parse(data) : fallback;
     } catch {
       console.error(`Failed to read ${key} from storage`);
@@ -14,7 +103,7 @@ class StorageService {
 
   private setItem<T>(key: string, value: T): void {
     try {
-      localStorage.setItem(key, JSON.stringify(value));
+      localStorage.setItem(this.getProfileKey(key), JSON.stringify(value));
     } catch (error) {
       console.error(`Failed to write ${key} to storage`, error);
     }
@@ -198,7 +287,7 @@ class StorageService {
   }
 
   clearAllData(): void {
-    Object.values(STORAGE_KEYS).forEach((key) => localStorage.removeItem(key));
+    Object.values(STORAGE_KEYS).forEach((key) => localStorage.removeItem(this.getProfileKey(key)));
   }
 }
 

@@ -6,7 +6,7 @@ import {
 } from 'lucide-react';
 import { useAppContext } from '../../../context/AppContext';
 import { Button } from '../../../shared/components/ui/Button';
-import { Select } from '../../../shared/components/ui/Input';
+import { Input, Select } from '../../../shared/components/ui/Input';
 import { Modal } from '../../../shared/components/ui/Modal';
 import { storageService } from '../../../shared/services/storageService';
 import { Transaction } from '../../../shared/types';
@@ -22,6 +22,7 @@ interface CSVImportModalProps {
 }
 
 type Step = 'upload' | 'mapping' | 'preview' | 'result';
+type ImportTarget = 'current' | 'new';
 
 export function CSVImportModal({ isOpen, onClose }: CSVImportModalProps) {
   const { state, dispatch } = useAppContext();
@@ -35,6 +36,8 @@ export function CSVImportModal({ isOpen, onClose }: CSVImportModalProps) {
   });
   const [dateFormat, setDateFormat] = useState('DD/MM/YYYY');
   const [defaultType, setDefaultType] = useState<'income' | 'expense'>('expense');
+  const [importTarget, setImportTarget] = useState<ImportTarget>('current');
+  const [newProfileName, setNewProfileName] = useState('');
   const [importResult, setImportResult] = useState<ImportResult | null>(null);
   const [importedCount, setImportedCount] = useState(0);
   const [showSkipped, setShowSkipped] = useState(false);
@@ -47,6 +50,8 @@ export function CSVImportModal({ isOpen, onClose }: CSVImportModalProps) {
     setMapping({ date: '', amount: '', category: '', notes: '', type: '', account: '' });
     setDateFormat('DD/MM/YYYY');
     setDefaultType('expense');
+    setImportTarget('current');
+    setNewProfileName('');
     setImportResult(null);
     setImportedCount(0);
     setShowSkipped(false);
@@ -81,11 +86,11 @@ export function CSVImportModal({ isOpen, onClose }: CSVImportModalProps) {
         const autoMapping = guessColumnMapping(parsed.headers);
         setMapping(autoMapping);
 
-        // Auto-detect date format from first mapped column
+        // Auto-detect date format from ALL rows (not just first 20)
         if (autoMapping.date) {
           const dateIdx = parsed.headers.indexOf(autoMapping.date);
           if (dateIdx >= 0) {
-            const dateSamples = parsed.rows.slice(0, 20).map((r) => r[dateIdx] || '');
+            const dateSamples = parsed.rows.map((r) => r[dateIdx] || '');
             const detected = detectDateFormat(dateSamples);
             if (detected !== 'unknown') setDateFormat(detected);
           }
@@ -118,8 +123,25 @@ export function CSVImportModal({ isOpen, onClose }: CSVImportModalProps) {
     if (!importResult) return;
 
     const now = new Date().toISOString();
-    const { categories } = state;
-    let currentCategories = [...categories];
+
+    // If importing into a new profile, create it and switch first
+    if (importTarget === 'new' && newProfileName.trim()) {
+      const profileId = uuidv4();
+      const profile = {
+        id: profileId,
+        name: newProfileName.trim(),
+        icon: '📥',
+        createdAt: now,
+      };
+      const updatedProfiles = storageService.addProfile(profile);
+      dispatch({ type: 'SET_PROFILES', payload: updatedProfiles });
+      // Switch to new profile so storage writes go there
+      storageService.setActiveProfile(profileId);
+    }
+
+    // After potential profile switch, get categories for this profile
+    const profileCategories = storageService.getAllCategories();
+    let currentCategories = [...profileCategories];
     let addedCategoryCount = 0;
 
     const transactions: Transaction[] = importResult.parsed.map((p: ParsedTransaction) => {
@@ -144,7 +166,6 @@ export function CSVImportModal({ isOpen, onClose }: CSVImportModalProps) {
       // Create new custom category if no match
       if (!categoryId) {
         const newCatId = `import-${p.category.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`;
-        // Check if we already created this in this import batch
         const alreadyCreated = currentCategories.find((c) => c.id === newCatId);
         if (alreadyCreated) {
           categoryId = alreadyCreated.id;
@@ -157,7 +178,8 @@ export function CSVImportModal({ isOpen, onClose }: CSVImportModalProps) {
             color: p.type === 'income' ? '#10b981' : '#64748b',
             isCustom: true,
           };
-          dispatch({ type: 'ADD_CATEGORY', payload: newCategory });
+          // Save directly to storage (may be a different profile now)
+          storageService.addCustomCategory(newCategory);
           currentCategories = [...currentCategories, newCategory];
           addedCategoryCount++;
           categoryId = newCatId;
@@ -177,18 +199,24 @@ export function CSVImportModal({ isOpen, onClose }: CSVImportModalProps) {
       };
     });
 
-    // Batch save all transactions
-    const existingTxns = state.transactions;
+    // Save transactions to the target profile's storage
+    const existingTxns = storageService.getTransactions();
     const allTxns = [...existingTxns, ...transactions];
-    dispatch({ type: 'SET_TRANSACTIONS', payload: allTxns });
-
-    // Persist to localStorage
     storageService.saveTransactions(allTxns);
+
+    // If we created a new profile, switch the app to it to show imported data
+    if (importTarget === 'new' && newProfileName.trim()) {
+      const newProfileId = storageService.getCurrentProfileId();
+      dispatch({ type: 'SWITCH_PROFILE', payload: newProfileId });
+    } else {
+      // Reload data in current profile
+      dispatch({ type: 'SET_TRANSACTIONS', payload: allTxns });
+      dispatch({ type: 'SET_CATEGORIES', payload: storageService.getAllCategories() });
+    }
 
     setImportedCount(transactions.length);
     setStep('result');
 
-    // Log summary
     console.log(`CSV Import: ${transactions.length} transactions imported, ${addedCategoryCount} new categories created, ${importResult.skipped.length} rows skipped`);
   };
 
@@ -501,12 +529,53 @@ export function CSVImportModal({ isOpen, onClose }: CSVImportModalProps) {
             </div>
           )}
 
+          {/* Import target selection */}
+          <div className="rounded-lg border border-gray-200 p-3 space-y-2">
+            <p className="text-xs font-medium text-gray-600">Import destination</p>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => setImportTarget('current')}
+                className={`flex-1 rounded-lg border-2 p-2.5 text-left transition-all ${
+                  importTarget === 'current'
+                    ? 'border-primary-500 bg-primary-50'
+                    : 'border-gray-200 hover:border-gray-300'
+                }`}
+              >
+                <p className="text-sm font-medium text-gray-900">Current Profile</p>
+                <p className="text-[11px] text-gray-500">
+                  Add to "{state.profiles.find((p) => p.id === state.activeProfileId)?.name || 'Personal'}"
+                </p>
+              </button>
+              <button
+                type="button"
+                onClick={() => setImportTarget('new')}
+                className={`flex-1 rounded-lg border-2 p-2.5 text-left transition-all ${
+                  importTarget === 'new'
+                    ? 'border-primary-500 bg-primary-50'
+                    : 'border-gray-200 hover:border-gray-300'
+                }`}
+              >
+                <p className="text-sm font-medium text-gray-900">New Profile</p>
+                <p className="text-[11px] text-gray-500">Keep existing data untouched</p>
+              </button>
+            </div>
+            {importTarget === 'new' && (
+              <Input
+                label="New Profile Name"
+                placeholder="e.g., iPhone Import, Old Data..."
+                value={newProfileName}
+                onChange={(e) => setNewProfileName(e.target.value)}
+              />
+            )}
+          </div>
+
           <div className="flex justify-between pt-2">
             <Button variant="secondary" icon={<ArrowLeft size={14} />} onClick={() => setStep('mapping')}>
               Back
             </Button>
             <Button
-              disabled={importResult.parsed.length === 0}
+              disabled={importResult.parsed.length === 0 || (importTarget === 'new' && !newProfileName.trim())}
               icon={<Upload size={14} />}
               onClick={handleImport}
             >

@@ -94,3 +94,10 @@ export interface TransactionFilters {
   sortBy: 'date' | 'amount' | 'category';
   sortOrder: 'asc' | 'desc';
 }
+
+export interface Profile {
+  id: string;
+  name: string;
+  icon: string; // emoji or short label
+  createdAt: string;
+}
