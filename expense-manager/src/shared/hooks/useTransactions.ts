@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { useAppContext } from '../../context/AppContext';
 import { MonthlyStats, CategoryStat } from '../types';
-import { getMonthRange, getCurrentMonth } from '../utils/helpers';
+import { getMonthRange, getYearRange, getCurrentMonth } from '../utils/helpers';
 
 export function useTransactions() {
   const { state, dispatch } = useAppContext();
@@ -121,6 +121,54 @@ export function useTransactions() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [transactions, categories]);
 
+  const getYearlyStats = useMemo(() => {
+    return (year: string): MonthlyStats => {
+      const range = getYearRange(year);
+      const yearTxns = transactions.filter(
+        (t) => t.date >= range.start && t.date <= range.end
+      );
+
+      const totalIncome = yearTxns
+        .filter((t) => t.type === 'income')
+        .reduce((sum, t) => sum + t.amount, 0);
+
+      const totalExpense = yearTxns
+        .filter((t) => t.type === 'expense')
+        .reduce((sum, t) => sum + t.amount, 0);
+
+      const categoryMap = new Map<string, { amount: number; count: number }>();
+      yearTxns.forEach((t) => {
+        const cat = findCategory(t.categoryId);
+        const effectiveId = cat?.parentId || t.categoryId;
+        const existing = categoryMap.get(effectiveId) || { amount: 0, count: 0 };
+        categoryMap.set(effectiveId, {
+          amount: existing.amount + t.amount,
+          count: existing.count + 1,
+        });
+      });
+
+      const totalForPercentage = totalIncome + totalExpense || 1;
+      const byCategory: CategoryStat[] = Array.from(categoryMap.entries()).map(
+        ([categoryId, { amount, count }]) => {
+          const category = findCategory(categoryId);
+          return {
+            categoryId,
+            categoryName: category?.name || 'Unknown',
+            amount,
+            percentage: Math.round((amount / totalForPercentage) * 100),
+            color: category?.color || '#64748b',
+            count,
+          };
+        }
+      );
+
+      byCategory.sort((a, b) => b.amount - a.amount);
+
+      return { month: year, totalIncome, totalExpense, balance: totalIncome - totalExpense, byCategory };
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [transactions, categories]);
+
   const currentMonthStats = useMemo(() => getMonthlyStats(getCurrentMonth()), [getMonthlyStats]);
 
   const totalBalance = useMemo(() => {
@@ -144,6 +192,7 @@ export function useTransactions() {
     totalBalance,
     recentTransactions,
     getMonthlyStats,
+    getYearlyStats,
     dispatch,
   };
 }

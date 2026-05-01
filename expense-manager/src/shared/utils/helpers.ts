@@ -27,6 +27,14 @@ export const formatDate = (dateStr: string, format: string = 'DD/MM/YYYY'): stri
   }
 };
 
+export const getCurrentYear = (): string => {
+  return new Date().getFullYear().toString();
+};
+
+export const getYearRange = (year: string): { start: string; end: string } => {
+  return { start: `${year}-01-01`, end: `${year}-12-31` };
+};
+
 export const formatMonth = (monthStr: string): string => {
   const [year, month] = monthStr.split('-');
   const monthNames = [

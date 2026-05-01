@@ -407,9 +407,8 @@ export function guessColumnMapping(headers: string[]): ColumnMapping {
 
 // --- Emoji & Unicode Cleaning ---
 
-/** Strip emojis and special Unicode characters, keeping only letters, numbers, spaces, and basic punctuation */
-function stripEmojis(str: string): string {
-  // Remove emoji ranges, variation selectors, ZWJ, skin tone modifiers, etc.
+/** Strip emojis, special Unicode characters, and garbled emoji placeholders (????) */
+export function stripEmojis(str: string): string {
   return str
     .replace(/[\u{1F600}-\u{1F9FF}]/gu, '')   // emoticons, supplemental symbols
     .replace(/[\u{1F300}-\u{1F5FF}]/gu, '')   // misc symbols & pictographs
@@ -422,6 +421,9 @@ function stripEmojis(str: string): string {
     .replace(/[\u{20E3}]/gu, '')              // combining enclosing keycap
     .replace(/[\u{E0020}-\u{E007F}]/gu, '')   // tags
     .replace(/[\u{D83C}-\u{D83E}][\u{DC00}-\u{DFFF}]/gu, '') // surrogate pairs
+    .replace(/[\u{FE0E}\u{FE0F}]/gu, '')     // text/emoji variation selectors
+    .replace(/[\u{200B}-\u{200F}\u{2028}-\u{202F}\u{2060}-\u{206F}\u{FEFF}]/gu, '') // zero-width chars
+    .replace(/\?{2,}/g, '')                   // garbled emoji placeholders (????)
     .replace(/\s+/g, ' ')
     .trim();
 }
