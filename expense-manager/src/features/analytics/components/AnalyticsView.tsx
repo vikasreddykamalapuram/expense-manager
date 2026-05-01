@@ -4,7 +4,7 @@ import {
   Wallet, List as ListIcon, LineChart as LineChartIcon,
 } from 'lucide-react';
 import {
-  PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip,
+  BarChart, Bar, XAxis, YAxis, Tooltip,
   ResponsiveContainer, CartesianGrid, Legend, AreaChart, Area,
 } from 'recharts';
 import { useAppContext } from '../../../context/AppContext';
