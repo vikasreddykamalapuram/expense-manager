@@ -62,10 +62,33 @@ export const STORAGE_KEYS = {
   CATEGORIES: 'em_categories',
   BUDGETS: 'em_budgets',
   SETTINGS: 'em_settings',
+  ACCOUNTS: 'em_accounts',
+  CUSTOM_INSTITUTIONS: 'em_custom_institutions',
 };
 
 export const CHART_COLORS = [
   '#3b82f6', '#ef4444', '#22c55e', '#f59e0b', '#8b5cf6',
   '#ec4899', '#14b8a6', '#f97316', '#06b6d4', '#6366f1',
   '#d946ef', '#0ea5e9', '#10b981', '#a855f7', '#64748b',
+];
+
+/** Icon names available for custom categories (Lucide icons) */
+export const CATEGORY_ICON_OPTIONS = [
+  'UtensilsCrossed', 'ShoppingCart', 'Car', 'ShoppingBag', 'Gamepad2',
+  'Zap', 'Heart', 'GraduationCap', 'Plane', 'Home',
+  'Shield', 'Sparkles', 'Gift', 'CreditCard', 'MoreHorizontal',
+  'Briefcase', 'Laptop', 'TrendingUp', 'Building2', 'Store',
+  'Rocket', 'RotateCcw', 'Percent', 'Smartphone', 'Banknote',
+  'Package', 'Coffee', 'Music', 'Film', 'Dumbbell',
+  'PawPrint', 'Baby', 'Wrench', 'Scissors', 'Palette',
+  'BookOpen', 'Stethoscope', 'Pill', 'Globe', 'Wifi',
+  'Phone', 'Tv', 'Camera', 'Headphones', 'Wallet',
+  'Gem', 'Crown', 'Trees', 'Flower2', 'Sun',
+];
+
+export const CATEGORY_COLORS = [
+  '#ef4444', '#f97316', '#eab308', '#22c55e', '#14b8a6',
+  '#06b6d4', '#3b82f6', '#6366f1', '#8b5cf6', '#a855f7',
+  '#d946ef', '#ec4899', '#f43f5e', '#0ea5e9', '#10b981',
+  '#f59e0b', '#0d9488', '#be185d', '#4f46e5', '#64748b',
 ];

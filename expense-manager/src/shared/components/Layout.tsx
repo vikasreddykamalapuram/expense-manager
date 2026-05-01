@@ -1,7 +1,7 @@
 import { NavLink, Outlet } from 'react-router-dom';
 import {
   LayoutDashboard, ArrowLeftRight, PlusCircle, CalendarDays,
-  Settings, Wallet, Menu, X,
+  Settings, Wallet, Menu, X, Landmark, Tag,
 } from 'lucide-react';
 import { useState } from 'react';
 import { classNames } from '../utils/helpers';
@@ -11,6 +11,8 @@ const navItems = [
   { path: '/transactions', icon: ArrowLeftRight, label: 'Transactions' },
   { path: '/add', icon: PlusCircle, label: 'Add New' },
   { path: '/monthly', icon: CalendarDays, label: 'Monthly View' },
+  { path: '/accounts', icon: Landmark, label: 'Accounts' },
+  { path: '/categories', icon: Tag, label: 'Categories' },
   { path: '/settings', icon: Settings, label: 'Settings' },
 ];
 

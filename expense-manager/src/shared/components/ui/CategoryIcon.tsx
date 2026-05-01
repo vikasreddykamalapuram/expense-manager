@@ -2,25 +2,33 @@ import {
   UtensilsCrossed, ShoppingCart, Car, ShoppingBag, Gamepad2, Zap,
   Heart, GraduationCap, Plane, Home, Shield, Sparkles, Gift, CreditCard,
   MoreHorizontal, Briefcase, Laptop, TrendingUp, Building2, Store,
-  Rocket, RotateCcw, Percent, LucideIcon,
+  Rocket, RotateCcw, Percent, Smartphone, Banknote, Package, Coffee,
+  Music, Film, Dumbbell, PawPrint, Baby, Wrench, Scissors, Palette,
+  BookOpen, Stethoscope, Pill, Globe, Wifi, Phone, Tv, Camera,
+  Headphones, Wallet, Gem, Crown, Trees, Flower2, Sun,
+  LucideIcon,
 } from 'lucide-react';
 
 const iconMap: Record<string, LucideIcon> = {
   UtensilsCrossed, ShoppingCart, Car, ShoppingBag, Gamepad2, Zap,
   Heart, GraduationCap, Plane, Home, Shield, Sparkles, Gift, CreditCard,
   MoreHorizontal, Briefcase, Laptop, TrendingUp, Building2, Store,
-  Rocket, RotateCcw, Percent,
+  Rocket, RotateCcw, Percent, Smartphone, Banknote, Package, Coffee,
+  Music, Film, Dumbbell, PawPrint, Baby, Wrench, Scissors, Palette,
+  BookOpen, Stethoscope, Pill, Globe, Wifi, Phone, Tv, Camera,
+  Headphones, Wallet, Gem, Crown, Trees, Flower2, Sun,
 };
 
 interface CategoryIconProps {
-  iconName: string;
+  icon?: string;
+  iconName?: string; // legacy alias
   color: string;
   size?: number;
   className?: string;
 }
 
-export function CategoryIcon({ iconName, color, size = 20, className = '' }: CategoryIconProps) {
-  const Icon = iconMap[iconName] || MoreHorizontal;
+export function CategoryIcon({ icon, iconName, color, size = 20, className = '' }: CategoryIconProps) {
+  const Icon = iconMap[icon || iconName || ''] || MoreHorizontal;
   return (
     <div
       className={`inline-flex items-center justify-center rounded-lg p-2 ${className}`}

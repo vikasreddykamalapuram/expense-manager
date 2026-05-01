@@ -19,6 +19,12 @@ export function useTransactions() {
       result = result.filter((t) => t.categoryId === filters.categoryId);
     }
 
+    if (filters.accountId) {
+      result = result.filter(
+        (t) => t.accountId === filters.accountId || t.toAccountId === filters.accountId
+      );
+    }
+
     if (filters.dateRange) {
       result = result.filter(
         (t) => t.date >= filters.dateRange!.start && t.date <= filters.dateRange!.end

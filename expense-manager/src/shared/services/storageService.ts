@@ -1,4 +1,4 @@
-import { Transaction, Budget, Settings, Category } from '../types';
+import { Transaction, Budget, Settings, Category, Account } from '../types';
 import { STORAGE_KEYS, DEFAULT_SETTINGS, ALL_CATEGORIES } from '../constants/categories';
 
 class StorageService {
@@ -72,6 +72,59 @@ class StorageService {
     return this.getAllCategories();
   }
 
+  updateCustomCategory(id: string, updates: Partial<Category>): Category[] {
+    const custom = this.getCustomCategories().map((c) =>
+      c.id === id ? { ...c, ...updates } : c
+    );
+    this.setItem(STORAGE_KEYS.CATEGORIES, custom);
+    return this.getAllCategories();
+  }
+
+  // Custom Institutions
+  getCustomInstitutions(): Record<string, string[]> {
+    return this.getItem<Record<string, string[]>>(STORAGE_KEYS.CUSTOM_INSTITUTIONS, {});
+  }
+
+  addCustomInstitution(accountType: string, name: string): Record<string, string[]> {
+    const institutions = this.getCustomInstitutions();
+    if (!institutions[accountType]) institutions[accountType] = [];
+    if (!institutions[accountType].includes(name)) {
+      institutions[accountType].push(name);
+    }
+    this.setItem(STORAGE_KEYS.CUSTOM_INSTITUTIONS, institutions);
+    return institutions;
+  }
+
+  // Accounts
+  getAccounts(): Account[] {
+    return this.getItem<Account[]>(STORAGE_KEYS.ACCOUNTS, []);
+  }
+
+  saveAccounts(accounts: Account[]): void {
+    this.setItem(STORAGE_KEYS.ACCOUNTS, accounts);
+  }
+
+  addAccount(account: Account): Account[] {
+    const accounts = this.getAccounts();
+    accounts.push(account);
+    this.saveAccounts(accounts);
+    return accounts;
+  }
+
+  updateAccount(id: string, updates: Partial<Account>): Account[] {
+    const accounts = this.getAccounts().map((a) =>
+      a.id === id ? { ...a, ...updates, updatedAt: new Date().toISOString() } : a
+    );
+    this.saveAccounts(accounts);
+    return accounts;
+  }
+
+  deleteAccount(id: string): Account[] {
+    const accounts = this.getAccounts().filter((a) => a.id !== id);
+    this.saveAccounts(accounts);
+    return accounts;
+  }
+
   // Budgets
   getBudgets(): Budget[] {
     return this.getItem<Budget[]>(STORAGE_KEYS.BUDGETS, []);
@@ -116,9 +169,10 @@ class StorageService {
       transactions: this.getTransactions(),
       categories: this.getCustomCategories(),
       budgets: this.getBudgets(),
+      accounts: this.getAccounts(),
       settings: this.getSettings(),
       exportedAt: new Date().toISOString(),
-      version: '1.0.0',
+      version: '1.1.0',
     };
     return JSON.stringify(data, null, 2);
   }
@@ -132,6 +186,7 @@ class StorageService {
       this.saveTransactions(data.transactions);
       if (data.categories) this.setItem(STORAGE_KEYS.CATEGORIES, data.categories);
       if (data.budgets) this.saveBudgets(data.budgets);
+      if (data.accounts) this.saveAccounts(data.accounts);
       if (data.settings) this.saveSettings(data.settings);
       return true;
     } catch (error) {

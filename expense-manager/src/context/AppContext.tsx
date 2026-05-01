@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useReducer, useEffect, ReactNode } from 'react';
-import { Transaction, TransactionFilters, Settings, Budget, Category } from '../shared/types';
+import { Transaction, TransactionFilters, Settings, Budget, Category, Account } from '../shared/types';
 import { storageService } from '../shared/services/storageService';
 import { DEFAULT_SETTINGS } from '../shared/constants/categories';
 
@@ -9,6 +9,7 @@ interface AppState {
   settings: Settings;
   budgets: Budget[];
   categories: Category[];
+  accounts: Account[];
   filters: TransactionFilters;
   isLoading: boolean;
 }
@@ -25,11 +26,16 @@ type AppAction =
   | { type: 'SET_BUDGET'; payload: Budget }
   | { type: 'SET_CATEGORIES'; payload: Category[] }
   | { type: 'ADD_CATEGORY'; payload: Category }
+  | { type: 'UPDATE_CATEGORY'; payload: { id: string; updates: Partial<Category> } }
   | { type: 'DELETE_CATEGORY'; payload: string }
   | { type: 'SET_FILTERS'; payload: Partial<TransactionFilters> }
   | { type: 'RESET_FILTERS' }
   | { type: 'SET_LOADING'; payload: boolean }
-  | { type: 'IMPORT_DATA'; payload: { transactions: Transaction[]; settings: Settings; budgets: Budget[]; categories: Category[] } };
+  | { type: 'SET_ACCOUNTS'; payload: Account[] }
+  | { type: 'ADD_ACCOUNT'; payload: Account }
+  | { type: 'UPDATE_ACCOUNT'; payload: { id: string; updates: Partial<Account> } }
+  | { type: 'DELETE_ACCOUNT'; payload: string }
+  | { type: 'IMPORT_DATA'; payload: { transactions: Transaction[]; settings: Settings; budgets: Budget[]; categories: Category[]; accounts: Account[] } };
 
 const initialFilters: TransactionFilters = {
   sortBy: 'date',
@@ -41,6 +47,7 @@ const initialState: AppState = {
   settings: DEFAULT_SETTINGS,
   budgets: [],
   categories: [],
+  accounts: [],
   filters: initialFilters,
   isLoading: true,
 };
@@ -93,6 +100,10 @@ function appReducer(state: AppState, action: AppAction): AppState {
       const cats = storageService.addCustomCategory(action.payload);
       return { ...state, categories: cats };
     }
+    case 'UPDATE_CATEGORY': {
+      const cats = storageService.updateCustomCategory(action.payload.id, action.payload.updates);
+      return { ...state, categories: cats };
+    }
     case 'DELETE_CATEGORY': {
       const cats = storageService.deleteCustomCategory(action.payload);
       return { ...state, categories: cats };
@@ -103,6 +114,27 @@ function appReducer(state: AppState, action: AppAction): AppState {
       return { ...state, filters: initialFilters };
     case 'SET_LOADING':
       return { ...state, isLoading: action.payload };
+    case 'SET_ACCOUNTS':
+      return { ...state, accounts: action.payload };
+    case 'ADD_ACCOUNT': {
+      const newAccounts = [...state.accounts, action.payload];
+      storageService.saveAccounts(newAccounts);
+      return { ...state, accounts: newAccounts };
+    }
+    case 'UPDATE_ACCOUNT': {
+      const updatedAccounts = state.accounts.map((a) =>
+        a.id === action.payload.id
+          ? { ...a, ...action.payload.updates, updatedAt: new Date().toISOString() }
+          : a
+      );
+      storageService.saveAccounts(updatedAccounts);
+      return { ...state, accounts: updatedAccounts };
+    }
+    case 'DELETE_ACCOUNT': {
+      const remainingAccounts = state.accounts.filter((a) => a.id !== action.payload);
+      storageService.saveAccounts(remainingAccounts);
+      return { ...state, accounts: remainingAccounts };
+    }
     case 'IMPORT_DATA':
       return {
         ...state,
@@ -110,6 +142,7 @@ function appReducer(state: AppState, action: AppAction): AppState {
         settings: action.payload.settings,
         budgets: action.payload.budgets,
         categories: action.payload.categories,
+        accounts: action.payload.accounts,
       };
     default:
       return state;
@@ -132,11 +165,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
     const settings = storageService.getSettings();
     const budgets = storageService.getBudgets();
     const categories = storageService.getAllCategories();
+    const accounts = storageService.getAccounts();
 
     dispatch({ type: 'SET_TRANSACTIONS', payload: transactions });
     dispatch({ type: 'SET_SETTINGS', payload: settings });
     dispatch({ type: 'SET_BUDGETS', payload: budgets });
     dispatch({ type: 'SET_CATEGORIES', payload: categories });
+    dispatch({ type: 'SET_ACCOUNTS', payload: accounts });
     dispatch({ type: 'SET_LOADING', payload: false });
   }, []);
 

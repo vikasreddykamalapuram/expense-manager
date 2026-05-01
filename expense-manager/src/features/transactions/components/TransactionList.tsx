@@ -1,22 +1,24 @@
 import { useState } from 'react';
-import { Edit2, Trash2, Search, Filter, ArrowUpDown, Receipt } from 'lucide-react';
+import { Edit2, Trash2, Search, Filter, ArrowUpDown, Receipt, ArrowLeftRight } from 'lucide-react';
 import { useAppContext } from '../../../context/AppContext';
 import { useTransactions } from '../../../shared/hooks/useTransactions';
 import { Button } from '../../../shared/components/ui/Button';
 import { EmptyState } from '../../../shared/components/ui/EmptyState';
 import { Modal } from '../../../shared/components/ui/Modal';
 import { TransactionForm } from './TransactionForm';
-import { getCategoryById } from '../../../shared/constants/categories';
+import { PAYMENT_METHODS } from '../../../shared/constants/accounts';
 import { formatCurrency, formatDate, classNames } from '../../../shared/utils/helpers';
 import { Transaction, TransactionFilters } from '../../../shared/types';
 
 export function TransactionList() {
   const { state, dispatch } = useAppContext();
   const { transactions } = useTransactions();
-  const { settings, filters } = state;
+  const { settings, filters, categories } = state;
   const [editingTx, setEditingTx] = useState<Transaction | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
   const [showFilters, setShowFilters] = useState(false);
+
+  const getCategoryById = (id: string) => categories.find((c) => c.id === id);
 
   const handleDelete = (id: string) => {
     dispatch({ type: 'DELETE_TRANSACTION', payload: id });
@@ -70,13 +72,26 @@ export function TransactionList() {
             className="rounded-lg border border-gray-300 px-3 py-1.5 text-sm"
             value={filters.type || ''}
             onChange={(e) =>
-              updateFilters({ type: (e.target.value as 'income' | 'expense') || undefined })
+              updateFilters({ type: (e.target.value as 'income' | 'expense' | 'transfer') || undefined })
             }
           >
             <option value="">All Types</option>
             <option value="income">Income</option>
             <option value="expense">Expense</option>
+            <option value="transfer">Transfer</option>
           </select>
+          {state.accounts.length > 0 && (
+            <select
+              className="rounded-lg border border-gray-300 px-3 py-1.5 text-sm"
+              value={filters.accountId || ''}
+              onChange={(e) => updateFilters({ accountId: e.target.value || undefined })}
+            >
+              <option value="">All Accounts</option>
+              {state.accounts.map((a) => (
+                <option key={a.id} value={a.id}>{a.name}</option>
+              ))}
+            </select>
+          )}
           <select
             className="rounded-lg border border-gray-300 px-3 py-1.5 text-sm"
             value={filters.sortBy}
@@ -103,6 +118,9 @@ export function TransactionList() {
         <div className="space-y-2">
           {transactions.map((tx) => {
             const category = getCategoryById(tx.categoryId);
+            const account = tx.accountId ? state.accounts.find((a) => a.id === tx.accountId) : null;
+            const toAccount = tx.toAccountId ? state.accounts.find((a) => a.id === tx.toAccountId) : null;
+            const isTransfer = tx.type === 'transfer';
             return (
               <div
                 key={tx.id}
@@ -110,21 +128,32 @@ export function TransactionList() {
               >
                 <div
                   className="flex h-10 w-10 items-center justify-center rounded-xl"
-                  style={{ backgroundColor: `${category?.color}15` }}
+                  style={{ backgroundColor: isTransfer ? '#3b82f615' : `${category?.color}15` }}
                 >
-                  <div
-                    className="h-3 w-3 rounded-full"
-                    style={{ backgroundColor: category?.color }}
-                  />
+                  {isTransfer ? (
+                    <ArrowLeftRight size={16} className="text-primary-600" />
+                  ) : (
+                    <div
+                      className="h-3 w-3 rounded-full"
+                      style={{ backgroundColor: category?.color }}
+                    />
+                  )}
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
                     <p className="text-sm font-semibold text-gray-900 truncate">
-                      {category?.name || 'Unknown'}
+                      {isTransfer
+                        ? `${account?.name || 'Unknown'} → ${toAccount?.name || 'Unknown'}`
+                        : category?.name || 'Unknown'}
                     </p>
                     {tx.isRecurring && (
                       <span className="text-[10px] font-medium uppercase text-primary-600 bg-primary-50 px-1.5 py-0.5 rounded">
                         Recurring
+                      </span>
+                    )}
+                    {isTransfer && (
+                      <span className="text-[10px] font-medium uppercase text-primary-600 bg-primary-50 px-1.5 py-0.5 rounded">
+                        Transfer
                       </span>
                     )}
                   </div>
@@ -132,9 +161,19 @@ export function TransactionList() {
                     <span className="text-xs text-gray-500">
                       {formatDate(tx.date, settings.dateFormat)}
                     </span>
+                    {!isTransfer && account && (
+                      <span className="text-xs text-gray-400">
+                        · {account.name}
+                      </span>
+                    )}
                     {tx.notes && (
                       <span className="text-xs text-gray-400 truncate max-w-[200px]">
                         · {tx.notes}
+                      </span>
+                    )}
+                    {tx.paymentMethod && (
+                      <span className="text-[10px] font-medium text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded">
+                        {PAYMENT_METHODS.find((pm) => pm.value === tx.paymentMethod)?.label || tx.paymentMethod}
                       </span>
                     )}
                   </div>
@@ -143,10 +182,12 @@ export function TransactionList() {
                   <span
                     className={classNames(
                       'text-sm font-bold',
-                      tx.type === 'income' ? 'text-success-600' : 'text-danger-600'
+                      tx.type === 'income' ? 'text-success-600'
+                        : tx.type === 'transfer' ? 'text-primary-600'
+                        : 'text-danger-600'
                     )}
                   >
-                    {tx.type === 'income' ? '+' : '-'}
+                    {tx.type === 'income' ? '+' : tx.type === 'transfer' ? '' : '-'}
                     {formatCurrency(tx.amount, settings)}
                   </span>
                   <div className="flex gap-1 opacity-0 transition-opacity group-hover:opacity-100">

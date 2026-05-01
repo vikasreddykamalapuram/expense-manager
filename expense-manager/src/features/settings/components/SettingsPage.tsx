@@ -46,9 +46,10 @@ export function SettingsPage() {
         const newSettings = storageService.getSettings();
         const budgets = storageService.getBudgets();
         const categories = storageService.getAllCategories();
+        const accounts = storageService.getAccounts();
         dispatch({
           type: 'IMPORT_DATA',
-          payload: { transactions, settings: newSettings, budgets, categories },
+          payload: { transactions, settings: newSettings, budgets, categories, accounts },
         });
       } else {
         setImportStatus('error');

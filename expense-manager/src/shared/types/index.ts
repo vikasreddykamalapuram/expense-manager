@@ -1,10 +1,36 @@
+export type AccountType = 'bank' | 'credit_card' | 'loan' | 'wallet' | 'cash';
+export type AccountKind = 'asset' | 'liability';
+export type BankSubtype = 'savings' | 'current' | 'salary' | 'fd' | 'rd';
+export type LoanSubtype = 'home' | 'personal' | 'car' | 'education' | 'gold' | 'business' | 'other';
+export type PaymentMethod = 'upi' | 'cash' | 'card' | 'net_banking' | 'cheque' | 'auto_debit' | 'other';
+
+export interface Account {
+  id: string;
+  name: string;
+  type: AccountType;
+  kind: AccountKind;
+  subtype?: BankSubtype | LoanSubtype;
+  institution?: string;
+  openingBalance: number; // starting balance; for liabilities = initial amount owed (positive)
+  color: string;
+  icon: string;
+  creditLimit?: number; // credit cards only
+  interestRate?: number; // loans / credit cards
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface Transaction {
   id: string;
-  type: 'income' | 'expense';
+  type: 'income' | 'expense' | 'transfer';
   amount: number;
   categoryId: string;
   date: string; // ISO date string YYYY-MM-DD
   notes: string;
+  accountId?: string; // source (expense/transfer) or destination (income)
+  toAccountId?: string; // destination for transfers only
+  paymentMethod?: PaymentMethod;
   isRecurring: boolean;
   recurringFrequency?: 'daily' | 'weekly' | 'monthly' | 'yearly';
   createdAt: string;
@@ -59,8 +85,9 @@ export interface DateRange {
 }
 
 export interface TransactionFilters {
-  type?: 'income' | 'expense';
+  type?: 'income' | 'expense' | 'transfer';
   categoryId?: string;
+  accountId?: string;
   dateRange?: DateRange;
   searchQuery?: string;
   sortBy: 'date' | 'amount' | 'category';
