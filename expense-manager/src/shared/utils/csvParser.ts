@@ -534,13 +534,19 @@ export function processCSVImport(
     const notesParts = [rawNotes, rawDescription].filter(Boolean);
     const mergedNotes = notesParts.join(' — ');
 
-    // Detect type
+    // Detect type — skip transfers (inter-account movements, not real income/expense)
     const type = detectTransactionType(Math.abs(amount), rawType, rawCategory);
+    if (type === 'transfer') {
+      skipped.push({
+        rowIndex: i + 1,
+        reason: `Transfer skipped (inter-account movement): "${rawType}" — ${rawAccount} → ${rawCategory}`,
+        rawRow: row,
+      });
+      continue;
+    }
 
-    // For display, use "Category > Subcategory" format if subcategory exists
-    const displayCategory = rawSubcategory && rawSubcategory !== rawCategory
-      ? rawCategory || 'Other'
-      : rawCategory || 'Other';
+    // For display category name
+    const displayCategory = rawCategory || 'Other';
 
     // Category matching
     if (!rawCategory) warnings.push('No category — will use "Other"');
@@ -548,7 +554,7 @@ export function processCSVImport(
     parsed.push({
       date,
       amount: Math.abs(amount),
-      type: type === 'transfer' ? 'expense' : type, // store transfers as expense for now
+      type,
       category: displayCategory,
       subcategory: rawSubcategory,
       notes: mergedNotes,

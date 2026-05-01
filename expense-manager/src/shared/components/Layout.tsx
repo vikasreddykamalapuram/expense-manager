@@ -14,7 +14,7 @@ const navItems = [
   { path: '/', icon: LayoutDashboard, label: 'Dashboard' },
   { path: '/transactions', icon: ArrowLeftRight, label: 'Transactions' },
   { path: '/add', icon: PlusCircle, label: 'Add New' },
-  { path: '/monthly', icon: CalendarDays, label: 'Monthly View' },
+  { path: '/monthly', icon: CalendarDays, label: 'Analytics' },
   { path: '/accounts', icon: Landmark, label: 'Accounts' },
   { path: '/categories', icon: Tag, label: 'Categories' },
   { path: '/settings', icon: Settings, label: 'Settings' },
