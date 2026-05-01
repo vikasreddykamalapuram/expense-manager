@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react';
-import { Download, Upload, Trash2, AlertTriangle } from 'lucide-react';
+import { Download, Upload, Trash2, AlertTriangle, FileSpreadsheet } from 'lucide-react';
 import { useAppContext } from '../../../context/AppContext';
 import { Button } from '../../../shared/components/ui/Button';
 import { Select } from '../../../shared/components/ui/Input';
@@ -7,12 +7,14 @@ import { Modal } from '../../../shared/components/ui/Modal';
 import { storageService } from '../../../shared/services/storageService';
 import { downloadFile } from '../../../shared/utils/helpers';
 import { CURRENCIES } from '../../../shared/constants/categories';
+import { CSVImportModal } from './CSVImportModal';
 
 export function SettingsPage() {
   const { state, dispatch } = useAppContext();
   const { settings } = state;
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [showClearConfirm, setShowClearConfirm] = useState(false);
+  const [showCSVImport, setShowCSVImport] = useState(false);
   const [importStatus, setImportStatus] = useState<'idle' | 'success' | 'error'>('idle');
 
   const handleCurrencyChange = (code: string) => {
@@ -29,6 +31,31 @@ export function SettingsPage() {
     const data = storageService.exportData();
     const date = new Date().toISOString().split('T')[0];
     downloadFile(data, `expense-manager-backup-${date}.json`);
+  };
+
+  const handleExportCSV = () => {
+    const { transactions, categories } = state;
+    const findCat = (id: string) => categories.find((c) => c.id === id);
+    const header = 'Date,Type,Amount,Category,Subcategory,Notes,Payment Method';
+    const rows = transactions.map((t) => {
+      const cat = findCat(t.categoryId);
+      const parent = cat?.parentId ? findCat(cat.parentId) : null;
+      const categoryName = parent ? parent.name : (cat?.name || 'Unknown');
+      const subName = parent ? (cat?.name || '') : '';
+      const escapeCsv = (s: string) => s.includes(',') || s.includes('"') ? `"${s.replace(/"/g, '""')}"` : s;
+      return [
+        t.date,
+        t.type,
+        t.amount.toFixed(2),
+        escapeCsv(categoryName),
+        escapeCsv(subName),
+        escapeCsv(t.notes || ''),
+        t.paymentMethod || '',
+      ].join(',');
+    });
+    const csv = [header, ...rows].join('\n');
+    const date = new Date().toISOString().split('T')[0];
+    downloadFile(csv, `expense-manager-${date}.csv`, 'text/csv');
   };
 
   const handleImport = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -105,24 +132,51 @@ export function SettingsPage() {
       <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
         <h3 className="mb-4 text-base font-semibold text-gray-900">Data Management</h3>
         <div className="space-y-4">
-          <div className="flex flex-col gap-2 sm:flex-row">
-            <Button variant="secondary" icon={<Download size={16} />} onClick={handleExport}>
-              Export Data
-            </Button>
-            <Button
-              variant="secondary"
-              icon={<Upload size={16} />}
-              onClick={() => fileInputRef.current?.click()}
-            >
-              Import Data
-            </Button>
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept=".json"
-              className="hidden"
-              onChange={handleImport}
-            />
+          {/* Export */}
+          <div>
+            <p className="text-xs font-medium text-gray-500 mb-2">Export</p>
+            <div className="flex flex-col gap-2 sm:flex-row">
+              <Button variant="secondary" icon={<Download size={16} />} onClick={handleExport}>
+                JSON Backup (Full)
+              </Button>
+              <Button variant="secondary" icon={<FileSpreadsheet size={16} />} onClick={handleExportCSV}>
+                CSV (Transactions)
+              </Button>
+            </div>
+            <p className="mt-1 text-xs text-gray-400">
+              JSON: Full backup with all settings · CSV: Transactions only (Excel-compatible)
+            </p>
+          </div>
+
+          {/* Import */}
+          <div className="border-t border-gray-200 pt-4">
+            <p className="text-xs font-medium text-gray-500 mb-2">Import</p>
+            <div className="flex flex-col gap-2 sm:flex-row">
+              <Button
+                variant="secondary"
+                icon={<FileSpreadsheet size={16} />}
+                onClick={() => setShowCSVImport(true)}
+              >
+                Import from CSV
+              </Button>
+              <Button
+                variant="secondary"
+                icon={<Upload size={16} />}
+                onClick={() => fileInputRef.current?.click()}
+              >
+                Restore JSON Backup
+              </Button>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept=".json"
+                className="hidden"
+                onChange={handleImport}
+              />
+            </div>
+            <p className="mt-1 text-xs text-gray-400">
+              CSV: Import from other expense tracker apps · JSON: Restore a previous backup
+            </p>
           </div>
 
           {importStatus === 'success' && (
@@ -191,6 +245,12 @@ export function SettingsPage() {
           </Button>
         </div>
       </Modal>
+
+      {/* CSV Import Modal */}
+      <CSVImportModal
+        isOpen={showCSVImport}
+        onClose={() => setShowCSVImport(false)}
+      />
     </div>
   );
 }
