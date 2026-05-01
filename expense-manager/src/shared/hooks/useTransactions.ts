@@ -87,8 +87,10 @@ export function useTransactions() {
         .reduce((sum, t) => sum + t.amount, 0);
 
       // Aggregate by parent category (roll up subcategories into parent)
+      // Exclude transfers from category breakdown — they are inter-account movements, not income/expense
+      const nonTransferTxns = monthTxns.filter((t) => t.type !== 'transfer');
       const categoryMap = new Map<string, { amount: number; count: number }>();
-      monthTxns.forEach((t) => {
+      nonTransferTxns.forEach((t) => {
         const cat = findCategory(t.categoryId);
         // Roll up to parent if this is a subcategory
         const effectiveId = cat?.parentId || t.categoryId;
@@ -136,8 +138,9 @@ export function useTransactions() {
         .filter((t) => t.type === 'expense')
         .reduce((sum, t) => sum + t.amount, 0);
 
+      const nonTransferTxns = yearTxns.filter((t) => t.type !== 'transfer');
       const categoryMap = new Map<string, { amount: number; count: number }>();
-      yearTxns.forEach((t) => {
+      nonTransferTxns.forEach((t) => {
         const cat = findCategory(t.categoryId);
         const effectiveId = cat?.parentId || t.categoryId;
         const existing = categoryMap.get(effectiveId) || { amount: 0, count: 0 };
@@ -183,8 +186,9 @@ export function useTransactions() {
         .filter((t) => t.type === 'expense')
         .reduce((sum, t) => sum + t.amount, 0);
 
+      const nonTransferTxns = rangeTxns.filter((t) => t.type !== 'transfer');
       const categoryMap = new Map<string, { amount: number; count: number }>();
-      rangeTxns.forEach((t) => {
+      nonTransferTxns.forEach((t) => {
         const cat = findCategory(t.categoryId);
         const effectiveId = cat?.parentId || t.categoryId;
         const existing = categoryMap.get(effectiveId) || { amount: 0, count: 0 };

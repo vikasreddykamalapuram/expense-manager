@@ -22,6 +22,7 @@ import {
 import { CHART_COLORS } from '../../../shared/constants/categories';
 
 type ViewMode = 'weekly' | 'monthly' | 'yearly' | 'period' | 'list' | 'trend';
+type TrendRange = '7d' | '30d' | '3m' | '6m' | '1y' | 'all' | 'custom';
 
 const VIEW_MODE_OPTIONS: { value: ViewMode; label: string }[] = [
   { value: 'weekly', label: 'Weekly' },
@@ -30,6 +31,16 @@ const VIEW_MODE_OPTIONS: { value: ViewMode; label: string }[] = [
   { value: 'period', label: 'Period' },
   { value: 'list', label: 'List' },
   { value: 'trend', label: 'Trend' },
+];
+
+const TREND_RANGE_OPTIONS: { value: TrendRange; label: string }[] = [
+  { value: '7d', label: 'Last 7 Days' },
+  { value: '30d', label: 'Last 30 Days' },
+  { value: '3m', label: 'Last 3 Months' },
+  { value: '6m', label: 'Last 6 Months' },
+  { value: '1y', label: 'Last 1 Year' },
+  { value: 'all', label: 'All Time' },
+  { value: 'custom', label: 'Custom Range' },
 ];
 
 const MONTH_NAMES_SHORT = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -45,12 +56,39 @@ export function MonthlyView() {
   const [lastDateRange, setLastDateRange] = useState<{ start: string; end: string }>(
     getMonthRange(getCurrentMonth())
   );
+  // Trend view specific state
+  const [trendRange, setTrendRange] = useState<TrendRange>('3m');
+  const [trendCustomStart, setTrendCustomStart] = useState('');
+  const [trendCustomEnd, setTrendCustomEnd] = useState('');
 
   const { state } = useAppContext();
   const { settings, categories } = state;
   const { getMonthlyStats, getYearlyStats, getRangeStats, allTransactions } = useTransactions();
 
   const findCategory = (id: string) => categories.find((c) => c.id === id);
+
+  // ─── Compute trend date range from trendRange selector ───
+  const trendDateRange = useMemo(() => {
+    const today = new Date();
+    const fmt = (d: Date) =>
+      `${d.getFullYear()}-${(d.getMonth() + 1).toString().padStart(2, '0')}-${d.getDate().toString().padStart(2, '0')}`;
+    const endStr = fmt(today);
+
+    switch (trendRange) {
+      case '7d': { const s = new Date(today); s.setDate(s.getDate() - 6); return { start: fmt(s), end: endStr }; }
+      case '30d': { const s = new Date(today); s.setDate(s.getDate() - 29); return { start: fmt(s), end: endStr }; }
+      case '3m': { const s = new Date(today); s.setMonth(s.getMonth() - 3); return { start: fmt(s), end: endStr }; }
+      case '6m': { const s = new Date(today); s.setMonth(s.getMonth() - 6); return { start: fmt(s), end: endStr }; }
+      case '1y': { const s = new Date(today); s.setFullYear(s.getFullYear() - 1); return { start: fmt(s), end: endStr }; }
+      case 'all': {
+        if (allTransactions.length === 0) return { start: endStr, end: endStr };
+        const sorted = [...allTransactions].sort((a, b) => a.date.localeCompare(b.date));
+        return { start: sorted[0].date, end: sorted[sorted.length - 1].date };
+      }
+      case 'custom':
+        return { start: trendCustomStart || endStr, end: trendCustomEnd || endStr };
+    }
+  }, [trendRange, trendCustomStart, trendCustomEnd, allTransactions]);
 
   // ─── Compute active date range based on the current view mode ───
   const activeDateRange = useMemo(() => {
@@ -156,73 +194,97 @@ export function MonthlyView() {
       .sort((a, b) => b.date.localeCompare(a.date));
   }, [viewMode, lastDateRange, allTransactions]);
 
-  // ─── Trend view: data point generation ───
+  // ─── Trend view: data point generation with user-selected range ───
   const trendData = useMemo(() => {
     if (viewMode !== 'trend') return [];
-    const data: { label: string; income: number; expense: number; balance: number }[] = [];
+    const data: { label: string; income: number; expense: number; balance: number; [key: string]: string | number }[] = [];
 
-    // Determine granularity based on the view mode that was active before switching to trend
     const rangeDays = Math.ceil(
-      (new Date(lastDateRange.end).getTime() - new Date(lastDateRange.start).getTime()) / 86400000
+      (new Date(trendDateRange.end).getTime() - new Date(trendDateRange.start).getTime()) / 86400000
     );
 
-    if (rangeDays <= 10) {
-      // Daily points for the last 4 weeks
-      const endDate = new Date(lastDateRange.end + 'T00:00:00');
-      const startDate = new Date(endDate);
-      startDate.setDate(startDate.getDate() - 27);
+    // Get top expense categories for category-wise tracking
+    const overallStats = getRangeStats(trendDateRange.start, trendDateRange.end);
+    const topExpenseCategories = overallStats.byCategory
+      .filter((c) => findCategory(c.categoryId)?.type === 'expense')
+      .slice(0, 8); // Top 8 categories
+
+    if (rangeDays <= 14) {
+      // Daily points
+      const endDate = new Date(trendDateRange.end + 'T00:00:00');
+      const startDate = new Date(trendDateRange.start + 'T00:00:00');
       for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
         const dateStr = `${d.getFullYear()}-${(d.getMonth() + 1).toString().padStart(2, '0')}-${d.getDate().toString().padStart(2, '0')}`;
         const s = getRangeStats(dateStr, dateStr);
-        data.push({
+        const point: Record<string, string | number> = {
           label: `${d.getDate()}/${d.getMonth() + 1}`,
           income: s.totalIncome, expense: s.totalExpense, balance: s.balance,
-        });
-      }
-    } else if (rangeDays <= 45) {
-      // Weekly points for last 6 months
-      let current = getCurrentMonth();
-      const months: string[] = [];
-      for (let i = 0; i < 6; i++) { months.unshift(current); current = getPreviousMonth(current); }
-      for (const m of months) {
-        const range = getMonthRange(m);
-        // Split each month into ~4 weeks
-        const mStart = new Date(range.start + 'T00:00:00');
-        const mEnd = new Date(range.end + 'T00:00:00');
-        let wStart = new Date(mStart);
-        let weekNum = 1;
-        while (wStart <= mEnd) {
-          const wEnd = new Date(Math.min(wStart.getTime() + 6 * 86400000, mEnd.getTime()));
-          const sStr = `${wStart.getFullYear()}-${(wStart.getMonth() + 1).toString().padStart(2, '0')}-${wStart.getDate().toString().padStart(2, '0')}`;
-          const eStr = `${wEnd.getFullYear()}-${(wEnd.getMonth() + 1).toString().padStart(2, '0')}-${wEnd.getDate().toString().padStart(2, '0')}`;
-          const s = getRangeStats(sStr, eStr);
-          const monthLabel = MONTH_NAMES_SHORT[wStart.getMonth()];
-          data.push({
-            label: `${monthLabel} W${weekNum}`,
-            income: s.totalIncome, expense: s.totalExpense, balance: s.balance,
-          });
-          wStart = new Date(wEnd.getTime() + 86400000);
-          weekNum++;
+        };
+        // Add per-category amounts
+        for (const topCat of topExpenseCategories) {
+          const catStat = s.byCategory.find((c) => c.categoryId === topCat.categoryId);
+          point[topCat.categoryId] = catStat ? catStat.amount : 0;
         }
+        data.push(point as typeof data[number]);
+      }
+    } else if (rangeDays <= 90) {
+      // Weekly points
+      const startDate = new Date(trendDateRange.start + 'T00:00:00');
+      const endDate = new Date(trendDateRange.end + 'T00:00:00');
+      let wStart = new Date(startDate);
+      while (wStart <= endDate) {
+        const wEnd = new Date(Math.min(wStart.getTime() + 6 * 86400000, endDate.getTime()));
+        const sStr = `${wStart.getFullYear()}-${(wStart.getMonth() + 1).toString().padStart(2, '0')}-${wStart.getDate().toString().padStart(2, '0')}`;
+        const eStr = `${wEnd.getFullYear()}-${(wEnd.getMonth() + 1).toString().padStart(2, '0')}-${wEnd.getDate().toString().padStart(2, '0')}`;
+        const s = getRangeStats(sStr, eStr);
+        const monthLabel = MONTH_NAMES_SHORT[wStart.getMonth()];
+        const point: Record<string, string | number> = {
+          label: `${monthLabel} ${wStart.getDate()}`,
+          income: s.totalIncome, expense: s.totalExpense, balance: s.balance,
+        };
+        for (const topCat of topExpenseCategories) {
+          const catStat = s.byCategory.find((c) => c.categoryId === topCat.categoryId);
+          point[topCat.categoryId] = catStat ? catStat.amount : 0;
+        }
+        data.push(point as typeof data[number]);
+        wStart = new Date(wEnd.getTime() + 86400000);
       }
     } else {
-      // Monthly points for the last 2 years (or 12 months)
-      const count = rangeDays > 400 ? 24 : 12;
-      let current = getCurrentMonth();
-      const months: string[] = [];
-      for (let i = 0; i < count; i++) { months.unshift(current); current = getPreviousMonth(current); }
-      for (const m of months) {
-        const s = getMonthlyStats(m);
-        const [, mon] = m.split('-');
-        const yr = m.split('-')[0].slice(2);
-        data.push({
-          label: `${MONTH_NAMES_SHORT[parseInt(mon) - 1]} '${yr}`,
+      // Monthly points
+      const startDate = new Date(trendDateRange.start + 'T00:00:00');
+      const endDate = new Date(trendDateRange.end + 'T00:00:00');
+      let current = `${startDate.getFullYear()}-${(startDate.getMonth() + 1).toString().padStart(2, '0')}`;
+      const endMonth = `${endDate.getFullYear()}-${(endDate.getMonth() + 1).toString().padStart(2, '0')}`;
+      while (current <= endMonth) {
+        const s = getMonthlyStats(current);
+        const [yr, mon] = current.split('-');
+        const point: Record<string, string | number> = {
+          label: `${MONTH_NAMES_SHORT[parseInt(mon) - 1]} '${yr.slice(2)}`,
           income: s.totalIncome, expense: s.totalExpense, balance: s.balance,
-        });
+        };
+        for (const topCat of topExpenseCategories) {
+          const catStat = s.byCategory.find((c) => c.categoryId === topCat.categoryId);
+          point[topCat.categoryId] = catStat ? catStat.amount : 0;
+        }
+        data.push(point as typeof data[number]);
+        // Advance to next month
+        const [y, m] = current.split('-').map(Number);
+        const nextM = m === 12 ? 1 : m + 1;
+        const nextY = m === 12 ? y + 1 : y;
+        current = `${nextY}-${nextM.toString().padStart(2, '0')}`;
       }
     }
     return data;
-  }, [viewMode, lastDateRange, getRangeStats, getMonthlyStats]);
+  }, [viewMode, trendDateRange, getRangeStats, getMonthlyStats, categories]);
+
+  // Top expense categories for trend legend (computed alongside trendData)
+  const trendTopCategories = useMemo(() => {
+    if (viewMode !== 'trend') return [];
+    const overallStats = getRangeStats(trendDateRange.start, trendDateRange.end);
+    return overallStats.byCategory
+      .filter((c) => findCategory(c.categoryId)?.type === 'expense')
+      .slice(0, 8);
+  }, [viewMode, trendDateRange, getRangeStats, categories]);
 
   // ─── Navigation handlers ───
   const handlePrev = () => {
@@ -375,42 +437,134 @@ export function MonthlyView() {
 
       {/* ── Trend View ── */}
       {viewMode === 'trend' && (
-        <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
-          <h3 className="mb-1 text-base font-semibold text-gray-900 flex items-center gap-2">
-            <LineChartIcon size={18} /> Income / Expense / Balance Trend
-          </h3>
-          <p className="mb-4 text-xs text-gray-400">
-            {formatDate(lastDateRange.start, 'DD MMM YYYY')} – {formatDate(lastDateRange.end, 'DD MMM YYYY')}
-          </p>
-          {trendData.length === 0 ? (
-            <EmptyState icon={<LineChartIcon size={40} />} title="No trend data" description="Not enough data to display a trend." />
-          ) : (
-            <ResponsiveContainer width="100%" height={340}>
-              <AreaChart data={trendData}>
-                <defs>
-                  <linearGradient id="gradIncome" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#10b981" stopOpacity={0.15} />
-                    <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
-                  </linearGradient>
-                  <linearGradient id="gradExpense" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#ef4444" stopOpacity={0.15} />
-                    <stop offset="95%" stopColor="#ef4444" stopOpacity={0} />
-                  </linearGradient>
-                  <linearGradient id="gradBalance" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.1} />
-                    <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-                <XAxis dataKey="label" tick={{ fontSize: 10, fill: '#64748b' }} interval="preserveStartEnd" />
-                <YAxis tick={{ fontSize: 11, fill: '#64748b' }} />
-                <Tooltip formatter={(value) => formatCurrency(Number(value), settings)} contentStyle={tooltipStyle} />
-                <Legend />
-                <Area type="monotone" dataKey="income" stroke="#10b981" strokeWidth={2} fill="url(#gradIncome)" name="Income" />
-                <Area type="monotone" dataKey="expense" stroke="#ef4444" strokeWidth={2} fill="url(#gradExpense)" name="Expense" />
-                <Area type="monotone" dataKey="balance" stroke="#3b82f6" strokeWidth={2} fill="url(#gradBalance)" name="Balance" />
-              </AreaChart>
-            </ResponsiveContainer>
+        <div className="space-y-6">
+          {/* Trend timeline selector */}
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="relative">
+              <select
+                value={trendRange}
+                onChange={(e) => setTrendRange(e.target.value as TrendRange)}
+                className="appearance-none rounded-lg border border-gray-200 bg-white px-3 py-1.5 pr-8 text-sm font-medium text-gray-700 shadow-sm outline-none focus:border-primary-400 focus:ring-2 focus:ring-primary-100 cursor-pointer"
+              >
+                {TREND_RANGE_OPTIONS.map((opt) => (
+                  <option key={opt.value} value={opt.value}>{opt.label}</option>
+                ))}
+              </select>
+              <ChevronRight size={14} className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 rotate-90 text-gray-400" />
+            </div>
+            {trendRange === 'custom' && (
+              <div className="flex items-center gap-2">
+                <input type="date" value={trendCustomStart}
+                  onChange={(e) => setTrendCustomStart(e.target.value)}
+                  className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-sm text-gray-700 shadow-sm outline-none focus:border-primary-400" />
+                <span className="text-sm text-gray-400">to</span>
+                <input type="date" value={trendCustomEnd}
+                  onChange={(e) => setTrendCustomEnd(e.target.value)}
+                  className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-sm text-gray-700 shadow-sm outline-none focus:border-primary-400" />
+              </div>
+            )}
+          </div>
+
+          {/* Summary stats for trend period */}
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+            <StatCard title="Income" value={formatCurrency(getRangeStats(trendDateRange.start, trendDateRange.end).totalIncome, settings)} icon={<TrendingUp size={24} />} variant="income" />
+            <StatCard title="Expenses" value={formatCurrency(getRangeStats(trendDateRange.start, trendDateRange.end).totalExpense, settings)} icon={<TrendingDown size={24} />} variant="expense" />
+            <StatCard title="Net Balance" value={formatCurrency(getRangeStats(trendDateRange.start, trendDateRange.end).balance, settings)} icon={<Wallet size={24} />}
+              variant={getRangeStats(trendDateRange.start, trendDateRange.end).balance >= 0 ? 'income' : 'expense'} />
+          </div>
+
+          {/* Overall Income / Expense / Balance trend */}
+          <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+            <h3 className="mb-1 text-base font-semibold text-gray-900 flex items-center gap-2">
+              <LineChartIcon size={18} /> Income / Expense / Balance Trend
+            </h3>
+            <p className="mb-4 text-xs text-gray-400">
+              {formatDate(trendDateRange.start, 'DD MMM YYYY')} – {formatDate(trendDateRange.end, 'DD MMM YYYY')}
+            </p>
+            {trendData.length === 0 ? (
+              <EmptyState icon={<LineChartIcon size={40} />} title="No trend data" description="Not enough data to display a trend." />
+            ) : (
+              <ResponsiveContainer width="100%" height={340}>
+                <AreaChart data={trendData}>
+                  <defs>
+                    <linearGradient id="gradIncome" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#10b981" stopOpacity={0.15} />
+                      <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
+                    </linearGradient>
+                    <linearGradient id="gradExpense" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#ef4444" stopOpacity={0.15} />
+                      <stop offset="95%" stopColor="#ef4444" stopOpacity={0} />
+                    </linearGradient>
+                    <linearGradient id="gradBalance" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.1} />
+                      <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+                  <XAxis dataKey="label" tick={{ fontSize: 10, fill: '#64748b' }} interval="preserveStartEnd" />
+                  <YAxis tick={{ fontSize: 11, fill: '#64748b' }} />
+                  <Tooltip formatter={(value) => formatCurrency(Number(value), settings)} contentStyle={tooltipStyle} />
+                  <Legend />
+                  <Area type="monotone" dataKey="income" stroke="#10b981" strokeWidth={2} fill="url(#gradIncome)" name="Income" />
+                  <Area type="monotone" dataKey="expense" stroke="#ef4444" strokeWidth={2} fill="url(#gradExpense)" name="Expense" />
+                  <Area type="monotone" dataKey="balance" stroke="#3b82f6" strokeWidth={2} fill="url(#gradBalance)" name="Balance" />
+                </AreaChart>
+              </ResponsiveContainer>
+            )}
+          </div>
+
+          {/* Category-wise Expense Trend */}
+          {trendTopCategories.length > 0 && trendData.length > 0 && (
+            <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+              <h3 className="mb-1 text-base font-semibold text-gray-900 flex items-center gap-2">
+                <TrendingDown size={18} /> Category-wise Expense Trend
+              </h3>
+              <p className="mb-4 text-xs text-gray-400">Top {trendTopCategories.length} expense categories over time</p>
+              <ResponsiveContainer width="100%" height={340}>
+                <AreaChart data={trendData}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+                  <XAxis dataKey="label" tick={{ fontSize: 10, fill: '#64748b' }} interval="preserveStartEnd" />
+                  <YAxis tick={{ fontSize: 11, fill: '#64748b' }} />
+                  <Tooltip
+                    formatter={(value, name) => {
+                      const cat = trendTopCategories.find((c) => c.categoryId === name);
+                      return [formatCurrency(Number(value), settings), cat?.categoryName || String(name)];
+                    }}
+                    contentStyle={tooltipStyle}
+                  />
+                  <Legend
+                    formatter={(value) => {
+                      const cat = trendTopCategories.find((c) => c.categoryId === value);
+                      return cat?.categoryName || String(value);
+                    }}
+                  />
+                  {trendTopCategories.map((cat, i) => (
+                    <Area
+                      key={cat.categoryId}
+                      type="monotone"
+                      dataKey={cat.categoryId}
+                      stackId="categories"
+                      stroke={cat.color || CHART_COLORS[i]}
+                      fill={cat.color || CHART_COLORS[i]}
+                      fillOpacity={0.3}
+                      strokeWidth={1.5}
+                      name={cat.categoryId}
+                    />
+                  ))}
+                </AreaChart>
+              </ResponsiveContainer>
+
+              {/* Category legend with totals */}
+              <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
+                {trendTopCategories.map((cat) => (
+                  <div key={cat.categoryId} className="flex items-center gap-2 text-xs">
+                    <div className="h-2.5 w-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: cat.color }} />
+                    <span className="truncate text-gray-600">{cat.categoryName}</span>
+                    <span className="font-medium text-gray-900 ml-auto">{formatCurrency(cat.amount, settings)}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
           )}
         </div>
       )}
