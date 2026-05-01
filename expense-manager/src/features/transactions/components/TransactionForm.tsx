@@ -204,13 +204,8 @@ export function TransactionForm({ editTransaction, onClose }: TransactionFormPro
             value={selectedParentId}
             onChange={(e) => {
               const pid = e.target.value;
-              // Check if subcategories exist for this parent
-              const subs = categories.filter((c) => c.parentId === pid);
-              if (subs.length === 0) {
-                setCategoryId(pid); // no subs, use parent directly
-              } else {
-                setCategoryId(''); // clear — user must pick subcategory
-              }
+              // Always set to parent — subcategory dropdown defaults to "General [Parent]"
+              setCategoryId(pid);
             }}
             error={errors.categoryId}
             options={[
