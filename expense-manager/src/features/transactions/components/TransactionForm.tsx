@@ -34,10 +34,19 @@ export function TransactionForm({ editTransaction, onClose }: TransactionFormPro
   );
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  // Use state categories (includes custom) instead of hardcoded getCategoriesByType
-  const filteredCategories = type === 'transfer'
+  // Two-level category picker: parent categories + subcategories
+  const parentCategories = type === 'transfer'
     ? []
-    : categories.filter((c) => c.type === (type === 'income' ? 'income' : 'expense'));
+    : categories.filter((c) => c.type === (type === 'income' ? 'income' : 'expense') && !c.parentId);
+
+  // Determine selected parent from categoryId
+  const selectedCat = categories.find((c) => c.id === categoryId);
+  const selectedParentId = selectedCat?.parentId || (selectedCat && !selectedCat.parentId ? selectedCat.id : '');
+
+  const subcategories = selectedParentId
+    ? categories.filter((c) => c.parentId === selectedParentId)
+    : [];
+
   const activeAccounts = accounts.filter((a) => a.isActive);
 
   const validate = (): boolean => {
@@ -187,18 +196,40 @@ export function TransactionForm({ editTransaction, onClose }: TransactionFormPro
         </div>
       )}
 
-      {/* Category (not for transfers) */}
+      {/* Category (not for transfers) — Two-level picker */}
       {type !== 'transfer' && (
-        <Select
-          label="Category"
-          value={categoryId}
-          onChange={(e) => setCategoryId(e.target.value)}
-          error={errors.categoryId}
-          options={[
-            { value: '', label: 'Select a category...' },
-            ...filteredCategories.map((c) => ({ value: c.id, label: c.name })),
-          ]}
-        />
+        <div className="space-y-3">
+          <Select
+            label="Category"
+            value={selectedParentId}
+            onChange={(e) => {
+              const pid = e.target.value;
+              // Check if subcategories exist for this parent
+              const subs = categories.filter((c) => c.parentId === pid);
+              if (subs.length === 0) {
+                setCategoryId(pid); // no subs, use parent directly
+              } else {
+                setCategoryId(''); // clear — user must pick subcategory
+              }
+            }}
+            error={errors.categoryId}
+            options={[
+              { value: '', label: 'Select a category...' },
+              ...parentCategories.map((c) => ({ value: c.id, label: c.name })),
+            ]}
+          />
+          {subcategories.length > 0 && (
+            <Select
+              label="Subcategory"
+              value={selectedCat?.parentId ? categoryId : ''}
+              onChange={(e) => setCategoryId(e.target.value || selectedParentId)}
+              options={[
+                { value: '', label: `General ${categories.find((c) => c.id === selectedParentId)?.name || ''}` },
+                ...subcategories.map((c) => ({ value: c.id, label: c.name })),
+              ]}
+            />
+          )}
+        </div>
       )}
 
       {/* Payment Method */}

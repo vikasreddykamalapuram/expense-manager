@@ -61,6 +61,7 @@ class StorageService {
 
   addCustomCategory(category: Category): Category[] {
     const custom = this.getCustomCategories();
+    if (custom.some((c) => c.id === category.id)) return this.getAllCategories();
     custom.push({ ...category, isCustom: true });
     this.setItem(STORAGE_KEYS.CATEGORIES, custom);
     return this.getAllCategories();
@@ -106,6 +107,7 @@ class StorageService {
 
   addAccount(account: Account): Account[] {
     const accounts = this.getAccounts();
+    if (accounts.some((a) => a.id === account.id)) return accounts;
     accounts.push(account);
     this.saveAccounts(accounts);
     return accounts;

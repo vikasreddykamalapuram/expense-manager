@@ -6,15 +6,16 @@ import { useTransactions } from '../../../shared/hooks/useTransactions';
 import { StatCard } from '../../../shared/components/ui/StatCard';
 import { Button } from '../../../shared/components/ui/Button';
 import { EmptyState } from '../../../shared/components/ui/EmptyState';
-import { getCategoryById } from '../../../shared/constants/categories';
 import { formatCurrency, formatDate, formatMonth, getLast6Months, classNames } from '../../../shared/utils/helpers';
 import { CHART_COLORS } from '../../../shared/constants/categories';
 
 export function Dashboard() {
   const { state } = useAppContext();
-  const { settings } = state;
+  const { settings, categories } = state;
   const { currentMonthStats, totalBalance, recentTransactions, getMonthlyStats } = useTransactions();
   const navigate = useNavigate();
+
+  const findCategory = (id: string) => categories.find((c) => c.id === id);
 
   const last6Months = getLast6Months();
   const monthlyData = last6Months.map((m: string) => {
@@ -28,7 +29,7 @@ export function Dashboard() {
 
   const expenseByCategory = currentMonthStats.byCategory
     .filter((c: { categoryId: string }) => {
-      const cat = getCategoryById(c.categoryId);
+      const cat = findCategory(c.categoryId);
       return cat?.type === 'expense';
     })
     .slice(0, 6);
@@ -174,7 +175,8 @@ export function Dashboard() {
             </div>
             <div className="space-y-3">
               {recentTransactions.map((tx) => {
-                const category = getCategoryById(tx.categoryId);
+                const category = findCategory(tx.categoryId);
+                const parent = category?.parentId ? findCategory(category.parentId) : null;
                 return (
                   <div
                     key={tx.id}
@@ -191,7 +193,7 @@ export function Dashboard() {
                     </div>
                     <div className="flex-1">
                       <p className="text-sm font-medium text-gray-900">
-                        {category?.name || 'Unknown'}
+                        {parent ? `${parent.name} › ${category?.name}` : category?.name || 'Unknown'}
                       </p>
                       <p className="text-xs text-gray-500">
                         {formatDate(tx.date, settings.dateFormat)}

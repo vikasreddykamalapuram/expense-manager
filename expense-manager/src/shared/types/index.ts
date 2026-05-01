@@ -42,8 +42,9 @@ export interface Category {
   name: string;
   type: 'income' | 'expense';
   icon: string; // lucide icon name
-  color: string; // tailwind color class
+  color: string; // hex color
   isCustom: boolean;
+  parentId?: string; // if set, this is a subcategory
 }
 
 export interface Budget {

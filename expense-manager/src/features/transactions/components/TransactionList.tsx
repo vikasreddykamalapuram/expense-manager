@@ -118,9 +118,16 @@ export function TransactionList() {
         <div className="space-y-2">
           {transactions.map((tx) => {
             const category = getCategoryById(tx.categoryId);
+            const parentCat = category?.parentId ? getCategoryById(category.parentId) : null;
             const account = tx.accountId ? state.accounts.find((a) => a.id === tx.accountId) : null;
             const toAccount = tx.toAccountId ? state.accounts.find((a) => a.id === tx.toAccountId) : null;
             const isTransfer = tx.type === 'transfer';
+            const displayColor = parentCat?.color || category?.color;
+            const displayName = isTransfer
+              ? `${account?.name || 'Unknown'} → ${toAccount?.name || 'Unknown'}`
+              : parentCat
+                ? `${parentCat.name} › ${category?.name}`
+                : category?.name || 'Unknown';
             return (
               <div
                 key={tx.id}
@@ -128,23 +135,21 @@ export function TransactionList() {
               >
                 <div
                   className="flex h-10 w-10 items-center justify-center rounded-xl"
-                  style={{ backgroundColor: isTransfer ? '#3b82f615' : `${category?.color}15` }}
+                  style={{ backgroundColor: isTransfer ? '#3b82f615' : `${displayColor}15` }}
                 >
                   {isTransfer ? (
                     <ArrowLeftRight size={16} className="text-primary-600" />
                   ) : (
                     <div
                       className="h-3 w-3 rounded-full"
-                      style={{ backgroundColor: category?.color }}
+                      style={{ backgroundColor: displayColor }}
                     />
                   )}
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
                     <p className="text-sm font-semibold text-gray-900 truncate">
-                      {isTransfer
-                        ? `${account?.name || 'Unknown'} → ${toAccount?.name || 'Unknown'}`
-                        : category?.name || 'Unknown'}
+                      {displayName}
                     </p>
                     {tx.isRecurring && (
                       <span className="text-[10px] font-medium uppercase text-primary-600 bg-primary-50 px-1.5 py-0.5 rounded">

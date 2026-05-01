@@ -8,7 +8,6 @@ import { useAppContext } from '../../../context/AppContext';
 import { useTransactions } from '../../../shared/hooks/useTransactions';
 import { StatCard } from '../../../shared/components/ui/StatCard';
 import { EmptyState } from '../../../shared/components/ui/EmptyState';
-import { getCategoryById } from '../../../shared/constants/categories';
 import {
   formatCurrency, formatMonth, getCurrentMonth,
   getPreviousMonth, getNextMonth,
@@ -19,8 +18,10 @@ import { TrendingUp, TrendingDown, Wallet } from 'lucide-react';
 export function MonthlyView() {
   const [selectedMonth, setSelectedMonth] = useState(getCurrentMonth());
   const { state } = useAppContext();
-  const { settings } = state;
+  const { settings, categories } = state;
   const { getMonthlyStats } = useTransactions();
+
+  const findCategory = (id: string) => categories.find((c) => c.id === id);
 
   const stats = useMemo(() => getMonthlyStats(selectedMonth), [selectedMonth, getMonthlyStats]);
   const prevStats = useMemo(
@@ -29,12 +30,12 @@ export function MonthlyView() {
   );
 
   const expenseCategories = stats.byCategory.filter((c) => {
-    const cat = getCategoryById(c.categoryId);
+    const cat = findCategory(c.categoryId);
     return cat?.type === 'expense';
   });
 
   const incomeCategories = stats.byCategory.filter((c) => {
-    const cat = getCategoryById(c.categoryId);
+    const cat = findCategory(c.categoryId);
     return cat?.type === 'income';
   });
 

@@ -1,12 +1,20 @@
 import { useMemo } from 'react';
 import { useAppContext } from '../../context/AppContext';
 import { MonthlyStats, CategoryStat } from '../types';
-import { getCategoryById } from '../constants/categories';
 import { getMonthRange, getCurrentMonth } from '../utils/helpers';
 
 export function useTransactions() {
   const { state, dispatch } = useAppContext();
-  const { transactions, filters } = state;
+  const { transactions, filters, categories } = state;
+
+  // Helper: look up category from state (includes custom + subcategories)
+  const findCategory = (id: string) => categories.find((c) => c.id === id);
+
+  // Helper: get all child category IDs for a parent (for filtering)
+  const getCategoryFamily = (categoryId: string): string[] => {
+    const children = categories.filter((c) => c.parentId === categoryId).map((c) => c.id);
+    return [categoryId, ...children];
+  };
 
   const filteredTransactions = useMemo(() => {
     let result = [...transactions];
@@ -16,7 +24,9 @@ export function useTransactions() {
     }
 
     if (filters.categoryId) {
-      result = result.filter((t) => t.categoryId === filters.categoryId);
+      // Include parent + all its subcategories
+      const family = getCategoryFamily(filters.categoryId);
+      result = result.filter((t) => family.includes(t.categoryId));
     }
 
     if (filters.accountId) {
@@ -34,10 +44,12 @@ export function useTransactions() {
     if (filters.searchQuery) {
       const query = filters.searchQuery.toLowerCase();
       result = result.filter((t) => {
-        const category = getCategoryById(t.categoryId);
+        const category = findCategory(t.categoryId);
+        const parent = category?.parentId ? findCategory(category.parentId) : null;
         return (
           t.notes.toLowerCase().includes(query) ||
           category?.name.toLowerCase().includes(query) ||
+          parent?.name.toLowerCase().includes(query) ||
           t.amount.toString().includes(query)
         );
       });
@@ -56,7 +68,8 @@ export function useTransactions() {
     });
 
     return result;
-  }, [transactions, filters]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [transactions, filters, categories]);
 
   const getMonthlyStats = useMemo(() => {
     return (month: string): MonthlyStats => {
@@ -73,10 +86,14 @@ export function useTransactions() {
         .filter((t) => t.type === 'expense')
         .reduce((sum, t) => sum + t.amount, 0);
 
+      // Aggregate by parent category (roll up subcategories into parent)
       const categoryMap = new Map<string, { amount: number; count: number }>();
       monthTxns.forEach((t) => {
-        const existing = categoryMap.get(t.categoryId) || { amount: 0, count: 0 };
-        categoryMap.set(t.categoryId, {
+        const cat = findCategory(t.categoryId);
+        // Roll up to parent if this is a subcategory
+        const effectiveId = cat?.parentId || t.categoryId;
+        const existing = categoryMap.get(effectiveId) || { amount: 0, count: 0 };
+        categoryMap.set(effectiveId, {
           amount: existing.amount + t.amount,
           count: existing.count + 1,
         });
@@ -85,7 +102,7 @@ export function useTransactions() {
       const totalForPercentage = totalIncome + totalExpense || 1;
       const byCategory: CategoryStat[] = Array.from(categoryMap.entries()).map(
         ([categoryId, { amount, count }]) => {
-          const category = getCategoryById(categoryId);
+          const category = findCategory(categoryId);
           return {
             categoryId,
             categoryName: category?.name || 'Unknown',
@@ -101,7 +118,8 @@ export function useTransactions() {
 
       return { month, totalIncome, totalExpense, balance: totalIncome - totalExpense, byCategory };
     };
-  }, [transactions]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [transactions, categories]);
 
   const currentMonthStats = useMemo(() => getMonthlyStats(getCurrentMonth()), [getMonthlyStats]);
 

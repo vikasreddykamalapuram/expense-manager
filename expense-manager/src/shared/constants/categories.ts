@@ -10,12 +10,65 @@ export const EXPENSE_CATEGORIES: Category[] = [
   { id: 'health', name: 'Health & Medical', type: 'expense', icon: 'Heart', color: '#14b8a6', isCustom: false },
   { id: 'education', name: 'Education', type: 'expense', icon: 'GraduationCap', color: '#06b6d4', isCustom: false },
   { id: 'travel', name: 'Travel', type: 'expense', icon: 'Plane', color: '#8b5cf6', isCustom: false },
-  { id: 'rent-mortgage', name: 'Rent / Mortgage', type: 'expense', icon: 'Home', color: '#d946ef', isCustom: false },
+  { id: 'household', name: 'Home / Household', type: 'expense', icon: 'Home', color: '#d946ef', isCustom: false },
   { id: 'insurance', name: 'Insurance', type: 'expense', icon: 'Shield', color: '#0ea5e9', isCustom: false },
   { id: 'personal-care', name: 'Personal Care', type: 'expense', icon: 'Sparkles', color: '#f43f5e', isCustom: false },
   { id: 'gifts-donations', name: 'Gifts & Donations', type: 'expense', icon: 'Gift', color: '#10b981', isCustom: false },
   { id: 'subscriptions', name: 'Subscriptions', type: 'expense', icon: 'CreditCard', color: '#3b82f6', isCustom: false },
   { id: 'other-expense', name: 'Other', type: 'expense', icon: 'MoreHorizontal', color: '#64748b', isCustom: false },
+];
+
+/** Default subcategories for common expense parents */
+export const EXPENSE_SUBCATEGORIES: Category[] = [
+  // Food & Dining
+  { id: 'food-restaurants', name: 'Restaurants', type: 'expense', icon: 'UtensilsCrossed', color: '#ef4444', isCustom: false, parentId: 'food-dining' },
+  { id: 'food-takeaway', name: 'Takeaway / Delivery', type: 'expense', icon: 'Package', color: '#ef4444', isCustom: false, parentId: 'food-dining' },
+  { id: 'food-coffee-snacks', name: 'Coffee & Snacks', type: 'expense', icon: 'Coffee', color: '#ef4444', isCustom: false, parentId: 'food-dining' },
+  // Groceries
+  { id: 'groceries-general', name: 'General Groceries', type: 'expense', icon: 'ShoppingCart', color: '#f97316', isCustom: false, parentId: 'groceries' },
+  { id: 'groceries-fruits-veg', name: 'Fruits & Vegetables', type: 'expense', icon: 'Trees', color: '#f97316', isCustom: false, parentId: 'groceries' },
+  { id: 'groceries-dairy', name: 'Dairy & Bakery', type: 'expense', icon: 'Package', color: '#f97316', isCustom: false, parentId: 'groceries' },
+  // Transportation
+  { id: 'transport-fuel', name: 'Fuel / Petrol', type: 'expense', icon: 'Car', color: '#eab308', isCustom: false, parentId: 'transportation' },
+  { id: 'transport-public', name: 'Public Transit / Metro', type: 'expense', icon: 'Car', color: '#eab308', isCustom: false, parentId: 'transportation' },
+  { id: 'transport-taxi', name: 'Taxi / Ride Share', type: 'expense', icon: 'Car', color: '#eab308', isCustom: false, parentId: 'transportation' },
+  { id: 'transport-parking', name: 'Parking & Tolls', type: 'expense', icon: 'Car', color: '#eab308', isCustom: false, parentId: 'transportation' },
+  { id: 'transport-flight', name: 'Flight', type: 'expense', icon: 'Plane', color: '#eab308', isCustom: false, parentId: 'transportation' },
+  { id: 'transport-bus', name: 'Bus', type: 'expense', icon: 'Car', color: '#eab308', isCustom: false, parentId: 'transportation' },
+  { id: 'transport-train', name: 'Train', type: 'expense', icon: 'Car', color: '#eab308', isCustom: false, parentId: 'transportation' },
+  // Shopping
+  { id: 'shopping-clothing', name: 'Clothing & Fashion', type: 'expense', icon: 'ShoppingBag', color: '#a855f7', isCustom: false, parentId: 'shopping' },
+  { id: 'shopping-electronics', name: 'Electronics & Gadgets', type: 'expense', icon: 'Smartphone', color: '#a855f7', isCustom: false, parentId: 'shopping' },
+  { id: 'shopping-home-decor', name: 'Home & Decor', type: 'expense', icon: 'Home', color: '#a855f7', isCustom: false, parentId: 'shopping' },
+  { id: 'shopping-online', name: 'Online Shopping', type: 'expense', icon: 'Globe', color: '#a855f7', isCustom: false, parentId: 'shopping' },
+  // Bills & Utilities
+  { id: 'bills-electricity', name: 'Electricity', type: 'expense', icon: 'Zap', color: '#6366f1', isCustom: false, parentId: 'bills-utilities' },
+  { id: 'bills-water', name: 'Water', type: 'expense', icon: 'Zap', color: '#6366f1', isCustom: false, parentId: 'bills-utilities' },
+  { id: 'bills-gas', name: 'Gas / Cooking', type: 'expense', icon: 'Zap', color: '#6366f1', isCustom: false, parentId: 'bills-utilities' },
+  { id: 'bills-internet', name: 'Internet / Broadband', type: 'expense', icon: 'Wifi', color: '#6366f1', isCustom: false, parentId: 'bills-utilities' },
+  { id: 'bills-phone', name: 'Phone / Mobile', type: 'expense', icon: 'Phone', color: '#6366f1', isCustom: false, parentId: 'bills-utilities' },
+  // Health & Medical
+  { id: 'health-doctor', name: 'Doctor / Consultation', type: 'expense', icon: 'Stethoscope', color: '#14b8a6', isCustom: false, parentId: 'health' },
+  { id: 'health-medicine', name: 'Medicine / Pharmacy', type: 'expense', icon: 'Pill', color: '#14b8a6', isCustom: false, parentId: 'health' },
+  { id: 'health-lab-tests', name: 'Lab Tests / Diagnostics', type: 'expense', icon: 'Heart', color: '#14b8a6', isCustom: false, parentId: 'health' },
+  { id: 'health-hospital', name: 'Hospital', type: 'expense', icon: 'Heart', color: '#14b8a6', isCustom: false, parentId: 'health' },
+  // Home / Household
+  { id: 'household-rent', name: 'Rent', type: 'expense', icon: 'Home', color: '#d946ef', isCustom: false, parentId: 'household' },
+  { id: 'household-maid', name: 'Maid / Help', type: 'expense', icon: 'Home', color: '#d946ef', isCustom: false, parentId: 'household' },
+  { id: 'household-maintenance', name: 'Maintenance & Repairs', type: 'expense', icon: 'Wrench', color: '#d946ef', isCustom: false, parentId: 'household' },
+  { id: 'household-furniture', name: 'Furniture', type: 'expense', icon: 'Home', color: '#d946ef', isCustom: false, parentId: 'household' },
+  { id: 'household-groceries', name: 'Home Essentials', type: 'expense', icon: 'ShoppingCart', color: '#d946ef', isCustom: false, parentId: 'household' },
+  // Entertainment
+  { id: 'entertainment-movies', name: 'Movies / Cinema', type: 'expense', icon: 'Film', color: '#ec4899', isCustom: false, parentId: 'entertainment' },
+  { id: 'entertainment-streaming', name: 'Streaming Services', type: 'expense', icon: 'Tv', color: '#ec4899', isCustom: false, parentId: 'entertainment' },
+  { id: 'entertainment-events', name: 'Events & Concerts', type: 'expense', icon: 'Music', color: '#ec4899', isCustom: false, parentId: 'entertainment' },
+  // Personal Care
+  { id: 'personal-salon', name: 'Salon / Grooming', type: 'expense', icon: 'Scissors', color: '#f43f5e', isCustom: false, parentId: 'personal-care' },
+  { id: 'personal-gym', name: 'Gym / Fitness', type: 'expense', icon: 'Dumbbell', color: '#f43f5e', isCustom: false, parentId: 'personal-care' },
+  // Education
+  { id: 'education-tuition', name: 'Tuition / Fees', type: 'expense', icon: 'GraduationCap', color: '#06b6d4', isCustom: false, parentId: 'education' },
+  { id: 'education-books', name: 'Books & Materials', type: 'expense', icon: 'BookOpen', color: '#06b6d4', isCustom: false, parentId: 'education' },
+  { id: 'education-courses', name: 'Online Courses', type: 'expense', icon: 'Laptop', color: '#06b6d4', isCustom: false, parentId: 'education' },
 ];
 
 export const INCOME_CATEGORIES: Category[] = [
@@ -31,13 +84,32 @@ export const INCOME_CATEGORIES: Category[] = [
   { id: 'other-income', name: 'Other', type: 'income', icon: 'MoreHorizontal', color: '#64748b', isCustom: false },
 ];
 
-export const ALL_CATEGORIES: Category[] = [...EXPENSE_CATEGORIES, ...INCOME_CATEGORIES];
+/** Default subcategories for common income parents */
+export const INCOME_SUBCATEGORIES: Category[] = [
+  { id: 'salary-base', name: 'Base Pay', type: 'income', icon: 'Briefcase', color: '#22c55e', isCustom: false, parentId: 'salary' },
+  { id: 'salary-bonus', name: 'Bonus', type: 'income', icon: 'Gem', color: '#22c55e', isCustom: false, parentId: 'salary' },
+  { id: 'salary-reimbursement', name: 'Reimbursement', type: 'income', icon: 'RotateCcw', color: '#22c55e', isCustom: false, parentId: 'salary' },
+  { id: 'investments-dividends', name: 'Dividends', type: 'income', icon: 'TrendingUp', color: '#3b82f6', isCustom: false, parentId: 'investments' },
+  { id: 'investments-capital-gains', name: 'Capital Gains', type: 'income', icon: 'TrendingUp', color: '#3b82f6', isCustom: false, parentId: 'investments' },
+  { id: 'investments-interest', name: 'Interest Income', type: 'income', icon: 'Percent', color: '#3b82f6', isCustom: false, parentId: 'investments' },
+];
 
+export const ALL_CATEGORIES: Category[] = [
+  ...EXPENSE_CATEGORIES, ...EXPENSE_SUBCATEGORIES,
+  ...INCOME_CATEGORIES, ...INCOME_SUBCATEGORIES,
+];
+
+/** Get a built-in category by ID (does NOT include custom categories — use state.categories for that) */
 export const getCategoryById = (id: string): Category | undefined =>
   ALL_CATEGORIES.find((c) => c.id === id);
 
-export const getCategoriesByType = (type: 'income' | 'expense'): Category[] =>
-  ALL_CATEGORIES.filter((c) => c.type === type);
+/** Get top-level (parent) built-in categories by type */
+export const getParentCategoriesByType = (type: 'income' | 'expense'): Category[] =>
+  ALL_CATEGORIES.filter((c) => c.type === type && !c.parentId);
+
+/** Get subcategories for a parent */
+export const getSubcategories = (parentId: string): Category[] =>
+  ALL_CATEGORIES.filter((c) => c.parentId === parentId);
 
 export const CURRENCIES = [
   { code: 'INR', symbol: '₹', name: 'Indian Rupee' },

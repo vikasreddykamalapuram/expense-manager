@@ -10,18 +10,29 @@ import { CategoryIcon } from '../../../shared/components/ui/CategoryIcon';
 interface CategoryFormProps {
   editCategory?: Category;
   defaultType?: 'income' | 'expense';
+  defaultParentId?: string;
   onClose: () => void;
 }
 
-export function CategoryForm({ editCategory, defaultType, onClose }: CategoryFormProps) {
-  const { dispatch } = useAppContext();
+export function CategoryForm({ editCategory, defaultType, defaultParentId, onClose }: CategoryFormProps) {
+  const { state, dispatch } = useAppContext();
+  const { categories } = state;
   const isEditing = !!editCategory;
 
   const [name, setName] = useState(editCategory?.name || '');
   const [type, setType] = useState<'income' | 'expense'>(editCategory?.type || defaultType || 'expense');
+  const [parentId, setParentId] = useState(editCategory?.parentId || defaultParentId || '');
   const [icon, setIcon] = useState(editCategory?.icon || CATEGORY_ICON_OPTIONS[0]);
   const [color, setColor] = useState(editCategory?.color || CATEGORY_COLORS[0]);
   const [errors, setErrors] = useState<Record<string, string>>({});
+
+  // Get parent categories of current type (excluding the one being edited)
+  const availableParents = categories.filter(
+    (c) => c.type === type && !c.parentId && c.id !== editCategory?.id
+  );
+
+  // If parentId is set, inherit type and color from parent
+  const parentCat = parentId ? categories.find((c) => c.id === parentId) : null;
 
   const validate = (): boolean => {
     const newErrors: Record<string, string> = {};
@@ -34,12 +45,20 @@ export function CategoryForm({ editCategory, defaultType, onClose }: CategoryFor
     e.preventDefault();
     if (!validate()) return;
 
+    const effectiveColor = parentCat ? parentCat.color : color;
+
     if (isEditing && editCategory) {
       dispatch({
         type: 'UPDATE_CATEGORY',
         payload: {
           id: editCategory.id,
-          updates: { name: name.trim(), type, icon, color },
+          updates: {
+            name: name.trim(),
+            type,
+            icon,
+            color: effectiveColor,
+            parentId: parentId || undefined,
+          },
         },
       });
     } else {
@@ -48,8 +67,9 @@ export function CategoryForm({ editCategory, defaultType, onClose }: CategoryFor
         name: name.trim(),
         type,
         icon,
-        color,
+        color: effectiveColor,
         isCustom: true,
+        parentId: parentId || undefined,
       };
       dispatch({ type: 'ADD_CATEGORY', payload: category });
     }
@@ -59,20 +79,38 @@ export function CategoryForm({ editCategory, defaultType, onClose }: CategoryFor
   return (
     <form onSubmit={handleSubmit} className="space-y-5">
       {/* Category Type */}
-      <Select
-        label="Category Type"
-        value={type}
-        onChange={(e) => setType(e.target.value as 'income' | 'expense')}
-        options={[
-          { value: 'expense', label: 'Expense' },
-          { value: 'income', label: 'Income' },
-        ]}
-      />
+      {!defaultParentId && (
+        <Select
+          label="Category Type"
+          value={type}
+          onChange={(e) => {
+            setType(e.target.value as 'income' | 'expense');
+            setParentId('');
+          }}
+          options={[
+            { value: 'expense', label: 'Expense' },
+            { value: 'income', label: 'Income' },
+          ]}
+        />
+      )}
+
+      {/* Parent Category (optional — makes this a subcategory) */}
+      {availableParents.length > 0 && (
+        <Select
+          label={defaultParentId ? 'Parent Category' : 'Parent Category (optional — creates a subcategory)'}
+          value={parentId}
+          onChange={(e) => setParentId(e.target.value)}
+          options={[
+            ...(defaultParentId ? [] : [{ value: '', label: 'None (top-level category)' }]),
+            ...availableParents.map((c) => ({ value: c.id, label: c.name })),
+          ]}
+        />
+      )}
 
       {/* Category Name */}
       <Input
-        label="Category Name"
-        placeholder="e.g., Gym, Pet Care, Charity..."
+        label={parentId ? 'Subcategory Name' : 'Category Name'}
+        placeholder={parentId ? 'e.g., Medical, Shopping, Food...' : 'e.g., Gym, Pet Care, Charity...'}
         value={name}
         onChange={(e) => setName(e.target.value)}
         error={errors.name}
@@ -94,30 +132,36 @@ export function CategoryForm({ editCategory, defaultType, onClose }: CategoryFor
               }`}
               title={iconName}
             >
-              <CategoryIcon icon={iconName} color={icon === iconName ? color : '#6b7280'} size={18} />
+              <CategoryIcon icon={iconName} color={icon === iconName ? (parentCat?.color || color) : '#6b7280'} size={18} className="!p-0 !bg-transparent" />
             </button>
           ))}
         </div>
       </div>
 
-      {/* Color Selection */}
-      <div>
-        <label className="mb-1.5 block text-sm font-medium text-gray-700">Color</label>
-        <div className="flex flex-wrap gap-2">
-          {CATEGORY_COLORS.map((c) => (
-            <button
-              key={c}
-              type="button"
-              onClick={() => setColor(c)}
-              className={`h-8 w-8 rounded-full transition-all ${
-                color === c ? 'ring-2 ring-offset-2 ring-primary-500 scale-110' : 'hover:scale-105'
-              }`}
-              style={{ backgroundColor: c }}
-              aria-label={`Select color ${c}`}
-            />
-          ))}
+      {/* Color Selection (only for top-level categories) */}
+      {!parentId && (
+        <div>
+          <label className="mb-1.5 block text-sm font-medium text-gray-700">Color</label>
+          <div className="flex flex-wrap gap-2">
+            {CATEGORY_COLORS.map((c) => (
+              <button
+                key={c}
+                type="button"
+                onClick={() => setColor(c)}
+                className={`h-8 w-8 rounded-full transition-all ${
+                  color === c ? 'ring-2 ring-offset-2 ring-primary-500 scale-110' : 'hover:scale-105'
+                }`}
+                style={{ backgroundColor: c }}
+                aria-label={`Select color ${c}`}
+              />
+            ))}
+          </div>
         </div>
-      </div>
+      )}
+
+      {parentId && parentCat && (
+        <p className="text-xs text-gray-400">Color inherited from parent: {parentCat.name}</p>
+      )}
 
       {/* Preview */}
       <div className="rounded-lg bg-gray-50 p-3">
@@ -125,11 +169,14 @@ export function CategoryForm({ editCategory, defaultType, onClose }: CategoryFor
         <div className="flex items-center gap-2">
           <div
             className="flex h-8 w-8 items-center justify-center rounded-lg"
-            style={{ backgroundColor: `${color}20` }}
+            style={{ backgroundColor: `${parentCat?.color || color}20` }}
           >
-            <CategoryIcon icon={icon} color={color} size={16} />
+            <CategoryIcon icon={icon} color={parentCat?.color || color} size={16} className="!p-0 !bg-transparent" />
           </div>
-          <span className="text-sm font-medium text-gray-900">{name || 'Category Name'}</span>
+          <div>
+            {parentCat && <span className="text-xs text-gray-400">{parentCat.name} › </span>}
+            <span className="text-sm font-medium text-gray-900">{name || 'Category Name'}</span>
+          </div>
           <span className={`ml-auto text-xs font-medium px-2 py-0.5 rounded-full ${
             type === 'income' ? 'bg-success-100 text-success-700' : 'bg-danger-100 text-danger-700'
           }`}>
@@ -141,7 +188,7 @@ export function CategoryForm({ editCategory, defaultType, onClose }: CategoryFor
       {/* Actions */}
       <div className="flex gap-3 pt-2">
         <Button type="submit" className="flex-1">
-          {isEditing ? 'Update Category' : 'Add Category'}
+          {isEditing ? 'Update' : parentId ? 'Add Subcategory' : 'Add Category'}
         </Button>
         <Button type="button" variant="secondary" onClick={onClose}>
           Cancel
