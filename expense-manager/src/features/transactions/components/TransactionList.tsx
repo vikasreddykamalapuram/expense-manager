@@ -149,26 +149,36 @@ export function TransactionList() {
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
                     <p className="text-sm font-semibold text-gray-900 truncate">
-                      {displayName}
+                      {isTransfer ? 'Transfer' : displayName}
                     </p>
                     {tx.isRecurring && (
                       <span className="text-[10px] font-medium uppercase text-primary-600 bg-primary-50 px-1.5 py-0.5 rounded">
                         Recurring
                       </span>
                     )}
-                    {isTransfer && (
-                      <span className="text-[10px] font-medium uppercase text-primary-600 bg-primary-50 px-1.5 py-0.5 rounded">
-                        Transfer
-                      </span>
-                    )}
                   </div>
                   <div className="flex items-center gap-2 mt-0.5">
-                    <span className="text-xs text-gray-500">
-                      {formatDate(tx.date, settings.dateFormat)}
-                    </span>
-                    {!isTransfer && account && (
-                      <span className="text-xs text-gray-400">
-                        · {account.name}
+                    {isTransfer ? (
+                      <span className="text-xs text-gray-500">
+                        <span className="font-medium text-gray-600">From:</span> {account?.name || 'Unknown'}
+                        <span className="mx-1.5 text-primary-400">→</span>
+                        <span className="font-medium text-gray-600">To:</span> {toAccount?.name || 'Unknown'}
+                      </span>
+                    ) : (
+                      <>
+                        <span className="text-xs text-gray-500">
+                          {formatDate(tx.date, settings.dateFormat)}
+                        </span>
+                        {account && (
+                          <span className="text-xs text-gray-400">
+                            · {account.name}
+                          </span>
+                        )}
+                      </>
+                    )}
+                    {isTransfer && (
+                      <span className="text-xs text-gray-500 ml-1">
+                        · {formatDate(tx.date, settings.dateFormat)}
                       </span>
                     )}
                     {tx.notes && (
