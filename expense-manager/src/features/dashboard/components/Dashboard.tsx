@@ -28,10 +28,7 @@ export function Dashboard() {
   });
 
   const expenseByCategory = currentMonthStats.byCategory
-    .filter((c: { categoryId: string }) => {
-      const cat = findCategory(c.categoryId);
-      return cat?.type === 'expense';
-    })
+    .filter((c) => c.type === 'expense')
     .slice(0, 6);
 
   const hasData = state.transactions.length > 0;

@@ -72,44 +72,63 @@ export function useTransactions() {
   }, [transactions, filters, categories]);
 
   // Shared helper: build byCategory from a filtered set of transactions
-  // Separates income and expense, computes percentage against the correct total
+  // Groups by TRANSACTION type (not category type) to ensure expense breakdown
+  // only includes expense transaction amounts and income breakdown only income amounts.
   const buildByCategory = (
     txns: typeof transactions,
     totalIncome: number,
     totalExpense: number
   ): CategoryStat[] => {
-    const categoryMap = new Map<string, { amount: number; count: number; type: 'income' | 'expense' }>();
-    // Only income and expense transactions (no transfers)
-    txns.filter((t) => t.type === 'income' || t.type === 'expense').forEach((t) => {
+    // Build separate maps for income and expense transactions
+    const expenseMap = new Map<string, { amount: number; count: number }>();
+    const incomeMap = new Map<string, { amount: number; count: number }>();
+
+    txns.forEach((t) => {
+      if (t.type !== 'income' && t.type !== 'expense') return; // skip transfers
+      const map = t.type === 'expense' ? expenseMap : incomeMap;
       const cat = findCategory(t.categoryId);
       const effectiveId = cat?.parentId || t.categoryId;
-      const existing = categoryMap.get(effectiveId) || { amount: 0, count: 0, type: t.type as 'income' | 'expense' };
-      categoryMap.set(effectiveId, {
+      const existing = map.get(effectiveId) || { amount: 0, count: 0 };
+      map.set(effectiveId, {
         amount: existing.amount + t.amount,
         count: existing.count + 1,
-        type: existing.type, // keep the first-seen type
       });
     });
 
-    const byCategory: CategoryStat[] = Array.from(categoryMap.entries()).map(
-      ([categoryId, { amount, count }]) => {
-        const category = findCategory(categoryId);
-        // Use correct denominator: expense categories relative to totalExpense, income to totalIncome
-        const isExpense = category?.type === 'expense';
-        const denominator = (isExpense ? totalExpense : totalIncome) || 1;
-        return {
-          categoryId,
-          categoryName: category?.name || 'Unknown',
-          amount,
-          percentage: Math.round((amount / denominator) * 100),
-          color: category?.color || '#64748b',
-          count,
-        };
-      }
-    );
+    const result: CategoryStat[] = [];
 
-    byCategory.sort((a, b) => b.amount - a.amount);
-    return byCategory;
+    // Expense categories — percentage relative to totalExpense
+    const expenseDenom = totalExpense || 1;
+    expenseMap.forEach(({ amount, count }, categoryId) => {
+      const category = findCategory(categoryId);
+      result.push({
+        categoryId,
+        categoryName: category?.name || 'Unknown',
+        amount,
+        percentage: Math.round((amount / expenseDenom) * 100),
+        color: category?.color || '#64748b',
+        count,
+        type: 'expense',
+      });
+    });
+
+    // Income categories — percentage relative to totalIncome
+    const incomeDenom = totalIncome || 1;
+    incomeMap.forEach(({ amount, count }, categoryId) => {
+      const category = findCategory(categoryId);
+      result.push({
+        categoryId,
+        categoryName: category?.name || 'Unknown',
+        amount,
+        percentage: Math.round((amount / incomeDenom) * 100),
+        color: category?.color || '#64748b',
+        count,
+        type: 'income',
+      });
+    });
+
+    result.sort((a, b) => b.amount - a.amount);
+    return result;
   };
 
   const getMonthlyStats = useMemo(() => {

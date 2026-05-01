@@ -78,6 +78,7 @@ export interface CategoryStat {
   percentage: number;
   color: string;
   count: number;
+  type: 'income' | 'expense'; // transaction type this stat belongs to
 }
 
 export interface DateRange {

@@ -165,14 +165,14 @@ export function AnalyticsView() {
     });
   }, [viewMode, selectedYear, getMonthlyStats]);
 
-  // ─── Category breakdowns ───
+  // ─── Category breakdowns — filter by transaction type stored on each stat ───
   const expenseCategories = useMemo(
-    () => stats.byCategory.filter((c) => findCategory(c.categoryId)?.type === 'expense'),
-    [stats, categories]
+    () => stats.byCategory.filter((c) => c.type === 'expense'),
+    [stats]
   );
   const incomeCategories = useMemo(
-    () => stats.byCategory.filter((c) => findCategory(c.categoryId)?.type === 'income'),
-    [stats, categories]
+    () => stats.byCategory.filter((c) => c.type === 'income'),
+    [stats]
   );
 
   // ─── Comparison data ───
@@ -206,7 +206,7 @@ export function AnalyticsView() {
     // Get top expense categories for category-wise tracking
     const overallStats = getRangeStats(trendDateRange.start, trendDateRange.end);
     const topExpenseCategories = overallStats.byCategory
-      .filter((c) => findCategory(c.categoryId)?.type === 'expense')
+      .filter((c) => c.type === 'expense')
       .slice(0, 8); // Top 8 categories
 
     if (rangeDays <= 14) {
@@ -282,9 +282,9 @@ export function AnalyticsView() {
     if (viewMode !== 'trend') return [];
     const overallStats = getRangeStats(trendDateRange.start, trendDateRange.end);
     return overallStats.byCategory
-      .filter((c) => findCategory(c.categoryId)?.type === 'expense')
+      .filter((c) => c.type === 'expense')
       .slice(0, 8);
-  }, [viewMode, trendDateRange, getRangeStats, categories]);
+  }, [viewMode, trendDateRange, getRangeStats]);
 
   // ─── Navigation handlers ───
   const handlePrev = () => {
@@ -584,15 +584,15 @@ export function AnalyticsView() {
           {viewMode === 'yearly' && (
             <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
               <h3 className="mb-4 text-base font-semibold text-gray-900">Monthly Trend — {selectedYear}</h3>
-              <ResponsiveContainer width="100%" height={280}>
-                <BarChart data={monthlyBreakdown} barGap={4}>
+              <ResponsiveContainer width="100%" height={300}>
+                <BarChart data={monthlyBreakdown} barGap={2} barCategoryGap="15%">
                   <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
                   <XAxis dataKey="month" tick={{ fontSize: 11, fill: '#64748b' }} />
-                  <YAxis tickFormatter={(v) => formatCurrencyCompact(v, settings)} tick={{ fontSize: 10, fill: '#64748b' }} width={65} />
+                  <YAxis tickFormatter={(v) => formatCurrencyCompact(v, settings)} tick={{ fontSize: 10, fill: '#64748b' }} width={70} domain={[0, 'auto']} />
                   <Tooltip formatter={(value) => formatCurrency(Number(value), settings)} contentStyle={tooltipStyle} />
                   <Legend />
-                  <Bar dataKey="income" fill="#10b981" radius={[3, 3, 0, 0]} name="Income" />
-                  <Bar dataKey="expense" fill="#ef4444" radius={[3, 3, 0, 0]} name="Expense" />
+                  <Bar dataKey="income" fill="#10b981" radius={[3, 3, 0, 0]} name="Income" maxBarSize={40} />
+                  <Bar dataKey="expense" fill="#ef4444" radius={[3, 3, 0, 0]} name="Expense" maxBarSize={40} />
                 </BarChart>
               </ResponsiveContainer>
             </div>
@@ -602,15 +602,15 @@ export function AnalyticsView() {
           {comparisonData.length > 0 && (
             <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
               <h3 className="mb-4 text-base font-semibold text-gray-900">vs {prevPeriodLabel}</h3>
-              <ResponsiveContainer width="100%" height={250}>
-                <BarChart data={comparisonData} barGap={8}>
+              <ResponsiveContainer width="100%" height={280}>
+                <BarChart data={comparisonData} barGap={4} barCategoryGap="20%">
                   <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
                   <XAxis dataKey="label" tick={{ fontSize: 12, fill: '#64748b' }} />
-                  <YAxis tickFormatter={(v) => formatCurrencyCompact(v, settings)} tick={{ fontSize: 10, fill: '#64748b' }} width={65} />
+                  <YAxis tickFormatter={(v) => formatCurrencyCompact(v, settings)} tick={{ fontSize: 10, fill: '#64748b' }} width={70} domain={['auto', 'auto']} />
                   <Tooltip formatter={(value) => formatCurrency(Number(value), settings)} contentStyle={tooltipStyle} />
                   <Legend />
-                  <Bar dataKey="previous" fill="#94a3b8" radius={[4, 4, 0, 0]} name="Previous" />
-                  <Bar dataKey="current" fill="#3b82f6" radius={[4, 4, 0, 0]} name="Current" />
+                  <Bar dataKey="previous" fill="#94a3b8" radius={[4, 4, 0, 0]} name="Previous" maxBarSize={50} />
+                  <Bar dataKey="current" fill="#3b82f6" radius={[4, 4, 0, 0]} name="Current" maxBarSize={50} />
                 </BarChart>
               </ResponsiveContainer>
             </div>
