@@ -13,7 +13,9 @@ export interface ColumnMapping {
   date: string;
   amount: string;
   category: string;
+  subcategory: string;
   notes: string;
+  description: string;
   type: string; // income/expense column (may be empty if using amount sign)
   account: string;
 }
@@ -21,8 +23,9 @@ export interface ColumnMapping {
 export interface ParsedTransaction {
   date: string; // YYYY-MM-DD
   amount: number;
-  type: 'income' | 'expense';
-  category: string; // raw category from CSV
+  type: 'income' | 'expense' | 'transfer';
+  category: string; // raw category from CSV (cleaned of emojis)
+  subcategory: string; // raw subcategory from CSV (cleaned of emojis)
   notes: string;
   account: string;
   rawRow: string[];
@@ -342,12 +345,15 @@ export function detectTransactionType(
   amount: number,
   typeValue: string,
   categoryValue: string,
-): 'income' | 'expense' {
-  const typeLower = typeValue.toLowerCase().trim();
+): 'income' | 'expense' | 'transfer' {
+  const typeLower = typeValue.toLowerCase().trim().replace(/\.$/, ''); // strip trailing dot
+
+  // Transfer types
+  if (['transfer-in', 'transfer-out', 'transfer', 'xfer'].includes(typeLower)) return 'transfer';
 
   // Explicit type column
   if (['income', 'credit', 'cr', 'credited', 'earning', 'inflow'].includes(typeLower)) return 'income';
-  if (['expense', 'debit', 'dr', 'debited', 'spending', 'outflow'].includes(typeLower)) return 'expense';
+  if (['expense', 'debit', 'dr', 'debited', 'spending', 'outflow', 'exp'].includes(typeLower)) return 'expense';
 
   // Check category for income hints
   const catLower = categoryValue.toLowerCase();
@@ -367,23 +373,25 @@ export function detectTransactionType(
 // --- Column Auto-Mapping ---
 
 const COLUMN_PATTERNS: Record<keyof ColumnMapping, RegExp[]> = {
-  date: [/^date$/i, /^txn\s*date$/i, /^transaction\s*date$/i, /^trans\.?\s*date$/i, /^payment\s*date$/i, /^created$/i],
-  amount: [/^amount$/i, /^value$/i, /^total$/i, /^sum$/i, /^price$/i, /^cost$/i, /^amt$/i, /^money$/i],
+  date: [/^date$/i, /^period$/i, /^txn\s*date$/i, /^transaction\s*date$/i, /^trans\.?\s*date$/i, /^payment\s*date$/i, /^created$/i, /^time$/i, /^when$/i],
+  amount: [/^amount$/i, /^value$/i, /^total$/i, /^sum$/i, /^price$/i, /^cost$/i, /^amt$/i, /^money$/i, /^inr$/i, /^usd$/i, /^eur$/i, /^gbp$/i],
   category: [/^category$/i, /^cat$/i, /^group$/i, /^tag$/i, /^label$/i, /^expense\s*type$/i, /^spending\s*category$/i],
-  notes: [/^note$/i, /^notes$/i, /^description$/i, /^desc$/i, /^memo$/i, /^remark$/i, /^remarks$/i, /^detail$/i, /^details$/i, /^comment$/i, /^title$/i],
+  subcategory: [/^sub\s*category$/i, /^subcategory$/i, /^sub\s*cat$/i, /^sub[\s-]?type$/i, /^sub[\s-]?group$/i],
+  notes: [/^note$/i, /^notes$/i, /^memo$/i, /^remark$/i, /^remarks$/i, /^detail$/i, /^details$/i, /^comment$/i, /^title$/i],
+  description: [/^description$/i, /^desc$/i, /^info$/i, /^additional\s*info$/i, /^narrative$/i],
   type: [/^type$/i, /^transaction\s*type$/i, /^txn\s*type$/i, /^income\s*\/?\s*expense$/i, /^credit\s*\/?\s*debit$/i, /^cr\s*\/?\s*dr$/i, /^direction$/i],
-  account: [/^account$/i, /^account\s*name$/i, /^wallet$/i, /^from$/i, /^bank$/i, /^payment\s*mode$/i, /^payment\s*method$/i],
+  account: [/^accounts?$/i, /^account\s*name$/i, /^wallet$/i, /^from$/i, /^bank$/i, /^payment\s*mode$/i, /^payment\s*method$/i, /^source$/i],
 };
 
 export function guessColumnMapping(headers: string[]): ColumnMapping {
   const mapping: ColumnMapping = {
-    date: '', amount: '', category: '', notes: '', type: '', account: '',
+    date: '', amount: '', category: '', subcategory: '', notes: '', description: '', type: '', account: '',
   };
 
   const used = new Set<string>();
 
   // Match each field to best header
-  for (const field of ['date', 'amount', 'category', 'type', 'notes', 'account'] as (keyof ColumnMapping)[]) {
+  for (const field of ['date', 'amount', 'category', 'subcategory', 'type', 'notes', 'description', 'account'] as (keyof ColumnMapping)[]) {
     for (const pattern of COLUMN_PATTERNS[field]) {
       const match = headers.find((h) => pattern.test(h.trim()) && !used.has(h));
       if (match) {
@@ -397,26 +405,53 @@ export function guessColumnMapping(headers: string[]): ColumnMapping {
   return mapping;
 }
 
+// --- Emoji & Unicode Cleaning ---
+
+/** Strip emojis and special Unicode characters, keeping only letters, numbers, spaces, and basic punctuation */
+function stripEmojis(str: string): string {
+  // Remove emoji ranges, variation selectors, ZWJ, skin tone modifiers, etc.
+  return str
+    .replace(/[\u{1F600}-\u{1F9FF}]/gu, '')   // emoticons, supplemental symbols
+    .replace(/[\u{1F300}-\u{1F5FF}]/gu, '')   // misc symbols & pictographs
+    .replace(/[\u{1FA00}-\u{1FA6F}]/gu, '')   // chess symbols, extended-A
+    .replace(/[\u{1FA70}-\u{1FAFF}]/gu, '')   // symbols extended-A (cont)
+    .replace(/[\u{2600}-\u{26FF}]/gu, '')     // misc symbols
+    .replace(/[\u{2700}-\u{27BF}]/gu, '')     // dingbats
+    .replace(/[\u{FE00}-\u{FE0F}]/gu, '')     // variation selectors
+    .replace(/[\u{200D}]/gu, '')              // zero-width joiner
+    .replace(/[\u{20E3}]/gu, '')              // combining enclosing keycap
+    .replace(/[\u{E0020}-\u{E007F}]/gu, '')   // tags
+    .replace(/[\u{D83C}-\u{D83E}][\u{DC00}-\u{DFFF}]/gu, '') // surrogate pairs
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
 // --- Category Matching ---
 
 const CATEGORY_ALIASES: Record<string, string[]> = {
-  'food-dining': ['food', 'dining', 'restaurant', 'eat', 'eating out', 'meal', 'meals', 'lunch', 'dinner', 'breakfast', 'cafe', 'canteen'],
-  'groceries': ['grocery', 'groceries', 'supermarket', 'market', 'provisions', 'daily needs', 'kirana'],
-  'transportation': ['transport', 'transportation', 'commute', 'cab', 'taxi', 'uber', 'ola', 'auto', 'metro', 'bus', 'train', 'fuel', 'petrol', 'diesel', 'gas'],
-  'shopping': ['shopping', 'shop', 'purchase', 'amazon', 'flipkart', 'online shopping', 'clothing', 'clothes', 'apparel', 'fashion'],
+  'food-dining': ['food', 'dining', 'restaurant', 'eat', 'eating out', 'meal', 'meals', 'lunch', 'dinner', 'breakfast', 'cafe', 'canteen', 'tiffin', 'swiggy', 'zomato'],
+  'groceries': ['grocery', 'groceries', 'supermarket', 'market', 'provisions', 'daily needs', 'kirana', 'ratnadeep', 'zepto', 'instamart', 'bigbasket'],
+  'transportation': ['transport', 'transportation', 'commute', 'cab', 'taxi', 'uber', 'ola', 'auto', 'metro', 'bus', 'train', 'fuel', 'petrol', 'diesel', 'gas', 'bike'],
+  'shopping': ['shopping', 'shop', 'purchase', 'amazon', 'flipkart', 'online shopping', 'clothing', 'clothes', 'apparel', 'fashion', 'accessories'],
   'entertainment': ['entertainment', 'movies', 'movie', 'cinema', 'games', 'gaming', 'netflix', 'streaming', 'fun', 'leisure', 'hobby'],
-  'bills-utilities': ['bills', 'utilities', 'utility', 'electricity', 'electric', 'water', 'gas bill', 'internet', 'wifi', 'broadband', 'phone', 'mobile', 'recharge', 'dth'],
-  'health': ['health', 'medical', 'medicine', 'doctor', 'hospital', 'pharmacy', 'clinic', 'healthcare', 'dental', 'eye'],
-  'education': ['education', 'study', 'school', 'college', 'university', 'course', 'tuition', 'books', 'learning', 'training'],
+  'bills-utilities': ['bills', 'utilities', 'utility', 'electricity', 'electric', 'water', 'gas bill', 'internet', 'wifi', 'broadband', 'phone', 'mobile', 'recharge', 'dth', 'bill payments', 'jio', 'airtel'],
+  'health': ['health', 'medical', 'medicine', 'doctor', 'hospital', 'pharmacy', 'clinic', 'healthcare', 'dental', 'eye', 'diagnostic', 'badminton', 'fitness', 'gym'],
+  'education': ['education', 'study', 'school', 'college', 'university', 'course', 'tuition', 'books', 'learning', 'training', 'certifications'],
   'travel': ['travel', 'trip', 'vacation', 'holiday', 'flight', 'hotel', 'booking', 'tourism', 'tour'],
-  'household': ['household', 'home', 'house', 'rent', 'maintenance', 'repair', 'maid', 'housekeeper', 'furniture', 'appliance', 'home improvement'],
+  'household': ['household', 'home', 'house', 'rent', 'maintenance', 'repair', 'maid', 'housekeeper', 'furniture', 'appliance', 'home improvement', 'avanti apartments', 'apartment'],
   'insurance': ['insurance', 'life insurance', 'health insurance', 'vehicle insurance', 'premium'],
-  'personal-care': ['personal', 'personal care', 'salon', 'spa', 'haircut', 'grooming', 'beauty', 'cosmetics', 'gym', 'fitness'],
-  'gifts-donations': ['gift', 'gifts', 'donation', 'donations', 'charity', 'tip', 'tips'],
+  'personal-care': ['personal', 'personal care', 'salon', 'spa', 'haircut', 'grooming', 'beauty', 'cosmetics'],
+  'gifts-donations': ['gift', 'gifts', 'donation', 'donations', 'charity', 'tip', 'tips', 'friends'],
   'subscriptions': ['subscription', 'subscriptions', 'membership', 'emi', 'installment'],
   'other-expense': ['other', 'miscellaneous', 'misc', 'general', 'uncategorized'],
+  // Vehicle/Car
+  'vehicle': ['car', 'vehicle', 'petrol', 'fast tag', 'fasttag', 'toll', 'parking', 'car loan'],
+  // Loan payments
+  'loans': ['loan', 'loan repaymens', 'loan repayments', 'emi', 'car loan'],
+  // CC payments (inter-account transfers, not real expenses)
+  'cc-payments': ['cc payments', 'cc payment', 'credit card payment'],
   // Income categories
-  'salary': ['salary', 'paycheck', 'wages', 'pay', 'income'],
+  'salary': ['salary', 'paycheck', 'wages', 'pay', 'income', 'wct'],
   'freelance': ['freelance', 'consulting', 'contract', 'side hustle', 'gig'],
   'investments': ['investment', 'investments', 'dividend', 'interest', 'returns', 'capital gains', 'stocks', 'mutual fund'],
   'business': ['business', 'business income', 'revenue', 'sales', 'profit'],
@@ -426,7 +461,7 @@ const CATEGORY_ALIASES: Record<string, string[]> = {
 };
 
 export function matchCategory(rawCategory: string): string | null {
-  const lower = rawCategory.toLowerCase().trim();
+  const lower = stripEmojis(rawCategory).toLowerCase().trim();
   if (!lower) return null;
 
   // Exact or substring match
@@ -445,7 +480,7 @@ export function processCSVImport(
   csv: ParsedCSV,
   mapping: ColumnMapping,
   dateFormat: DateFormat,
-  defaultType: 'income' | 'expense',
+  _defaultType: 'income' | 'expense',
 ): ImportResult {
   const parsed: ParsedTransaction[] = [];
   const skipped: ImportResult['skipped'] = [];
@@ -455,7 +490,9 @@ export function processCSVImport(
   const dateIdx = getIndex(mapping.date);
   const amountIdx = getIndex(mapping.amount);
   const categoryIdx = getIndex(mapping.category);
+  const subcategoryIdx = getIndex(mapping.subcategory);
   const notesIdx = getIndex(mapping.notes);
+  const descriptionIdx = getIndex(mapping.description);
   const typeIdx = getIndex(mapping.type);
   const accountIdx = getIndex(mapping.account);
 
@@ -483,15 +520,25 @@ export function processCSVImport(
       continue;
     }
 
-    // Get raw values
-    const rawCategory = categoryIdx >= 0 ? (row[categoryIdx] || '') : '';
+    // Get raw values — strip emojis from category/subcategory
+    const rawCategory = categoryIdx >= 0 ? stripEmojis(row[categoryIdx] || '') : '';
+    const rawSubcategory = subcategoryIdx >= 0 ? stripEmojis(row[subcategoryIdx] || '') : '';
     const rawNotes = notesIdx >= 0 ? (row[notesIdx] || '') : '';
+    const rawDescription = descriptionIdx >= 0 ? (row[descriptionIdx] || '') : '';
     const rawType = typeIdx >= 0 ? (row[typeIdx] || '') : '';
     const rawAccount = accountIdx >= 0 ? (row[accountIdx] || '') : '';
 
+    // Merge notes + description
+    const notesParts = [rawNotes, rawDescription].filter(Boolean);
+    const mergedNotes = notesParts.join(' — ');
+
     // Detect type
-    let type = detectTransactionType(Math.abs(amount), rawType, rawCategory);
-    if (!rawType && amount > 0 && defaultType === 'expense') type = 'expense';
+    const type = detectTransactionType(Math.abs(amount), rawType, rawCategory);
+
+    // For display, use "Category > Subcategory" format if subcategory exists
+    const displayCategory = rawSubcategory && rawSubcategory !== rawCategory
+      ? rawCategory || 'Other'
+      : rawCategory || 'Other';
 
     // Category matching
     if (!rawCategory) warnings.push('No category — will use "Other"');
@@ -499,9 +546,10 @@ export function processCSVImport(
     parsed.push({
       date,
       amount: Math.abs(amount),
-      type,
-      category: rawCategory || 'Other',
-      notes: rawNotes,
+      type: type === 'transfer' ? 'expense' : type, // store transfers as expense for now
+      category: displayCategory,
+      subcategory: rawSubcategory,
+      notes: mergedNotes,
       account: rawAccount,
       rawRow: row,
       rowIndex: i + 1,

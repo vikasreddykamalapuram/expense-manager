@@ -40,12 +40,12 @@ export function Modal({ isOpen, onClose, title, children, size = 'md' }: ModalPr
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="fixed inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
       <div
-        className={`relative w-full ${sizeClasses[size]} rounded-2xl bg-white p-6 shadow-2xl`}
+        className={`relative flex max-h-[90vh] w-full flex-col ${sizeClasses[size]} rounded-2xl bg-white p-6 shadow-2xl`}
         role="dialog"
         aria-modal="true"
         aria-labelledby="modal-title"
       >
-        <div className="mb-4 flex items-center justify-between">
+        <div className="mb-4 flex items-center justify-between shrink-0">
           <h2 id="modal-title" className="text-lg font-semibold text-gray-900">
             {title}
           </h2>
@@ -57,7 +57,9 @@ export function Modal({ isOpen, onClose, title, children, size = 'md' }: ModalPr
             <X size={20} />
           </button>
         </div>
-        {children}
+        <div className="overflow-y-auto overscroll-contain" style={{ maxHeight: 'calc(80vh - 4rem)' }}>
+          {children}
+        </div>
       </div>
     </div>
   );

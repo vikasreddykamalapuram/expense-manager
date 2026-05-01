@@ -32,7 +32,7 @@ export function CSVImportModal({ isOpen, onClose }: CSVImportModalProps) {
   const [csv, setCsv] = useState<ParsedCSV | null>(null);
   const [fileName, setFileName] = useState('');
   const [mapping, setMapping] = useState<ColumnMapping>({
-    date: '', amount: '', category: '', notes: '', type: '', account: '',
+    date: '', amount: '', category: '', subcategory: '', notes: '', description: '', type: '', account: '',
   });
   const [dateFormat, setDateFormat] = useState('DD/MM/YYYY');
   const [defaultType, setDefaultType] = useState<'income' | 'expense'>('expense');
@@ -47,7 +47,7 @@ export function CSVImportModal({ isOpen, onClose }: CSVImportModalProps) {
     setStep('upload');
     setCsv(null);
     setFileName('');
-    setMapping({ date: '', amount: '', category: '', notes: '', type: '', account: '' });
+    setMapping({ date: '', amount: '', category: '', subcategory: '', notes: '', description: '', type: '', account: '' });
     setDateFormat('DD/MM/YYYY');
     setDefaultType('expense');
     setImportTarget('current');
@@ -170,12 +170,13 @@ export function CSVImportModal({ isOpen, onClose }: CSVImportModalProps) {
         if (alreadyCreated) {
           categoryId = alreadyCreated.id;
         } else {
+          const catType: 'income' | 'expense' = p.type === 'income' ? 'income' : 'expense';
           const newCategory = {
             id: newCatId,
             name: p.category,
-            type: p.type,
-            icon: p.type === 'income' ? 'TrendingUp' : 'Tag',
-            color: p.type === 'income' ? '#10b981' : '#64748b',
+            type: catType,
+            icon: catType === 'income' ? 'TrendingUp' : 'Tag',
+            color: catType === 'income' ? '#10b981' : '#64748b',
             isCustom: true,
           };
           // Save directly to storage (may be a different profile now)
@@ -186,13 +187,20 @@ export function CSVImportModal({ isOpen, onClose }: CSVImportModalProps) {
         }
       }
 
+      // Build notes: merge subcategory info if available
+      const noteParts: string[] = [];
+      if (p.subcategory) noteParts.push(`[${p.subcategory}]`);
+      if (p.notes) noteParts.push(p.notes);
+      if (p.account) noteParts.push(`via ${p.account}`);
+      const finalNotes = noteParts.join(' ');
+
       return {
         id: uuidv4(),
-        type: p.type,
+        type: p.type as 'income' | 'expense',
         amount: p.amount,
         categoryId: categoryId!,
         date: p.date,
-        notes: p.notes,
+        notes: finalNotes,
         isRecurring: false,
         createdAt: now,
         updatedAt: now,
@@ -328,15 +336,27 @@ export function CSVImportModal({ isOpen, onClose }: CSVImportModalProps) {
               options={headerOptions}
             />
             <Select
+              label="Subcategory Column"
+              value={mapping.subcategory}
+              onChange={(e) => setMapping({ ...mapping, subcategory: e.target.value })}
+              options={headerOptions}
+            />
+            <Select
               label="Type Column (Income/Expense)"
               value={mapping.type}
               onChange={(e) => setMapping({ ...mapping, type: e.target.value })}
               options={headerOptions}
             />
             <Select
-              label="Notes / Description Column"
+              label="Notes / Title Column"
               value={mapping.notes}
               onChange={(e) => setMapping({ ...mapping, notes: e.target.value })}
+              options={headerOptions}
+            />
+            <Select
+              label="Description Column"
+              value={mapping.description}
+              onChange={(e) => setMapping({ ...mapping, description: e.target.value })}
               options={headerOptions}
             />
             <Select
@@ -481,6 +501,8 @@ export function CSVImportModal({ isOpen, onClose }: CSVImportModalProps) {
                     <th className="px-2 py-2 text-left font-medium text-gray-600">Type</th>
                     <th className="px-2 py-2 text-right font-medium text-gray-600">Amount</th>
                     <th className="px-2 py-2 text-left font-medium text-gray-600">Category</th>
+                    <th className="px-2 py-2 text-left font-medium text-gray-600">Subcategory</th>
+                    <th className="px-2 py-2 text-left font-medium text-gray-600">Account</th>
                     <th className="px-2 py-2 text-left font-medium text-gray-600">Notes</th>
                   </tr>
                 </thead>
@@ -498,8 +520,10 @@ export function CSVImportModal({ isOpen, onClose }: CSVImportModalProps) {
                         </span>
                       </td>
                       <td className="px-2 py-1.5 text-right font-medium text-gray-900">{p.amount.toFixed(2)}</td>
-                      <td className="px-2 py-1.5 text-gray-700 max-w-[150px] truncate">{p.category}</td>
-                      <td className="px-2 py-1.5 text-gray-500 max-w-[200px] truncate">{p.notes}</td>
+                      <td className="px-2 py-1.5 text-gray-700 max-w-[120px] truncate">{p.category}</td>
+                      <td className="px-2 py-1.5 text-gray-500 max-w-[120px] truncate">{p.subcategory || '—'}</td>
+                      <td className="px-2 py-1.5 text-gray-500 max-w-[100px] truncate">{p.account || '—'}</td>
+                      <td className="px-2 py-1.5 text-gray-500 max-w-[180px] truncate">{p.notes}</td>
                     </tr>
                   ))}
                 </tbody>
