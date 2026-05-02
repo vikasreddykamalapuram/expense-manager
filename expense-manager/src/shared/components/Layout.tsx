@@ -1,13 +1,14 @@
-import { NavLink, Outlet } from 'react-router-dom';
+import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard, ArrowLeftRight, PlusCircle, CalendarDays,
   Settings, Wallet, Menu, X, Landmark, Tag, ChevronDown,
-  Plus,
+  Plus, LogIn, LogOut,
 } from 'lucide-react';
 import { useState, useRef, useEffect } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import { classNames } from '../utils/helpers';
 import { useAppContext } from '../../context/AppContext';
+import { useAuth } from '../../context/AuthContext';
 
 const navItems = [
   { path: '/', icon: LayoutDashboard, label: 'Dashboard' },
@@ -21,6 +22,8 @@ const navItems = [
 
 export function Layout() {
   const { state, actions } = useAppContext();
+  const { user, isAuthenticated, logout } = useAuth();
+  const navigate = useNavigate();
   const { profiles, activeProfileId } = state;
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
@@ -122,10 +125,17 @@ export function Layout() {
 
         {/* Footer */}
         <div className="border-t border-gray-100 p-4">
-          <div className="rounded-xl bg-gradient-to-r from-primary-500 to-primary-700 p-4 text-white">
-            <p className="text-xs font-medium opacity-80">Track smarter.</p>
-            <p className="mt-0.5 text-sm font-bold">Spend wiser.</p>
-          </div>
+          {isAuthenticated && user ? (
+            <div className="rounded-xl bg-gradient-to-r from-green-500 to-emerald-600 p-4 text-white">
+              <p className="text-xs font-medium opacity-80">Signed in via {user.provider === 'google' ? 'Google' : 'Microsoft'}</p>
+              <p className="mt-0.5 text-sm font-bold truncate">{user.name}</p>
+            </div>
+          ) : (
+            <div className="rounded-xl bg-gradient-to-r from-primary-500 to-primary-700 p-4 text-white">
+              <p className="text-xs font-medium opacity-80">Track smarter.</p>
+              <p className="mt-0.5 text-sm font-bold">Spend wiser.</p>
+            </div>
+          )}
         </div>
       </aside>
 
@@ -213,11 +223,42 @@ export function Layout() {
             )}
           </div>
 
-          <div className="flex items-center gap-2">
-            <div className="h-8 w-8 rounded-full bg-gradient-to-br from-primary-400 to-primary-600 flex items-center justify-center">
-              <span className="text-xs font-bold text-white">V</span>
+          {/* User Avatar / Login */}
+          {isAuthenticated && user ? (
+            <div className="flex items-center gap-2">
+              <div className="hidden sm:block text-right">
+                <p className="text-xs font-medium text-gray-700 truncate max-w-[120px]">{user.name}</p>
+                <p className="text-[10px] text-gray-400 truncate max-w-[120px]">{user.email}</p>
+              </div>
+              {user.avatar ? (
+                <img
+                  src={user.avatar}
+                  alt={user.name}
+                  className="h-8 w-8 rounded-full border-2 border-primary-200"
+                  referrerPolicy="no-referrer"
+                />
+              ) : (
+                <div className="h-8 w-8 rounded-full bg-gradient-to-br from-primary-400 to-primary-600 flex items-center justify-center">
+                  <span className="text-xs font-bold text-white">{user.name.charAt(0).toUpperCase()}</span>
+                </div>
+              )}
+              <button
+                onClick={() => { logout(); }}
+                className="rounded-lg p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors"
+                title="Sign out"
+              >
+                <LogOut size={16} />
+              </button>
             </div>
-          </div>
+          ) : (
+            <button
+              onClick={() => navigate('/login')}
+              className="flex items-center gap-1.5 rounded-lg border border-gray-200 px-3 py-1.5 text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors"
+            >
+              <LogIn size={16} />
+              <span className="hidden sm:inline">Sign in</span>
+            </button>
+          )}
         </header>
 
         {/* Page Content */}

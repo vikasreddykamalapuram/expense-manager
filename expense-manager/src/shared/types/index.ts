@@ -102,3 +102,13 @@ export interface Profile {
   icon: string; // emoji or short label
   createdAt: string;
 }
+
+export type AuthProvider = 'google' | 'microsoft';
+
+export interface AuthUser {
+  id: string;
+  email: string;
+  name: string;
+  avatar?: string;
+  provider: AuthProvider;
+}

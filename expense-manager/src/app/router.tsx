@@ -7,8 +7,13 @@ import { AnalyticsView } from '../features/analytics/components/AnalyticsView';
 import { AccountsPage } from '../features/accounts/components/AccountsPage';
 import { CategoriesPage } from '../features/categories/components/CategoriesPage';
 import { SettingsPage } from '../features/settings/components/SettingsPage';
+import { LoginPage } from '../features/auth/components/LoginPage';
 
 export const router = createBrowserRouter([
+  {
+    path: '/login',
+    element: <LoginPage />,
+  },
   {
     path: '/',
     element: <Layout />,

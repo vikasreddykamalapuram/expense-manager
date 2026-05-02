@@ -226,8 +226,8 @@ export function SettingsPage() {
         <h3 className="mb-4 text-base font-semibold text-gray-900">About</h3>
         <div className="space-y-2 text-sm text-gray-600">
           <p><strong>ExpenseIQ</strong> — Personal Finance Manager</p>
-          <p>Version 1.0.0</p>
-          <p>Data is stored locally in your browser.</p>
+          <p>Version 2.0.0</p>
+          <p>Data is stored locally in your browser (IndexedDB).</p>
           <p className="text-xs text-gray-400 mt-4">
             Total transactions: {state.transactions.length} · 
             Storage: ~{Math.round(JSON.stringify(state.transactions).length / 1024)}KB
