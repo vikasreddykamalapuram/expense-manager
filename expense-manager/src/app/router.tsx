@@ -1,4 +1,4 @@
-import { createBrowserRouter } from 'react-router-dom';
+import { createBrowserRouter, Navigate } from 'react-router-dom';
 import { Layout } from '../shared/components/Layout';
 import { Dashboard } from '../features/dashboard/components/Dashboard';
 import { TransactionsPage } from '../features/transactions/components/TransactionsPage';
@@ -9,6 +9,13 @@ import { CategoriesPage } from '../features/categories/components/CategoriesPage
 import { SettingsPage } from '../features/settings/components/SettingsPage';
 import { LoginPage } from '../features/auth/components/LoginPage';
 
+/** Redirect to /login if first-time visitor (no onboarding flag set) */
+function OnboardingGuard({ children }: { children: React.ReactNode }) {
+  const onboarded = localStorage.getItem('expenseiq_onboarded');
+  if (!onboarded) return <Navigate to="/login" replace />;
+  return <>{children}</>;
+}
+
 const basename = import.meta.env.BASE_URL.replace(/\/$/, '') || '/';
 
 export const router = createBrowserRouter([
@@ -18,7 +25,7 @@ export const router = createBrowserRouter([
   },
   {
     path: '/',
-    element: <Layout />,
+    element: <OnboardingGuard><Layout /></OnboardingGuard>,
     children: [
       { index: true, element: <Dashboard /> },
       { path: 'transactions', element: <TransactionsPage /> },

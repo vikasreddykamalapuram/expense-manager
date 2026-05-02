@@ -76,6 +76,58 @@ export function computeAccountBalance(
   return balance;
 }
 
+export const DEFAULT_ACCOUNTS: Account[] = [
+  {
+    id: 'default-cash',
+    name: 'Cash',
+    type: 'cash',
+    kind: 'asset',
+    icon: 'Banknote',
+    openingBalance: 0,
+    color: ACCOUNT_COLORS[2], // green
+    isActive: true,
+    createdAt: '2024-01-01T00:00:00.000Z',
+    updatedAt: '2024-01-01T00:00:00.000Z',
+  },
+  {
+    id: 'default-bank',
+    name: 'Bank Account',
+    type: 'bank',
+    kind: 'asset',
+    subtype: 'savings',
+    icon: 'Landmark',
+    openingBalance: 0,
+    color: ACCOUNT_COLORS[0], // blue
+    isActive: true,
+    createdAt: '2024-01-01T00:00:00.000Z',
+    updatedAt: '2024-01-01T00:00:00.000Z',
+  },
+  {
+    id: 'default-credit-card',
+    name: 'Credit Card',
+    type: 'credit_card',
+    kind: 'liability',
+    icon: 'CreditCard',
+    openingBalance: 0,
+    color: ACCOUNT_COLORS[1], // red
+    isActive: true,
+    createdAt: '2024-01-01T00:00:00.000Z',
+    updatedAt: '2024-01-01T00:00:00.000Z',
+  },
+  {
+    id: 'default-wallet',
+    name: 'Digital Wallet',
+    type: 'wallet',
+    kind: 'asset',
+    icon: 'Smartphone',
+    openingBalance: 0,
+    color: ACCOUNT_COLORS[4], // purple
+    isActive: true,
+    createdAt: '2024-01-01T00:00:00.000Z',
+    updatedAt: '2024-01-01T00:00:00.000Z',
+  },
+];
+
 export function getAccountTypeLabel(type: AccountType): string {
   return ACCOUNT_TYPE_META[type].label;
 }

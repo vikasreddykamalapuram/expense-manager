@@ -1,6 +1,7 @@
 import { db, DbTransaction, DbCategory, DbAccount, DbBudget } from './db';
 import { Transaction, Category, Account, Budget, Settings, Profile } from '../types';
 import { DEFAULT_SETTINGS, ALL_CATEGORIES } from '../constants/categories';
+import { DEFAULT_ACCOUNTS } from '../constants/accounts';
 
 const DEFAULT_PROFILE_ID = 'default';
 
@@ -264,6 +265,14 @@ class ExpenseRepository {
       this.getBudgets(profileId),
       this.getSettings(profileId),
     ]);
+
+    // Seed default accounts for new profiles with no accounts
+    if (accounts.length === 0) {
+      const rows: DbAccount[] = DEFAULT_ACCOUNTS.map((a) => ({ ...a, profileId }));
+      await db.accounts.bulkAdd(rows);
+      return { transactions, categories, accounts: [...DEFAULT_ACCOUNTS], budgets, settings };
+    }
+
     return { transactions, categories, accounts, budgets, settings };
   }
 }

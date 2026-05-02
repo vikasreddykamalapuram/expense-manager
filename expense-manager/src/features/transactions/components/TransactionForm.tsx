@@ -7,9 +7,10 @@ import { Button } from '../../../shared/components/ui/Button';
 import { Input, Select } from '../../../shared/components/ui/Input';
 import { Modal } from '../../../shared/components/ui/Modal';
 import { CategoryForm } from '../../categories/components/CategoryForm';
+import { AccountForm } from '../../accounts/components/AccountForm';
 import { PAYMENT_METHODS } from '../../../shared/constants/accounts';
 import { getToday, classNames } from '../../../shared/utils/helpers';
-import { Transaction, PaymentMethod } from '../../../shared/types';
+import { Transaction, Account, PaymentMethod } from '../../../shared/types';
 
 interface TransactionFormProps {
   editTransaction?: Transaction;
@@ -37,6 +38,8 @@ export function TransactionForm({ editTransaction, onClose }: TransactionFormPro
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [showCategoryForm, setShowCategoryForm] = useState(false);
   const [newCategoryParentId, setNewCategoryParentId] = useState<string | undefined>();
+  const [showAccountForm, setShowAccountForm] = useState(false);
+  const [accountFormTarget, setAccountFormTarget] = useState<'source' | 'destination'>('source');
 
   // Two-level category picker: parent categories + subcategories
   const parentCategories = type === 'transfer'
@@ -160,40 +163,54 @@ export function TransactionForm({ editTransaction, onClose }: TransactionFormPro
       />
 
       {/* Account Selection */}
-      {activeAccounts.length > 0 && (
-        <div className={type === 'transfer' ? 'grid grid-cols-2 gap-4' : ''}>
+      <div className={type === 'transfer' ? 'grid grid-cols-2 gap-4' : ''}>
+        <Select
+          label={type === 'transfer' ? 'From Account' : type === 'income' ? 'Credit To' : 'Debit From'}
+          value={accountId}
+          onChange={(e) => {
+            if (e.target.value === '__new__') {
+              setAccountFormTarget('source');
+              setShowAccountForm(true);
+              return;
+            }
+            setAccountId(e.target.value);
+          }}
+          error={errors.accountId}
+          options={[
+            { value: '', label: type === 'transfer' ? 'Select source...' : 'Select account (optional)...' },
+            ...activeAccounts.map((a) => ({
+              value: a.id,
+              label: `${a.name}${a.institution ? ` (${a.institution})` : ''}`,
+            })),
+            { value: '__new__', label: '＋ Add Account...' },
+          ]}
+        />
+        {type === 'transfer' && (
           <Select
-            label={type === 'transfer' ? 'From Account' : type === 'income' ? 'Credit To' : 'Debit From'}
-            value={accountId}
-            onChange={(e) => setAccountId(e.target.value)}
-            error={errors.accountId}
+            label="To Account"
+            value={toAccountId}
+            onChange={(e) => {
+              if (e.target.value === '__new__') {
+                setAccountFormTarget('destination');
+                setShowAccountForm(true);
+                return;
+              }
+              setToAccountId(e.target.value);
+            }}
+            error={errors.toAccountId}
             options={[
-              { value: '', label: type === 'transfer' ? 'Select source...' : 'Select account (optional)...' },
-              ...activeAccounts.map((a) => ({
-                value: a.id,
-                label: `${a.name}${a.institution ? ` (${a.institution})` : ''}`,
-              })),
+              { value: '', label: 'Select destination...' },
+              ...activeAccounts
+                .filter((a) => a.id !== accountId)
+                .map((a) => ({
+                  value: a.id,
+                  label: `${a.name}${a.institution ? ` (${a.institution})` : ''}`,
+                })),
+              { value: '__new__', label: '＋ Add Account...' },
             ]}
           />
-          {type === 'transfer' && (
-            <Select
-              label="To Account"
-              value={toAccountId}
-              onChange={(e) => setToAccountId(e.target.value)}
-              error={errors.toAccountId}
-              options={[
-                { value: '', label: 'Select destination...' },
-                ...activeAccounts
-                  .filter((a) => a.id !== accountId)
-                  .map((a) => ({
-                    value: a.id,
-                    label: `${a.name}${a.institution ? ` (${a.institution})` : ''}`,
-                  })),
-              ]}
-            />
-          )}
-        </div>
-      )}
+        )}
+      </div>
 
       {/* Category (not for transfers) — Two-level picker */}
       {type !== 'transfer' && (
@@ -333,6 +350,25 @@ export function TransactionForm({ editTransaction, onClose }: TransactionFormPro
         onCreated={(newCatId) => {
           setCategoryId(newCatId);
           setShowCategoryForm(false);
+        }}
+      />
+    </Modal>
+
+    {/* Inline Account Creation Modal — outside form to prevent submit bubbling */}
+    <Modal
+      isOpen={showAccountForm}
+      onClose={() => setShowAccountForm(false)}
+      title="New Account"
+    >
+      <AccountForm
+        onClose={() => setShowAccountForm(false)}
+        onCreated={(account: Account) => {
+          if (accountFormTarget === 'destination') {
+            setToAccountId(account.id);
+          } else {
+            setAccountId(account.id);
+          }
+          setShowAccountForm(false);
         }}
       />
     </Modal>

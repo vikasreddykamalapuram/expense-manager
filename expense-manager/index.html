@@ -22,5 +22,24 @@
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
+    <!-- Static links for Google verification bot (hidden once React mounts) -->
+    <noscript>
+      <p><a href="privacy.html">Privacy Policy</a> · <a href="terms.html">Terms of Service</a></p>
+    </noscript>
+    <div id="policy-links" style="position:fixed;bottom:0;left:0;right:0;text-align:center;padding:8px;font-size:11px;color:#9ca3af;background:#fff;">
+      <a href="privacy.html" style="color:#6b7280;text-decoration:underline;">Privacy Policy</a> ·
+      <a href="terms.html" style="color:#6b7280;text-decoration:underline;">Terms of Service</a>
+    </div>
+    <script>
+      // Hide static links once React app renders
+      var observer = new MutationObserver(function() {
+        if (document.getElementById('root') && document.getElementById('root').children.length > 0) {
+          var el = document.getElementById('policy-links');
+          if (el) el.style.display = 'none';
+          observer.disconnect();
+        }
+      });
+      observer.observe(document.getElementById('root'), { childList: true });
+    </script>
   </body>
 </html>

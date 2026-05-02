@@ -9,9 +9,10 @@ import { ACCOUNT_TYPE_META, ACCOUNT_COLORS, POPULAR_INSTITUTIONS, BANK_SUBTYPES,
 interface AccountFormProps {
   editAccount?: Account;
   onClose: () => void;
+  onCreated?: (account: Account) => void;
 }
 
-export function AccountForm({ editAccount, onClose }: AccountFormProps) {
+export function AccountForm({ editAccount, onClose, onCreated }: AccountFormProps) {
   const { actions } = useAppContext();
   const isEditing = !!editAccount;
 
@@ -108,6 +109,9 @@ export function AccountForm({ editAccount, onClose }: AccountFormProps) {
         updatedAt: now,
       };
       await actions.addAccount(account);
+      if (onCreated) {
+        onCreated(account);
+      }
     }
 
     onClose();
