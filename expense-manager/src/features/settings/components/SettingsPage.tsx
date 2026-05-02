@@ -4,13 +4,12 @@ import { useAppContext } from '../../../context/AppContext';
 import { Button } from '../../../shared/components/ui/Button';
 import { Select } from '../../../shared/components/ui/Input';
 import { Modal } from '../../../shared/components/ui/Modal';
-import { storageService } from '../../../shared/services/storageService';
 import { downloadFile } from '../../../shared/utils/helpers';
 import { CURRENCIES } from '../../../shared/constants/categories';
 import { CSVImportModal } from './CSVImportModal';
 
 export function SettingsPage() {
-  const { state, dispatch } = useAppContext();
+  const { state, actions } = useAppContext();
   const { settings } = state;
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [showClearConfirm, setShowClearConfirm] = useState(false);
@@ -20,15 +19,12 @@ export function SettingsPage() {
   const handleCurrencyChange = (code: string) => {
     const currency = CURRENCIES.find((c) => c.code === code);
     if (currency) {
-      dispatch({
-        type: 'UPDATE_SETTINGS',
-        payload: { currency: currency.code, currencySymbol: currency.symbol },
-      });
+      actions.updateSettings({ currency: currency.code, currencySymbol: currency.symbol });
     }
   };
 
-  const handleExport = () => {
-    const data = storageService.exportData();
+  const handleExport = async () => {
+    const data = await actions.exportData();
     const date = new Date().toISOString().split('T')[0];
     downloadFile(data, `expense-manager-backup-${date}.json`);
   };
@@ -63,34 +59,18 @@ export function SettingsPage() {
     if (!file) return;
 
     const reader = new FileReader();
-    reader.onload = (event) => {
+    reader.onload = async (event) => {
       const content = event.target?.result as string;
-      const success = storageService.importData(content);
-      if (success) {
-        setImportStatus('success');
-        // Reload state from storage
-        const transactions = storageService.getTransactions();
-        const newSettings = storageService.getSettings();
-        const budgets = storageService.getBudgets();
-        const categories = storageService.getAllCategories();
-        const accounts = storageService.getAccounts();
-        dispatch({
-          type: 'IMPORT_DATA',
-          payload: { transactions, settings: newSettings, budgets, categories, accounts },
-        });
-      } else {
-        setImportStatus('error');
-      }
+      const success = await actions.importData(content);
+      setImportStatus(success ? 'success' : 'error');
       setTimeout(() => setImportStatus('idle'), 3000);
     };
     reader.readAsText(file);
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
-  const handleClearData = () => {
-    storageService.clearAllData();
-    dispatch({ type: 'SET_TRANSACTIONS', payload: [] });
-    dispatch({ type: 'SET_BUDGETS', payload: [] });
+  const handleClearData = async () => {
+    await actions.clearAllData();
     setShowClearConfirm(false);
   };
 
@@ -117,7 +97,7 @@ export function SettingsPage() {
           <Select
             label="Date Format"
             value={settings.dateFormat}
-            onChange={(e) => dispatch({ type: 'UPDATE_SETTINGS', payload: { dateFormat: e.target.value } })}
+            onChange={(e) => actions.updateSettings({ dateFormat: e.target.value })}
             options={[
               { value: 'DD/MM/YYYY', label: 'DD/MM/YYYY' },
               { value: 'MM/DD/YYYY', label: 'MM/DD/YYYY' },
@@ -154,8 +134,7 @@ export function SettingsPage() {
                 <button
                   onClick={() => {
                     if (confirm(`Delete profile "${p.name}"? All data in this profile will be lost.`)) {
-                      const updated = storageService.deleteProfile(p.id);
-                      dispatch({ type: 'SET_PROFILES', payload: updated });
+                      actions.deleteProfile(p.id);
                     }
                   }}
                   className="rounded p-1.5 text-gray-400 hover:bg-danger-50 hover:text-danger-600 transition-colors"

@@ -8,7 +8,6 @@ import { useState, useRef, useEffect } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import { classNames } from '../utils/helpers';
 import { useAppContext } from '../../context/AppContext';
-import { storageService } from '../services/storageService';
 
 const navItems = [
   { path: '/', icon: LayoutDashboard, label: 'Dashboard' },
@@ -21,7 +20,7 @@ const navItems = [
 ];
 
 export function Layout() {
-  const { state, dispatch } = useAppContext();
+  const { state, actions } = useAppContext();
   const { profiles, activeProfileId } = state;
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
@@ -45,11 +44,11 @@ export function Layout() {
   }, []);
 
   const handleSwitchProfile = (profileId: string) => {
-    dispatch({ type: 'SWITCH_PROFILE', payload: profileId });
+    actions.switchProfile(profileId);
     setProfileDropdownOpen(false);
   };
 
-  const handleCreateProfile = () => {
+  const handleCreateProfile = async () => {
     if (!newProfileName.trim()) return;
     const profile = {
       id: uuidv4(),
@@ -57,9 +56,8 @@ export function Layout() {
       icon: '📊',
       createdAt: new Date().toISOString(),
     };
-    const updatedProfiles = storageService.addProfile(profile);
-    dispatch({ type: 'SET_PROFILES', payload: updatedProfiles });
-    dispatch({ type: 'SWITCH_PROFILE', payload: profile.id });
+    await actions.addProfile(profile);
+    await actions.switchProfile(profile.id);
     setNewProfileName('');
     setShowNewProfile(false);
     setProfileDropdownOpen(false);

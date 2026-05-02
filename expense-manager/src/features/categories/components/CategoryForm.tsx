@@ -15,7 +15,7 @@ interface CategoryFormProps {
 }
 
 export function CategoryForm({ editCategory, defaultType, defaultParentId, onClose }: CategoryFormProps) {
-  const { state, dispatch } = useAppContext();
+  const { state, actions } = useAppContext();
   const { categories } = state;
   const isEditing = !!editCategory;
 
@@ -41,25 +41,19 @@ export function CategoryForm({ editCategory, defaultType, defaultParentId, onClo
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validate()) return;
 
     const effectiveColor = parentCat ? parentCat.color : color;
 
     if (isEditing && editCategory) {
-      dispatch({
-        type: 'UPDATE_CATEGORY',
-        payload: {
-          id: editCategory.id,
-          updates: {
-            name: name.trim(),
-            type,
-            icon,
-            color: effectiveColor,
-            parentId: parentId || undefined,
-          },
-        },
+      await actions.updateCategory(editCategory.id, {
+        name: name.trim(),
+        type,
+        icon,
+        color: effectiveColor,
+        parentId: parentId || undefined,
       });
     } else {
       const category: Category = {
@@ -71,7 +65,7 @@ export function CategoryForm({ editCategory, defaultType, defaultParentId, onClo
         isCustom: true,
         parentId: parentId || undefined,
       };
-      dispatch({ type: 'ADD_CATEGORY', payload: category });
+      await actions.addCategory(category);
     }
     onClose();
   };

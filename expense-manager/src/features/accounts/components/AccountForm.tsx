@@ -1,11 +1,10 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import { useAppContext } from '../../../context/AppContext';
 import { Button } from '../../../shared/components/ui/Button';
 import { Input, Select } from '../../../shared/components/ui/Input';
 import { Account, AccountType, BankSubtype, LoanSubtype } from '../../../shared/types';
 import { ACCOUNT_TYPE_META, ACCOUNT_COLORS, POPULAR_INSTITUTIONS, BANK_SUBTYPES, LOAN_SUBTYPES, getAccountKind } from '../../../shared/constants/accounts';
-import { storageService } from '../../../shared/services/storageService';
 
 interface AccountFormProps {
   editAccount?: Account;
@@ -13,7 +12,7 @@ interface AccountFormProps {
 }
 
 export function AccountForm({ editAccount, onClose }: AccountFormProps) {
-  const { dispatch } = useAppContext();
+  const { actions } = useAppContext();
   const isEditing = !!editAccount;
 
   const [name, setName] = useState(editAccount?.name || '');
@@ -28,7 +27,10 @@ export function AccountForm({ editAccount, onClose }: AccountFormProps) {
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   // Merge popular + custom institutions
-  const customInstitutions = storageService.getCustomInstitutions();
+  const [customInstitutions, setCustomInstitutions] = useState<Record<string, string[]>>({});
+  useEffect(() => {
+    actions.getCustomInstitutions().then(setCustomInstitutions);
+  }, []);
   const allInstitutions = [
     ...POPULAR_INSTITUTIONS[type].filter((i) => i !== 'Other'),
     ...(customInstitutions[type] || []),
@@ -56,11 +58,11 @@ export function AccountForm({ editAccount, onClose }: AccountFormProps) {
     return Object.keys(newErrors).length === 0;
   };
 
-  const resolveInstitution = (): string | undefined => {
+  const resolveInstitution = async (): Promise<string | undefined> => {
     if (institution === 'Other') {
       const trimmed = customInstitution.trim();
       if (trimmed) {
-        storageService.addCustomInstitution(type, trimmed);
+        await actions.addCustomInstitution(type, trimmed);
         return trimmed;
       }
       return undefined;
@@ -68,31 +70,25 @@ export function AccountForm({ editAccount, onClose }: AccountFormProps) {
     return institution || undefined;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validate()) return;
 
     const now = new Date().toISOString();
-    const resolvedInstitution = resolveInstitution();
+    const resolvedInstitution = await resolveInstitution();
     const resolvedSubtype = (subtype || undefined) as Account['subtype'];
 
     if (isEditing && editAccount) {
-      dispatch({
-        type: 'UPDATE_ACCOUNT',
-        payload: {
-          id: editAccount.id,
-          updates: {
-            name: name.trim(),
-            type,
-            kind,
-            subtype: resolvedSubtype,
-            institution: resolvedInstitution,
-            openingBalance: parseFloat(openingBalance),
-            creditLimit: type === 'credit_card' ? parseFloat(creditLimit) : undefined,
-            interestRate: interestRate ? parseFloat(interestRate) : undefined,
-            color,
-          },
-        },
+      await actions.updateAccount(editAccount.id, {
+        name: name.trim(),
+        type,
+        kind,
+        subtype: resolvedSubtype,
+        institution: resolvedInstitution,
+        openingBalance: parseFloat(openingBalance),
+        creditLimit: type === 'credit_card' ? parseFloat(creditLimit) : undefined,
+        interestRate: interestRate ? parseFloat(interestRate) : undefined,
+        color,
       });
     } else {
       const account: Account = {
@@ -111,7 +107,7 @@ export function AccountForm({ editAccount, onClose }: AccountFormProps) {
         createdAt: now,
         updatedAt: now,
       };
-      dispatch({ type: 'ADD_ACCOUNT', payload: account });
+      await actions.addAccount(account);
     }
 
     onClose();

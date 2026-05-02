@@ -8,7 +8,6 @@ import { useAppContext } from '../../../context/AppContext';
 import { Button } from '../../../shared/components/ui/Button';
 import { Input, Select } from '../../../shared/components/ui/Input';
 import { Modal } from '../../../shared/components/ui/Modal';
-import { storageService } from '../../../shared/services/storageService';
 import { Transaction } from '../../../shared/types';
 import {
   parseCSV, ParsedCSV, ColumnMapping, guessColumnMapping,
@@ -25,7 +24,7 @@ type Step = 'upload' | 'mapping' | 'preview' | 'result';
 type ImportTarget = 'current' | 'new';
 
 export function CSVImportModal({ isOpen, onClose }: CSVImportModalProps) {
-  const { state, dispatch } = useAppContext();
+  const { state, actions } = useAppContext();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [step, setStep] = useState<Step>('upload');
@@ -119,7 +118,7 @@ export function CSVImportModal({ isOpen, onClose }: CSVImportModalProps) {
   };
 
   // Step 3 → 4: Actually import
-  const handleImport = () => {
+  const handleImport = async () => {
     if (!importResult) return;
 
     const now = new Date().toISOString();
@@ -133,27 +132,21 @@ export function CSVImportModal({ isOpen, onClose }: CSVImportModalProps) {
         icon: '📥',
         createdAt: now,
       };
-      const updatedProfiles = storageService.addProfile(profile);
-      dispatch({ type: 'SET_PROFILES', payload: updatedProfiles });
-      // Switch to new profile so storage writes go there
-      storageService.setActiveProfile(profileId);
+      await actions.addProfile(profile);
+      await actions.switchProfile(profileId);
     }
 
-    // After potential profile switch, get categories for this profile
-    const profileCategories = storageService.getAllCategories();
-    let currentCategories = [...profileCategories];
+    // After potential profile switch, work with current state categories
+    let currentCategories = [...state.categories];
     let addedCategoryCount = 0;
 
     const transactions: Transaction[] = importResult.parsed.map((p: ParsedTransaction) => {
-      // Match category to existing or create new
       let categoryId = matchCategory(p.category);
 
-      // Check if matched category exists in state
       if (categoryId && !currentCategories.find((c) => c.id === categoryId)) {
         categoryId = null;
       }
 
-      // Try exact name match from existing categories
       if (!categoryId) {
         const existing = currentCategories.find(
           (c) => c.name.toLowerCase() === p.category.toLowerCase() && c.type === p.type
@@ -163,7 +156,6 @@ export function CSVImportModal({ isOpen, onClose }: CSVImportModalProps) {
         }
       }
 
-      // Create new custom category if no match
       if (!categoryId) {
         const newCatId = `import-${p.category.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`;
         const alreadyCreated = currentCategories.find((c) => c.id === newCatId);
@@ -179,15 +171,12 @@ export function CSVImportModal({ isOpen, onClose }: CSVImportModalProps) {
             color: catType === 'income' ? '#10b981' : '#64748b',
             isCustom: true,
           };
-          // Save directly to storage (may be a different profile now)
-          storageService.addCustomCategory(newCategory);
           currentCategories = [...currentCategories, newCategory];
           addedCategoryCount++;
           categoryId = newCatId;
         }
       }
 
-      // Build notes: merge subcategory info if available
       const noteParts: string[] = [];
       if (p.subcategory) noteParts.push(`[${p.subcategory}]`);
       if (p.notes) noteParts.push(p.notes);
@@ -207,20 +196,13 @@ export function CSVImportModal({ isOpen, onClose }: CSVImportModalProps) {
       };
     });
 
-    // Save transactions to the target profile's storage
-    const existingTxns = storageService.getTransactions();
-    const allTxns = [...existingTxns, ...transactions];
-    storageService.saveTransactions(allTxns);
+    // Save new categories (custom ones only)
+    const newCustomCats = currentCategories.filter((c) => c.isCustom);
+    await actions.saveCustomCategories(newCustomCats);
 
-    // If we created a new profile, switch the app to it to show imported data
-    if (importTarget === 'new' && newProfileName.trim()) {
-      const newProfileId = storageService.getCurrentProfileId();
-      dispatch({ type: 'SWITCH_PROFILE', payload: newProfileId });
-    } else {
-      // Reload data in current profile
-      dispatch({ type: 'SET_TRANSACTIONS', payload: allTxns });
-      dispatch({ type: 'SET_CATEGORIES', payload: storageService.getAllCategories() });
-    }
+    // Save all transactions (existing + new)
+    const allTxns = [...state.transactions, ...transactions];
+    await actions.saveTransactions(allTxns);
 
     setImportedCount(transactions.length);
     setStep('result');

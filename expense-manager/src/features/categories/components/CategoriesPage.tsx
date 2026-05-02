@@ -9,7 +9,7 @@ import { CategoryForm } from './CategoryForm';
 import { Category } from '../../../shared/types';
 
 export function CategoriesPage() {
-  const { state, dispatch } = useAppContext();
+  const { state, actions } = useAppContext();
   const { categories, transactions } = state;
   const [showForm, setShowForm] = useState(false);
   const [editCategory, setEditCategory] = useState<Category | undefined>();
@@ -67,14 +67,13 @@ export function CategoriesPage() {
 
   const handleDelete = () => {
     if (deleteTarget) {
-      // Also delete child subcategories if deleting a parent
       const children = getSubcategories(deleteTarget.id);
       children.forEach((child) => {
         if (child.isCustom) {
-          dispatch({ type: 'DELETE_CATEGORY', payload: child.id });
+          actions.deleteCategory(child.id);
         }
       });
-      dispatch({ type: 'DELETE_CATEGORY', payload: deleteTarget.id });
+      actions.deleteCategory(deleteTarget.id);
       setDeleteTarget(null);
     }
   };

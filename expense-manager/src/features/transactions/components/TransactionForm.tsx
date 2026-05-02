@@ -15,7 +15,7 @@ interface TransactionFormProps {
 }
 
 export function TransactionForm({ editTransaction, onClose }: TransactionFormProps) {
-  const { state, dispatch } = useAppContext();
+  const { state, actions } = useAppContext();
   const navigate = useNavigate();
   const isEditing = !!editTransaction;
   const { accounts, categories } = state;
@@ -84,15 +84,9 @@ export function TransactionForm({ editTransaction, onClose }: TransactionFormPro
     };
 
     if (isEditing && editTransaction) {
-      dispatch({
-        type: 'UPDATE_TRANSACTION',
-        payload: { id: editTransaction.id, updates: txData },
-      });
+      actions.updateTransaction(editTransaction.id, txData);
     } else {
-      dispatch({
-        type: 'ADD_TRANSACTION',
-        payload: { id: uuidv4(), ...txData, createdAt: now, updatedAt: now },
-      });
+      actions.addTransaction({ id: uuidv4(), ...txData, createdAt: now, updatedAt: now });
     }
 
     if (onClose) {

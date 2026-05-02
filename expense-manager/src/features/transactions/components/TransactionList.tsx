@@ -11,7 +11,7 @@ import { formatCurrency, formatDate, classNames } from '../../../shared/utils/he
 import { Transaction, TransactionFilters } from '../../../shared/types';
 
 export function TransactionList() {
-  const { state, dispatch } = useAppContext();
+  const { state, actions } = useAppContext();
   const { transactions } = useTransactions();
   const { settings, filters, categories } = state;
   const [editingTx, setEditingTx] = useState<Transaction | null>(null);
@@ -21,12 +21,12 @@ export function TransactionList() {
   const getCategoryById = (id: string) => categories.find((c) => c.id === id);
 
   const handleDelete = (id: string) => {
-    dispatch({ type: 'DELETE_TRANSACTION', payload: id });
+    actions.deleteTransaction(id);
     setDeleteConfirm(null);
   };
 
   const updateFilters = (updates: Partial<TransactionFilters>) => {
-    dispatch({ type: 'SET_FILTERS', payload: updates });
+    actions.setFilters(updates);
   };
 
   return (
@@ -101,7 +101,7 @@ export function TransactionList() {
             <option value="amount">Sort by Amount</option>
             <option value="category">Sort by Category</option>
           </select>
-          <Button variant="ghost" size="sm" onClick={() => dispatch({ type: 'RESET_FILTERS' })}>
+          <Button variant="ghost" size="sm" onClick={() => actions.resetFilters()}>
             Clear Filters
           </Button>
         </div>

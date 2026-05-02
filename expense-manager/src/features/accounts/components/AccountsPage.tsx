@@ -20,7 +20,7 @@ const iconMap: Record<string, LucideIcon> = {
 const typeOrder: AccountType[] = ['bank', 'credit_card', 'loan', 'wallet', 'cash'];
 
 export function AccountsPage() {
-  const { state, dispatch } = useAppContext();
+  const { state, actions } = useAppContext();
   const { accounts, transactions, settings } = state;
   const [showForm, setShowForm] = useState(false);
   const [editingAccount, setEditingAccount] = useState<Account | null>(null);
@@ -61,15 +61,14 @@ export function AccountsPage() {
       (t) => t.accountId === id || t.toAccountId === id
     );
     if (linkedTxns.length > 0) {
-      // Unlink transactions before deleting
       linkedTxns.forEach((t) => {
         const updates: Record<string, string | undefined> = {};
         if (t.accountId === id) updates.accountId = undefined;
         if (t.toAccountId === id) updates.toAccountId = undefined;
-        dispatch({ type: 'UPDATE_TRANSACTION', payload: { id: t.id, updates } });
+        actions.updateTransaction(t.id, updates);
       });
     }
-    dispatch({ type: 'DELETE_ACCOUNT', payload: id });
+    actions.deleteAccount(id);
     setDeleteConfirm(null);
   };
 
