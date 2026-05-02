@@ -27,13 +27,44 @@ export interface BackupResult {
 
 // ─── Token Acquisition ─────────────────────────────────
 
-/** Get Google access token from current session (requires gapi or @react-oauth flow) */
+/** Get Google access token — re-request via GIS token client if expired/missing */
 async function getGoogleAccessToken(): Promise<string | null> {
-  // In production, the GoogleOAuthProvider gives us a credential (ID token).
-  // For Drive API access, we need an access_token from the OAuth2 code flow.
-  // For now, we check if there's a token stored by the auth flow.
   const stored = sessionStorage.getItem('em_google_access_token');
-  return stored;
+  if (stored) return stored;
+
+  // Try to request a new token via GIS token client (requires user interaction)
+  return new Promise((resolve) => {
+    const google = (window as unknown as { google?: { accounts?: { oauth2?: { initTokenClient: (config: {
+      client_id: string; scope: string; callback: (resp: { access_token?: string; error?: string }) => void;
+    }) => { requestAccessToken: () => void } } } } })?.google;
+
+    if (!google?.accounts?.oauth2?.initTokenClient) {
+      resolve(null);
+      return;
+    }
+
+    // Dynamic import to get the client ID without circular deps
+    const clientId = sessionStorage.getItem('em_google_client_id');
+    if (!clientId) {
+      resolve(null);
+      return;
+    }
+
+    const tokenClient = google.accounts.oauth2.initTokenClient({
+      client_id: clientId,
+      scope: 'https://www.googleapis.com/auth/drive.appdata',
+      callback: (tokenResponse) => {
+        if (tokenResponse.access_token) {
+          sessionStorage.setItem('em_google_access_token', tokenResponse.access_token);
+          resolve(tokenResponse.access_token);
+        } else {
+          resolve(null);
+        }
+      },
+    });
+
+    tokenClient.requestAccessToken();
+  });
 }
 
 /** Get Microsoft access token using MSAL (acquired during login) */

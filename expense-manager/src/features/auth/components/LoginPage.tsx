@@ -38,7 +38,37 @@ export function LoginPage() {
     };
 
     login(user);
-    navigate('/');
+
+    // Request an access token with Drive scope for cloud backup
+    // Store client ID for backup service token refresh, then request Drive token
+    sessionStorage.setItem('em_google_client_id', AUTH_CONFIG.google.clientId);
+    requestGoogleDriveToken(() => navigate('/'));
+  };
+
+  /** Use Google Identity Services token client to get an access token with Drive scope */
+  const requestGoogleDriveToken = (onDone: () => void) => {
+    const google = (window as unknown as { google?: { accounts?: { oauth2?: { initTokenClient: (config: {
+      client_id: string; scope: string; callback: (resp: { access_token?: string; error?: string }) => void;
+    }) => { requestAccessToken: () => void } } } } })?.google;
+
+    if (!google?.accounts?.oauth2?.initTokenClient) {
+      // GIS library not loaded — skip Drive token, user can still use the app
+      onDone();
+      return;
+    }
+
+    const tokenClient = google.accounts.oauth2.initTokenClient({
+      client_id: AUTH_CONFIG.google.clientId,
+      scope: 'https://www.googleapis.com/auth/drive.appdata',
+      callback: (tokenResponse) => {
+        if (tokenResponse.access_token) {
+          sessionStorage.setItem('em_google_access_token', tokenResponse.access_token);
+        }
+        onDone();
+      },
+    });
+
+    tokenClient.requestAccessToken();
   };
 
   const handleMicrosoftLogin = async () => {
