@@ -43,11 +43,16 @@ export default {
       },
       animation: {
         'pulse-glow': 'pulse-glow 2s ease-in-out infinite',
+        'slide-up': 'slide-up 0.3s ease-out',
       },
       keyframes: {
         'pulse-glow': {
           '0%, 100%': { boxShadow: '0 0 8px 2px rgba(59, 130, 246, 0.4)' },
           '50%': { boxShadow: '0 0 20px 6px rgba(59, 130, 246, 0.6)' },
+        },
+        'slide-up': {
+          '0%': { transform: 'translateY(100%)', opacity: '0' },
+          '100%': { transform: 'translateY(0)', opacity: '1' },
         },
       },
     },

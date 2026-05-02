@@ -11,6 +11,8 @@ import { useAppContext } from '../../context/AppContext';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../hooks/useTheme';
 import { FloatingAssistant } from '../../features/assistant/components/FloatingAssistant';
+import { PWAUpdatePrompt } from './PWAUpdatePrompt';
+import { PWAInstallPrompt } from './PWAInstallPrompt';
 
 const navItems = [
   { path: '/', icon: LayoutDashboard, label: 'Dashboard' },
@@ -272,6 +274,10 @@ export function Layout() {
 
       {/* Floating AI Assistant */}
       <FloatingAssistant />
+
+      {/* PWA Prompts */}
+      <PWAUpdatePrompt />
+      <PWAInstallPrompt />
     </div>
   );
 }
