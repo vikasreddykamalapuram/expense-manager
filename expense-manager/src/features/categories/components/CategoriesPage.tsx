@@ -83,13 +83,13 @@ export function CategoriesPage() {
     return (
       <div
         key={sub.id}
-        className="flex items-center gap-3 rounded-lg bg-gray-50 p-3 ml-6 border-l-2"
+        className="flex items-center gap-3 rounded-lg bg-gray-50 dark:bg-gray-700/50 p-3 ml-6 border-l-2"
         style={{ borderLeftColor: sub.color }}
       >
         <CategoryIcon icon={sub.icon} color={sub.color} size={14} className="!p-1.5" />
         <div className="flex-1 min-w-0">
-          <p className="text-xs font-medium text-gray-800 truncate">{sub.name}</p>
-          <p className="text-[10px] text-gray-400">
+          <p className="text-xs font-medium text-gray-800 dark:text-gray-200 truncate">{sub.name}</p>
+          <p className="text-[10px] text-gray-400 dark:text-gray-500">
             {usageCount} txn{usageCount !== 1 ? 's' : ''}
             {sub.isCustom && (
               <span className="ml-1.5 text-primary-600">Custom</span>
@@ -100,13 +100,13 @@ export function CategoriesPage() {
           <div className="flex gap-0.5">
             <button
               onClick={() => handleEdit(sub)}
-              className="rounded p-1 text-gray-400 hover:bg-white hover:text-gray-600"
+              className="rounded p-1 text-gray-400 dark:text-gray-500 hover:bg-white dark:hover:bg-gray-700 hover:text-gray-600 dark:hover:text-gray-300"
             >
               <Edit2 size={12} />
             </button>
             <button
               onClick={() => setDeleteTarget(sub)}
-              className="rounded p-1 text-gray-400 hover:bg-danger-50 hover:text-danger-600"
+              className="rounded p-1 text-gray-400 dark:text-gray-500 hover:bg-danger-50 hover:text-danger-600"
             >
               <Trash2 size={12} />
             </button>
@@ -124,16 +124,16 @@ export function CategoriesPage() {
     return (
       <div key={category.id} className="space-y-1">
         <div
-          className="flex items-center gap-3 rounded-xl border border-gray-200 bg-white p-4 shadow-sm transition-all hover:shadow-md cursor-pointer"
+          className="flex items-center gap-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-4 shadow-sm transition-all hover:shadow-md cursor-pointer"
           onClick={() => subcats.length > 0 && toggleExpand(category.id)}
         >
           {/* Expand/Collapse arrow */}
           <div className="w-5 flex items-center justify-center">
             {subcats.length > 0 ? (
               isExpanded ? (
-                <ChevronDown size={16} className="text-gray-400" />
+                <ChevronDown size={16} className="text-gray-400 dark:text-gray-500" />
               ) : (
-                <ChevronRight size={16} className="text-gray-400" />
+                <ChevronRight size={16} className="text-gray-400 dark:text-gray-500" />
               )
             ) : null}
           </div>
@@ -145,12 +145,12 @@ export function CategoriesPage() {
             <CategoryIcon icon={category.icon} color={category.color} size={20} className="!p-0 !bg-transparent" />
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-semibold text-gray-900 truncate">{category.name}</p>
-            <p className="text-xs text-gray-500">
+            <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 truncate">{category.name}</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400">
               {totalUsage} transaction{totalUsage !== 1 ? 's' : ''}
               {subcats.length > 0 && ` · ${subcats.length} subcategories`}
               {category.isCustom && (
-                <span className="ml-2 inline-flex items-center rounded-full bg-primary-50 px-1.5 py-0.5 text-xs font-medium text-primary-700">
+                <span className="ml-2 inline-flex items-center rounded-full bg-primary-50 dark:bg-primary-900/30 px-1.5 py-0.5 text-xs font-medium text-primary-700 dark:text-primary-400">
                   Custom
                 </span>
               )}
@@ -159,7 +159,7 @@ export function CategoriesPage() {
           <div className="flex gap-1" onClick={(e) => e.stopPropagation()}>
             <button
               onClick={() => handleAddSubcategory(category)}
-              className="rounded-lg p-2 text-gray-400 hover:bg-primary-50 hover:text-primary-600 transition-colors"
+              className="rounded-lg p-2 text-gray-400 dark:text-gray-500 hover:bg-primary-50 hover:text-primary-600 transition-colors"
               title="Add subcategory"
             >
               <Plus size={14} />
@@ -168,14 +168,14 @@ export function CategoriesPage() {
               <>
                 <button
                   onClick={() => handleEdit(category)}
-                  className="rounded-lg p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors"
+                  className="rounded-lg p-2 text-gray-400 dark:text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-600 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
                   title="Edit category"
                 >
                   <Edit2 size={14} />
                 </button>
                 <button
                   onClick={() => setDeleteTarget(category)}
-                  className="rounded-lg p-2 text-gray-400 hover:bg-danger-50 hover:text-danger-600 transition-colors"
+                  className="rounded-lg p-2 text-gray-400 dark:text-gray-500 hover:bg-danger-50 hover:text-danger-600 transition-colors"
                   title="Delete category"
                 >
                   <Trash2 size={14} />
@@ -200,8 +200,8 @@ export function CategoriesPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Categories</h1>
-          <p className="text-sm text-gray-500">
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Categories</h1>
+          <p className="text-sm text-gray-500 dark:text-gray-400">
             Manage your income &amp; expense categories and subcategories
           </p>
         </div>
@@ -219,15 +219,15 @@ export function CategoriesPage() {
       </div>
 
       {/* Filter Tabs */}
-      <div className="flex gap-1 rounded-xl bg-gray-100 p-1 max-w-sm">
+      <div className="flex gap-1 rounded-xl bg-gray-100 dark:bg-gray-700 p-1 max-w-sm">
         {(['all', 'expense', 'income'] as const).map((t) => (
           <button
             key={t}
             onClick={() => setFilterType(t)}
             className={`flex-1 rounded-lg py-2 text-sm font-medium transition-all ${
               filterType === t
-                ? 'bg-white text-gray-900 shadow-sm'
-                : 'text-gray-600 hover:text-gray-900'
+                ? 'bg-white dark:bg-gray-600 text-gray-900 dark:text-gray-100 shadow-sm'
+                : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
             }`}
           >
             {t === 'all' ? 'All' : t === 'expense' ? 'Expense' : 'Income'}
@@ -266,7 +266,7 @@ export function CategoriesPage() {
                       return next;
                     });
                   }}
-                  className="text-xs text-gray-400 hover:text-gray-600"
+                  className="text-xs text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300"
                 >
                   {expenseParents.every((c) => expandedParents.has(c.id)) ? 'Collapse All' : 'Expand All'}
                 </button>
@@ -295,7 +295,7 @@ export function CategoriesPage() {
                       return next;
                     });
                   }}
-                  className="text-xs text-gray-400 hover:text-gray-600"
+                  className="text-xs text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300"
                 >
                   {incomeParents.every((c) => expandedParents.has(c.id)) ? 'Collapse All' : 'Expand All'}
                 </button>
@@ -341,7 +341,7 @@ export function CategoriesPage() {
       >
         {deleteTarget && (
           <>
-            <p className="text-sm text-gray-600">
+            <p className="text-sm text-gray-600 dark:text-gray-400">
               Are you sure you want to delete <strong>{deleteTarget.name}</strong>?
             </p>
             {!deleteTarget.parentId && getSubcategories(deleteTarget.id).filter((c) => c.isCustom).length > 0 && (

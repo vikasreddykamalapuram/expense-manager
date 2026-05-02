@@ -59,7 +59,7 @@ export interface Settings {
   currency: string;
   currencySymbol: string;
   dateFormat: string;
-  theme: 'light' | 'dark';
+  theme: 'light' | 'dark' | 'system';
   defaultView: 'dashboard' | 'transactions';
 }
 

@@ -125,7 +125,7 @@ export const DEFAULT_SETTINGS = {
   currency: 'INR',
   currencySymbol: '₹',
   dateFormat: 'DD/MM/YYYY',
-  theme: 'light' as const,
+  theme: 'system' as const,
   defaultView: 'dashboard' as const,
 };
 

@@ -40,18 +40,18 @@ export function Modal({ isOpen, onClose, title, children, size = 'md' }: ModalPr
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="fixed inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
       <div
-        className={`relative flex max-h-[90vh] w-full flex-col ${sizeClasses[size]} rounded-2xl bg-white p-6 shadow-2xl`}
+        className={`relative flex max-h-[90vh] w-full flex-col ${sizeClasses[size]} rounded-2xl bg-white dark:bg-gray-800 p-6 shadow-2xl`}
         role="dialog"
         aria-modal="true"
         aria-labelledby="modal-title"
       >
         <div className="mb-4 flex items-center justify-between shrink-0">
-          <h2 id="modal-title" className="text-lg font-semibold text-gray-900">
+          <h2 id="modal-title" className="text-lg font-semibold text-gray-900 dark:text-gray-100">
             {title}
           </h2>
           <button
             onClick={onClose}
-            className="rounded-lg p-1.5 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600"
+            className="rounded-lg p-1.5 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600 dark:text-gray-500 dark:hover:bg-gray-700 dark:hover:text-gray-300"
             aria-label="Close"
           >
             <X size={20} />

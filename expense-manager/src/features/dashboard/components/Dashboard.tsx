@@ -38,8 +38,8 @@ export function Dashboard() {
       {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
-          <p className="text-sm text-gray-500">
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Dashboard</h1>
+          <p className="text-sm text-gray-500 dark:text-gray-400">
             Overview of your finances for {formatMonth(currentMonthStats.month)}
           </p>
         </div>
@@ -90,8 +90,8 @@ export function Dashboard() {
       ) : (
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
           {/* Monthly Trend Chart */}
-          <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
-            <h3 className="mb-4 text-base font-semibold text-gray-900">Monthly Trend</h3>
+          <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800">
+            <h3 className="mb-4 text-base font-semibold text-gray-900 dark:text-gray-100">Monthly Trend</h3>
             <ResponsiveContainer width="100%" height={250}>
               <BarChart data={monthlyData} barGap={4}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
@@ -116,12 +116,12 @@ export function Dashboard() {
           </div>
 
           {/* Expense Breakdown */}
-          <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
-            <h3 className="mb-4 text-base font-semibold text-gray-900">
-              Expense Breakdown — {formatMonth(currentMonthStats.month).split(' ')[0]}
+          <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800">
+            <h3 className="mb-4 text-base font-semibold text-gray-900 dark:text-gray-100">
+              Expense Breakdown— {formatMonth(currentMonthStats.month).split(' ')[0]}
             </h3>
             {expenseByCategory.length === 0 ? (
-              <div className="flex h-[250px] items-center justify-center text-sm text-gray-400">
+              <div className="flex h-[250px] items-center justify-center text-sm text-gray-400 dark:text-gray-500">
                 No expenses this month
               </div>
             ) : (
@@ -152,8 +152,8 @@ export function Dashboard() {
                         className="h-3 w-3 rounded-full"
                         style={{ backgroundColor: cat.color }}
                       />
-                      <span className="flex-1 truncate text-gray-600">{cat.categoryName}</span>
-                      <span className="font-medium text-gray-900">
+                      <span className="flex-1 truncate text-gray-600 dark:text-gray-400">{cat.categoryName}</span>
+                      <span className="font-medium text-gray-900 dark:text-gray-100">
                         {formatCurrency(cat.amount, settings)}
                       </span>
                     </div>
@@ -164,9 +164,9 @@ export function Dashboard() {
           </div>
 
           {/* Recent Transactions */}
-          <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm lg:col-span-2">
+          <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm lg:col-span-2 dark:border-gray-700 dark:bg-gray-800">
             <div className="mb-4 flex items-center justify-between">
-              <h3 className="text-base font-semibold text-gray-900">Recent Transactions</h3>
+              <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100">Recent Transactions</h3>
               <button
                 onClick={() => navigate('/transactions')}
                 className="flex items-center gap-1 text-sm font-medium text-primary-600 hover:text-primary-700"
@@ -181,7 +181,7 @@ export function Dashboard() {
                 return (
                   <div
                     key={tx.id}
-                    className="flex items-center gap-4 rounded-lg p-3 transition-colors hover:bg-gray-50"
+                    className="flex items-center gap-4 rounded-lg p-3 transition-colors hover:bg-gray-50 dark:hover:bg-gray-700"
                   >
                     <div
                       className="flex h-10 w-10 items-center justify-center rounded-xl"
@@ -193,10 +193,10 @@ export function Dashboard() {
                       />
                     </div>
                     <div className="flex-1">
-                      <p className="text-sm font-medium text-gray-900">
+                      <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
                         {parent ? `${parent.name} › ${category?.name}` : category?.name || 'Unknown'}
                       </p>
-                      <p className="text-xs text-gray-500">
+                      <p className="text-xs text-gray-500 dark:text-gray-400">
                         {formatDate(tx.date, settings.dateFormat)}
                         {tx.notes && ` · ${tx.notes}`}
                       </p>

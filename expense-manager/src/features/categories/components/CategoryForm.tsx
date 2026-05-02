@@ -12,9 +12,10 @@ interface CategoryFormProps {
   defaultType?: 'income' | 'expense';
   defaultParentId?: string;
   onClose: () => void;
+  onCreated?: (categoryId: string) => void;
 }
 
-export function CategoryForm({ editCategory, defaultType, defaultParentId, onClose }: CategoryFormProps) {
+export function CategoryForm({ editCategory, defaultType, defaultParentId, onClose, onCreated }: CategoryFormProps) {
   const { state, actions } = useAppContext();
   const { categories } = state;
   const isEditing = !!editCategory;
@@ -56,8 +57,9 @@ export function CategoryForm({ editCategory, defaultType, defaultParentId, onClo
         parentId: parentId || undefined,
       });
     } else {
+      const newId = uuidv4();
       const category: Category = {
-        id: uuidv4(),
+        id: newId,
         name: name.trim(),
         type,
         icon,
@@ -66,6 +68,10 @@ export function CategoryForm({ editCategory, defaultType, defaultParentId, onClo
         parentId: parentId || undefined,
       };
       await actions.addCategory(category);
+      if (onCreated) {
+        onCreated(newId);
+        return;
+      }
     }
     onClose();
   };
@@ -112,8 +118,8 @@ export function CategoryForm({ editCategory, defaultType, defaultParentId, onClo
 
       {/* Icon Selection */}
       <div>
-        <label className="mb-1.5 block text-sm font-medium text-gray-700">Icon</label>
-        <div className="grid grid-cols-10 gap-1.5 max-h-36 overflow-y-auto rounded-lg border border-gray-200 p-2">
+        <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">Icon</label>
+        <div className="grid grid-cols-10 gap-1.5 max-h-36 overflow-y-auto rounded-lg border border-gray-200 dark:border-gray-700 p-2">
           {CATEGORY_ICON_OPTIONS.map((iconName) => (
             <button
               key={iconName}
@@ -122,7 +128,7 @@ export function CategoryForm({ editCategory, defaultType, defaultParentId, onClo
               className={`flex items-center justify-center rounded-lg p-2 transition-all ${
                 icon === iconName
                   ? 'bg-primary-100 ring-2 ring-primary-500'
-                  : 'hover:bg-gray-100'
+                  : 'hover:bg-gray-100 dark:hover:bg-gray-600'
               }`}
               title={iconName}
             >
@@ -135,7 +141,7 @@ export function CategoryForm({ editCategory, defaultType, defaultParentId, onClo
       {/* Color Selection (only for top-level categories) */}
       {!parentId && (
         <div>
-          <label className="mb-1.5 block text-sm font-medium text-gray-700">Color</label>
+          <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">Color</label>
           <div className="flex flex-wrap gap-2">
             {CATEGORY_COLORS.map((c) => (
               <button
@@ -143,7 +149,7 @@ export function CategoryForm({ editCategory, defaultType, defaultParentId, onClo
                 type="button"
                 onClick={() => setColor(c)}
                 className={`h-8 w-8 rounded-full transition-all ${
-                  color === c ? 'ring-2 ring-offset-2 ring-primary-500 scale-110' : 'hover:scale-105'
+                  color === c ? 'ring-2 ring-offset-2 dark:ring-offset-gray-800 ring-primary-500 scale-110' : 'hover:scale-105'
                 }`}
                 style={{ backgroundColor: c }}
                 aria-label={`Select color ${c}`}
@@ -154,12 +160,12 @@ export function CategoryForm({ editCategory, defaultType, defaultParentId, onClo
       )}
 
       {parentId && parentCat && (
-        <p className="text-xs text-gray-400">Color inherited from parent: {parentCat.name}</p>
+        <p className="text-xs text-gray-400 dark:text-gray-500">Color inherited from parent: {parentCat.name}</p>
       )}
 
       {/* Preview */}
-      <div className="rounded-lg bg-gray-50 p-3">
-        <p className="text-xs font-medium text-gray-500 mb-2">Preview</p>
+      <div className="rounded-lg bg-gray-50 dark:bg-gray-900 p-3">
+        <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-2">Preview</p>
         <div className="flex items-center gap-2">
           <div
             className="flex h-8 w-8 items-center justify-center rounded-lg"
@@ -168,8 +174,8 @@ export function CategoryForm({ editCategory, defaultType, defaultParentId, onClo
             <CategoryIcon icon={icon} color={parentCat?.color || color} size={16} className="!p-0 !bg-transparent" />
           </div>
           <div>
-            {parentCat && <span className="text-xs text-gray-400">{parentCat.name} › </span>}
-            <span className="text-sm font-medium text-gray-900">{name || 'Category Name'}</span>
+            {parentCat && <span className="text-xs text-gray-400 dark:text-gray-500">{parentCat.name} › </span>}
+            <span className="text-sm font-medium text-gray-900 dark:text-gray-100">{name || 'Category Name'}</span>
           </div>
           <span className={`ml-auto text-xs font-medium px-2 py-0.5 rounded-full ${
             type === 'income' ? 'bg-success-100 text-success-700' : 'bg-danger-100 text-danger-700'

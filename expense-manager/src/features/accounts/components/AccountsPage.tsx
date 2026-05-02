@@ -77,8 +77,8 @@ export function AccountsPage() {
       {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Accounts</h1>
-          <p className="text-sm text-gray-500">
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Accounts</h1>
+          <p className="text-sm text-gray-500 dark:text-gray-400">
             Manage your bank accounts, credit cards, loans, and wallets
           </p>
         </div>
@@ -134,11 +134,11 @@ export function AccountsPage() {
             return (
               <div key={type}>
                 <div className="mb-3 flex items-center gap-2">
-                  <Icon size={18} className="text-gray-500" />
-                  <h2 className="text-sm font-semibold uppercase tracking-wider text-gray-500">
+                  <Icon size={18} className="text-gray-500 dark:text-gray-400" />
+                  <h2 className="text-sm font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
                     {meta.label}s
                   </h2>
-                  <span className="text-xs text-gray-400">({group.length})</span>
+                  <span className="text-xs text-gray-400 dark:text-gray-500">({group.length})</span>
                 </div>
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
                   {group.map((acc) => {
@@ -148,7 +148,7 @@ export function AccountsPage() {
                     return (
                       <div
                         key={acc.id}
-                        className="group rounded-xl border border-gray-200 bg-white p-5 shadow-sm transition-shadow hover:shadow-md"
+                        className="group rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-5 shadow-sm transition-shadow hover:shadow-md"
                       >
                         <div className="flex items-start justify-between">
                           <div className="flex items-center gap-3">
@@ -159,16 +159,16 @@ export function AccountsPage() {
                               <Icon size={20} style={{ color: acc.color }} />
                             </div>
                             <div>
-                              <p className="text-sm font-semibold text-gray-900">{acc.name}</p>
+                              <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">{acc.name}</p>
                               <div className="flex items-center gap-1.5">
                                 {acc.subtype && (
-                                  <span className="text-xs text-gray-400">
+                                  <span className="text-xs text-gray-400 dark:text-gray-500">
                                     {[...BANK_SUBTYPES, ...LOAN_SUBTYPES].find((s) => s.value === acc.subtype)?.label || acc.subtype}
                                   </span>
                                 )}
-                                {acc.institution && acc.subtype && <span className="text-xs text-gray-300">·</span>}
+                                {acc.institution && acc.subtype && <span className="text-xs text-gray-300 dark:text-gray-600">·</span>}
                                 {acc.institution && (
-                                  <span className="text-xs text-gray-500">{acc.institution}</span>
+                                  <span className="text-xs text-gray-500 dark:text-gray-400">{acc.institution}</span>
                                 )}
                               </div>
                             </div>
@@ -179,14 +179,14 @@ export function AccountsPage() {
                                 setEditingAccount(acc);
                                 setShowForm(true);
                               }}
-                              className="rounded-lg p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600"
+                              className="rounded-lg p-1.5 text-gray-400 dark:text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-600 hover:text-gray-600 dark:hover:text-gray-300"
                               aria-label="Edit account"
                             >
                               <Edit2 size={14} />
                             </button>
                             <button
                               onClick={() => setDeleteConfirm(acc.id)}
-                              className="rounded-lg p-1.5 text-gray-400 hover:bg-danger-50 hover:text-danger-600"
+                              className="rounded-lg p-1.5 text-gray-400 dark:text-gray-500 hover:bg-danger-50 hover:text-danger-600"
                               aria-label="Delete account"
                             >
                               <Trash2 size={14} />
@@ -195,15 +195,14 @@ export function AccountsPage() {
                         </div>
 
                         <div className="mt-4">
-                          <p className="text-xs text-gray-500">
-                            {isLiability ? 'Outstanding' : 'Balance'}
+                          <p className="text-xs text-gray-500 dark:text-gray-400">
                           </p>
                           <p
                             className={classNames(
                               'text-xl font-bold',
                               isLiability
                                 ? balance > 0 ? 'text-danger-600' : 'text-success-600'
-                                : balance >= 0 ? 'text-gray-900' : 'text-danger-600'
+                                : balance >= 0 ? 'text-gray-900 dark:text-gray-100' : 'text-danger-600'
                             )}
                           >
                             {isLiability && balance > 0 && '-'}
@@ -212,11 +211,11 @@ export function AccountsPage() {
 
                           {acc.type === 'credit_card' && acc.creditLimit && (
                             <div className="mt-2">
-                              <div className="flex justify-between text-xs text-gray-500">
+                              <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400">
                                 <span>Available Credit</span>
                                 <span>{formatCurrency(Math.max(0, acc.creditLimit - balance), settings)}</span>
                               </div>
-                              <div className="mt-1 h-1.5 rounded-full bg-gray-100">
+                              <div className="mt-1 h-1.5 rounded-full bg-gray-100 dark:bg-gray-600">
                                 <div
                                   className="h-full rounded-full transition-all"
                                   style={{
@@ -229,7 +228,7 @@ export function AccountsPage() {
                           )}
 
                           {acc.interestRate !== undefined && acc.interestRate > 0 && (
-                            <p className="mt-1 text-xs text-gray-400">
+                            <p className="mt-1 text-xs text-gray-400 dark:text-gray-500">
                               {acc.interestRate}% p.a.
                             </p>
                           )}
@@ -275,7 +274,7 @@ export function AccountsPage() {
             <AlertTriangle className="text-danger-600" size={20} />
           </div>
           <div>
-            <p className="text-sm text-gray-600">
+            <p className="text-sm text-gray-600 dark:text-gray-400">
               Are you sure you want to delete this account? Linked transactions will be unassigned.
             </p>
           </div>

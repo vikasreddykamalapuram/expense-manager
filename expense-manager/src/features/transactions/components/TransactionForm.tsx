@@ -5,6 +5,8 @@ import { ArrowDownCircle, ArrowUpCircle, ArrowLeftRight } from 'lucide-react';
 import { useAppContext } from '../../../context/AppContext';
 import { Button } from '../../../shared/components/ui/Button';
 import { Input, Select } from '../../../shared/components/ui/Input';
+import { Modal } from '../../../shared/components/ui/Modal';
+import { CategoryForm } from '../../categories/components/CategoryForm';
 import { PAYMENT_METHODS } from '../../../shared/constants/accounts';
 import { getToday, classNames } from '../../../shared/utils/helpers';
 import { Transaction, PaymentMethod } from '../../../shared/types';
@@ -33,6 +35,8 @@ export function TransactionForm({ editTransaction, onClose }: TransactionFormPro
     editTransaction?.recurringFrequency || 'monthly'
   );
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [showCategoryForm, setShowCategoryForm] = useState(false);
+  const [newCategoryParentId, setNewCategoryParentId] = useState<string | undefined>();
 
   // Two-level category picker: parent categories + subcategories
   const parentCategories = type === 'transfer'
@@ -99,7 +103,7 @@ export function TransactionForm({ editTransaction, onClose }: TransactionFormPro
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       {/* Type Toggle */}
-      <div className="flex gap-1 rounded-xl bg-gray-100 p-1">
+      <div className="flex gap-1 rounded-xl bg-gray-100 dark:bg-gray-700 p-1">
         <button
           type="button"
           onClick={() => { setType('expense'); setCategoryId(''); }}
@@ -107,7 +111,7 @@ export function TransactionForm({ editTransaction, onClose }: TransactionFormPro
             'flex flex-1 items-center justify-center gap-1.5 rounded-lg py-2.5 text-sm font-medium transition-all',
             type === 'expense'
               ? 'bg-danger-600 text-white shadow-sm'
-              : 'text-gray-600 hover:text-gray-900'
+              : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
           )}
         >
           <ArrowUpCircle size={16} />
@@ -120,7 +124,7 @@ export function TransactionForm({ editTransaction, onClose }: TransactionFormPro
             'flex flex-1 items-center justify-center gap-1.5 rounded-lg py-2.5 text-sm font-medium transition-all',
             type === 'income'
               ? 'bg-success-600 text-white shadow-sm'
-              : 'text-gray-600 hover:text-gray-900'
+              : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
           )}
         >
           <ArrowDownCircle size={16} />
@@ -133,7 +137,7 @@ export function TransactionForm({ editTransaction, onClose }: TransactionFormPro
             'flex flex-1 items-center justify-center gap-1.5 rounded-lg py-2.5 text-sm font-medium transition-all',
             type === 'transfer'
               ? 'bg-primary-600 text-white shadow-sm'
-              : 'text-gray-600 hover:text-gray-900'
+              : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
           )}
         >
           <ArrowLeftRight size={16} />
@@ -193,33 +197,68 @@ export function TransactionForm({ editTransaction, onClose }: TransactionFormPro
       {/* Category (not for transfers) — Two-level picker */}
       {type !== 'transfer' && (
         <div className="space-y-3">
-          <Select
-            label="Category"
-            value={selectedParentId}
-            onChange={(e) => {
-              const pid = e.target.value;
-              // Always set to parent — subcategory dropdown defaults to "General [Parent]"
-              setCategoryId(pid);
-            }}
-            error={errors.categoryId}
-            options={[
-              { value: '', label: 'Select a category...' },
-              ...parentCategories.map((c) => ({ value: c.id, label: c.name })),
-            ]}
-          />
-          {subcategories.length > 0 && (
+          <div>
             <Select
-              label="Subcategory"
-              value={selectedCat?.parentId ? categoryId : ''}
-              onChange={(e) => setCategoryId(e.target.value || selectedParentId)}
+              label="Category"
+              value={selectedParentId}
+              onChange={(e) => {
+                const pid = e.target.value;
+                if (pid === '__new__') {
+                  setNewCategoryParentId(undefined);
+                  setShowCategoryForm(true);
+                  return;
+                }
+                setCategoryId(pid);
+              }}
+              error={errors.categoryId}
               options={[
-                { value: '', label: `General ${categories.find((c) => c.id === selectedParentId)?.name || ''}` },
-                ...subcategories.map((c) => ({ value: c.id, label: c.name })),
+                { value: '', label: 'Select a category...' },
+                ...parentCategories.map((c) => ({ value: c.id, label: c.name })),
+                { value: '__new__', label: '＋ Create New Category...' },
               ]}
             />
+          </div>
+          {subcategories.length > 0 && (
+            <div>
+              <Select
+                label="Subcategory"
+                value={selectedCat?.parentId ? categoryId : ''}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  if (val === '__new_sub__') {
+                    setNewCategoryParentId(selectedParentId);
+                    setShowCategoryForm(true);
+                    return;
+                  }
+                  setCategoryId(val || selectedParentId);
+                }}
+                options={[
+                  { value: '', label: `General ${categories.find((c) => c.id === selectedParentId)?.name || ''}` },
+                  ...subcategories.map((c) => ({ value: c.id, label: c.name })),
+                  { value: '__new_sub__', label: '＋ Add Subcategory...' },
+                ]}
+              />
+            </div>
           )}
         </div>
       )}
+
+      {/* Inline Category Creation Modal */}
+      <Modal
+        isOpen={showCategoryForm}
+        onClose={() => setShowCategoryForm(false)}
+        title={newCategoryParentId ? 'New Subcategory' : 'New Category'}
+      >
+        <CategoryForm
+          defaultType={type === 'income' ? 'income' : 'expense'}
+          defaultParentId={newCategoryParentId}
+          onClose={() => setShowCategoryForm(false)}
+          onCreated={(newCatId) => {
+            setCategoryId(newCatId);
+            setShowCategoryForm(false);
+          }}
+        />
+      </Modal>
 
       {/* Payment Method */}
       <Select
@@ -243,13 +282,13 @@ export function TransactionForm({ editTransaction, onClose }: TransactionFormPro
 
       {/* Notes */}
       <div>
-        <label htmlFor="notes" className="mb-1.5 block text-sm font-medium text-gray-700">
+        <label htmlFor="notes" className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">
           Notes (optional)
         </label>
         <textarea
           id="notes"
           rows={3}
-          className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 placeholder-gray-400 transition-colors focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20"
+          className="w-full rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm text-gray-900 dark:text-gray-100 dark:bg-gray-700 placeholder-gray-400 dark:placeholder-gray-500 transition-colors focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20"
           placeholder={type === 'transfer' ? 'e.g., CC bill payment, EMI...' : 'Add a description...'}
           value={notes}
           onChange={(e) => setNotes(e.target.value)}
@@ -264,9 +303,9 @@ export function TransactionForm({ editTransaction, onClose }: TransactionFormPro
               type="checkbox"
               checked={isRecurring}
               onChange={(e) => setIsRecurring(e.target.checked)}
-              className="h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+              className="h-4 w-4 rounded border-gray-300 dark:border-gray-600 text-primary-600 focus:ring-primary-500"
             />
-            <span className="text-sm font-medium text-gray-700">Recurring transaction</span>
+            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Recurring transaction</span>
           </label>
           {isRecurring && (
             <Select

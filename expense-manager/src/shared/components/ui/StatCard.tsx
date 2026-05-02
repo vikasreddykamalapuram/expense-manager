@@ -11,17 +11,17 @@ interface StatCardProps {
 }
 
 const variantStyles = {
-  default: 'bg-white border-gray-200',
-  income: 'bg-success-50 border-success-500/20',
-  expense: 'bg-danger-50 border-danger-500/20',
-  balance: 'bg-primary-50 border-primary-500/20',
+  default: 'bg-white border-gray-200 dark:bg-gray-800 dark:border-gray-700',
+  income: 'bg-success-50 border-success-500/20 dark:bg-success-500/10 dark:border-success-500/20',
+  expense: 'bg-danger-50 border-danger-500/20 dark:bg-danger-500/10 dark:border-danger-500/20',
+  balance: 'bg-primary-50 border-primary-500/20 dark:bg-primary-500/10 dark:border-primary-500/20',
 };
 
 const iconBgStyles = {
-  default: 'bg-gray-100 text-gray-600',
-  income: 'bg-success-100 text-success-700',
-  expense: 'bg-danger-100 text-danger-700',
-  balance: 'bg-primary-100 text-primary-700',
+  default: 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400',
+  income: 'bg-success-100 text-success-700 dark:bg-success-500/20',
+  expense: 'bg-danger-100 text-danger-700 dark:bg-danger-500/20',
+  balance: 'bg-primary-100 text-primary-700 dark:bg-primary-500/20',
 };
 
 export function StatCard({ title, value, icon, trend, variant = 'default', className }: StatCardProps) {
@@ -35,8 +35,8 @@ export function StatCard({ title, value, icon, trend, variant = 'default', class
     >
       <div className="flex items-center justify-between">
         <div className="flex-1">
-          <p className="text-sm font-medium text-gray-500">{title}</p>
-          <p className="mt-1.5 text-2xl font-bold text-gray-900">{value}</p>
+          <p className="text-sm font-medium text-gray-500 dark:text-gray-400">{title}</p>
+          <p className="mt-1.5 text-2xl font-bold text-gray-900 dark:text-gray-100">{value}</p>
           {trend && (
             <p className={classNames(
               'mt-1 text-xs font-medium',

@@ -331,8 +331,8 @@ export function AnalyticsView() {
       {/* ── Header ── */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">{viewLabel} View</h1>
-          <p className="text-sm text-gray-500">Detailed breakdown for {periodLabel}</p>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">{viewLabel} View</h1>
+          <p className="text-sm text-gray-500 dark:text-gray-400">Detailed breakdown for {periodLabel}</p>
         </div>
         <div className="flex flex-wrap items-center gap-3">
           {/* View mode dropdown */}
@@ -340,25 +340,25 @@ export function AnalyticsView() {
             <select
               value={viewMode}
               onChange={(e) => setViewMode(e.target.value as ViewMode)}
-              className="appearance-none rounded-lg border border-gray-200 bg-white px-3 py-1.5 pr-8 text-sm font-medium text-gray-700 shadow-sm outline-none focus:border-primary-400 focus:ring-2 focus:ring-primary-100 cursor-pointer"
+              className="appearance-none rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 px-3 py-1.5 pr-8 text-sm font-medium text-gray-700 dark:text-gray-300 shadow-sm outline-none focus:border-primary-400 focus:ring-2 focus:ring-primary-100 cursor-pointer"
             >
               {VIEW_MODE_OPTIONS.map((opt) => (
                 <option key={opt.value} value={opt.value}>{opt.label}</option>
               ))}
             </select>
-            <ChevronRight size={14} className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 rotate-90 text-gray-400" />
+            <ChevronRight size={14} className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 rotate-90 text-gray-400 dark:text-gray-500" />
           </div>
 
           {/* Period navigator (weekly/monthly/yearly) */}
           {showNav && (
-            <div className="flex items-center gap-2 rounded-xl border border-gray-200 bg-white p-1 shadow-sm">
-              <button onClick={handlePrev} className="rounded-lg p-2 text-gray-500 hover:bg-gray-100" aria-label="Previous period">
+            <div className="flex items-center gap-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-1 shadow-sm">
+              <button onClick={handlePrev} className="rounded-lg p-2 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-600" aria-label="Previous period">
                 <ChevronLeft size={18} />
               </button>
-              <span className="min-w-[140px] text-center text-sm font-semibold text-gray-900">
+              <span className="min-w-[140px] text-center text-sm font-semibold text-gray-900 dark:text-gray-100">
                 {periodLabel}
               </span>
-              <button onClick={handleNext} className="rounded-lg p-2 text-gray-500 hover:bg-gray-100" aria-label="Next period">
+              <button onClick={handleNext} className="rounded-lg p-2 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-600" aria-label="Next period">
                 <ChevronRight size={18} />
               </button>
             </div>
@@ -371,14 +371,14 @@ export function AnalyticsView() {
                 type="date"
                 value={periodStart}
                 onChange={(e) => setPeriodStart(e.target.value)}
-                className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-sm text-gray-700 shadow-sm outline-none focus:border-primary-400"
+                className="rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 px-3 py-1.5 text-sm text-gray-700 dark:text-gray-300 shadow-sm outline-none focus:border-primary-400"
               />
-              <span className="text-sm text-gray-400">to</span>
+              <span className="text-sm text-gray-400 dark:text-gray-500">to</span>
               <input
                 type="date"
                 value={periodEnd}
                 onChange={(e) => setPeriodEnd(e.target.value)}
-                className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-sm text-gray-700 shadow-sm outline-none focus:border-primary-400"
+                className="rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 px-3 py-1.5 text-sm text-gray-700 dark:text-gray-300 shadow-sm outline-none focus:border-primary-400"
               />
             </div>
           )}
@@ -396,12 +396,12 @@ export function AnalyticsView() {
 
       {/* ── List View ── */}
       {viewMode === 'list' && (
-        <div className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
-          <div className="flex items-center justify-between border-b border-gray-100 px-6 py-4">
-            <h3 className="text-base font-semibold text-gray-900 flex items-center gap-2">
+        <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-sm overflow-hidden">
+          <div className="flex items-center justify-between border-b border-gray-100 dark:border-gray-700 px-6 py-4">
+            <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2">
               <ListIcon size={18} /> Transactions
             </h3>
-            <span className="text-xs text-gray-400">
+            <span className="text-xs text-gray-400 dark:text-gray-500">
               {formatDate(lastDateRange.start, 'DD MMM YYYY')} – {formatDate(lastDateRange.end, 'DD MMM YYYY')}
               {' · '}{filteredTransactions.length} items
             </span>
@@ -414,7 +414,7 @@ export function AnalyticsView() {
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b border-gray-100 bg-gray-50/50 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                  <tr className="border-b border-gray-100 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-700/50 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
                     <th className="px-6 py-3">Date</th>
                     <th className="px-6 py-3">Category</th>
                     <th className="px-6 py-3">Notes</th>
@@ -422,25 +422,25 @@ export function AnalyticsView() {
                     <th className="px-6 py-3 text-center">Type</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-50">
+                <tbody className="divide-y divide-gray-50 dark:divide-gray-700">
                   {filteredTransactions.map((txn) => {
                     const cat = findCategory(txn.categoryId);
                     return (
-                      <tr key={txn.id} className="hover:bg-gray-50 transition-colors">
-                        <td className="whitespace-nowrap px-6 py-3 text-gray-700">{formatDate(txn.date, 'DD MMM YYYY')}</td>
+                      <tr key={txn.id} className="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                        <td className="whitespace-nowrap px-6 py-3 text-gray-700 dark:text-gray-300">{formatDate(txn.date, 'DD MMM YYYY')}</td>
                         <td className="px-6 py-3">
                           <span className="inline-flex items-center gap-1.5">
                             {cat && <span className="inline-block h-2.5 w-2.5 rounded-full" style={{ backgroundColor: cat.color }} />}
-                            <span className="text-gray-700">{cat?.name ?? 'Unknown'}</span>
+                            <span className="text-gray-700 dark:text-gray-300">{cat?.name ?? 'Unknown'}</span>
                           </span>
                         </td>
-                        <td className="max-w-[240px] truncate px-6 py-3 text-gray-500">{txn.notes || '—'}</td>
+                        <td className="max-w-[240px] truncate px-6 py-3 text-gray-500 dark:text-gray-400">{txn.notes || '—'}</td>
                         <td className={`whitespace-nowrap px-6 py-3 text-right font-medium ${txn.type === 'income' ? 'text-emerald-600' : 'text-red-500'}`}>
                           {txn.type === 'income' ? '+' : '-'}{formatCurrency(txn.amount, settings)}
                         </td>
                         <td className="px-6 py-3 text-center">
                           <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${
-                            txn.type === 'income' ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-700'
+                            txn.type === 'income' ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' : 'bg-red-50 text-red-700 dark:bg-red-900/30 dark:text-red-400'
                           }`}>
                             {txn.type === 'income' ? 'Income' : 'Expense'}
                           </span>
@@ -464,23 +464,23 @@ export function AnalyticsView() {
               <select
                 value={trendRange}
                 onChange={(e) => setTrendRange(e.target.value as TrendRange)}
-                className="appearance-none rounded-lg border border-gray-200 bg-white px-3 py-1.5 pr-8 text-sm font-medium text-gray-700 shadow-sm outline-none focus:border-primary-400 focus:ring-2 focus:ring-primary-100 cursor-pointer"
+                className="appearance-none rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 px-3 py-1.5 pr-8 text-sm font-medium text-gray-700 dark:text-gray-300 shadow-sm outline-none focus:border-primary-400 focus:ring-2 focus:ring-primary-100 cursor-pointer"
               >
                 {TREND_RANGE_OPTIONS.map((opt) => (
                   <option key={opt.value} value={opt.value}>{opt.label}</option>
                 ))}
               </select>
-              <ChevronRight size={14} className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 rotate-90 text-gray-400" />
+              <ChevronRight size={14} className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 rotate-90 text-gray-400 dark:text-gray-500" />
             </div>
             {trendRange === 'custom' && (
               <div className="flex items-center gap-2">
                 <input type="date" value={trendCustomStart}
                   onChange={(e) => setTrendCustomStart(e.target.value)}
-                  className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-sm text-gray-700 shadow-sm outline-none focus:border-primary-400" />
-                <span className="text-sm text-gray-400">to</span>
+                  className="rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 px-3 py-1.5 text-sm text-gray-700 dark:text-gray-300 shadow-sm outline-none focus:border-primary-400" />
+                <span className="text-sm text-gray-400 dark:text-gray-500">to</span>
                 <input type="date" value={trendCustomEnd}
                   onChange={(e) => setTrendCustomEnd(e.target.value)}
-                  className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-sm text-gray-700 shadow-sm outline-none focus:border-primary-400" />
+                  className="rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 px-3 py-1.5 text-sm text-gray-700 dark:text-gray-300 shadow-sm outline-none focus:border-primary-400" />
               </div>
             )}
           </div>
@@ -494,11 +494,11 @@ export function AnalyticsView() {
           </div>
 
           {/* Overall Income / Expense / Balance trend */}
-          <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
-            <h3 className="mb-1 text-base font-semibold text-gray-900 flex items-center gap-2">
+          <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-6 shadow-sm">
+            <h3 className="mb-1 text-base font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2">
               <LineChartIcon size={18} /> Income / Expense / Balance Trend
             </h3>
-            <p className="mb-4 text-xs text-gray-400">
+            <p className="mb-4 text-xs text-gray-400 dark:text-gray-500">
               {formatDate(trendDateRange.start, 'DD MMM YYYY')} – {formatDate(trendDateRange.end, 'DD MMM YYYY')}
             </p>
             {trendData.length === 0 ? (
@@ -535,11 +535,11 @@ export function AnalyticsView() {
 
           {/* Category-wise Expense Trend */}
           {trendTopCategories.length > 0 && trendData.length > 0 && (
-            <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
-              <h3 className="mb-1 text-base font-semibold text-gray-900 flex items-center gap-2">
+            <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-6 shadow-sm">
+              <h3 className="mb-1 text-base font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2">
                 <TrendingDown size={18} /> Category-wise Expense Trend
               </h3>
-              <p className="mb-4 text-xs text-gray-400">Top {trendTopCategories.length} expense categories over time</p>
+              <p className="mb-4 text-xs text-gray-400 dark:text-gray-500">Top {trendTopCategories.length} expense categories over time</p>
               <ResponsiveContainer width="100%" height={340}>
                 <AreaChart data={trendData}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
@@ -579,8 +579,8 @@ export function AnalyticsView() {
                 {trendTopCategories.map((cat) => (
                   <div key={cat.categoryId} className="flex items-center gap-2 text-xs">
                     <div className="h-2.5 w-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: cat.color }} />
-                    <span className="truncate text-gray-600">{cat.categoryName}</span>
-                    <span className="font-medium text-gray-900 ml-auto">{formatCurrency(cat.amount, settings)}</span>
+                    <span className="truncate text-gray-600 dark:text-gray-400">{cat.categoryName}</span>
+                    <span className="font-medium text-gray-900 dark:text-gray-100 ml-auto">{formatCurrency(cat.amount, settings)}</span>
                   </div>
                 ))}
               </div>
@@ -602,8 +602,8 @@ export function AnalyticsView() {
         <>
           {/* Yearly: Month-by-month bar chart */}
           {viewMode === 'yearly' && (
-            <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
-              <h3 className="mb-4 text-base font-semibold text-gray-900">Monthly Trend — {selectedYear}</h3>
+            <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-6 shadow-sm">
+              <h3 className="mb-4 text-base font-semibold text-gray-900 dark:text-gray-100">Monthly Trend — {selectedYear}</h3>
               <ResponsiveContainer width="100%" height={300}>
                 <BarChart data={monthlyBreakdown} barGap={4}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
@@ -620,8 +620,8 @@ export function AnalyticsView() {
 
           {/* Comparison with previous period (weekly/monthly/yearly only) */}
           {comparisonData.length > 0 && prevStats && (
-            <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
-              <h3 className="mb-4 text-base font-semibold text-gray-900">vs {prevPeriodLabel}</h3>
+            <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-6 shadow-sm">
+              <h3 className="mb-4 text-base font-semibold text-gray-900 dark:text-gray-100">vs {prevPeriodLabel}</h3>
               <div className="space-y-6">
                 {comparisonData.map((item) => {
                   const maxVal = Math.max(Math.abs(item.current), Math.abs(item.previous), 1);
@@ -633,25 +633,25 @@ export function AnalyticsView() {
                   return (
                     <div key={item.label}>
                       <div className="flex items-center justify-between mb-2">
-                        <span className="text-sm font-medium text-gray-700">{item.label}</span>
-                        <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${isPositiveChange ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-700'}`}>
+                        <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{item.label}</span>
+                        <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${isPositiveChange ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' : 'bg-red-50 text-red-700 dark:bg-red-900/30 dark:text-red-400'}`}>
                           {diff >= 0 ? '+' : ''}{diffPct}%
                         </span>
                       </div>
                       <div className="space-y-1.5">
                         <div className="flex items-center gap-3">
-                          <span className="text-xs text-gray-400 w-16">Current</span>
-                          <div className="flex-1 h-6 bg-gray-100 rounded-full overflow-hidden">
+                          <span className="text-xs text-gray-400 dark:text-gray-500 w-16">Current</span>
+                          <div className="flex-1 h-6 bg-gray-100 dark:bg-gray-600 rounded-full overflow-hidden">
                             <div className="h-full rounded-full bg-blue-500 transition-all duration-500" style={{ width: `${currentPct}%` }} />
                           </div>
-                          <span className="text-xs font-medium text-gray-700 w-28 text-right">{formatCurrency(item.current, settings)}</span>
+                          <span className="text-xs font-medium text-gray-700 dark:text-gray-300 w-28 text-right">{formatCurrency(item.current, settings)}</span>
                         </div>
                         <div className="flex items-center gap-3">
-                          <span className="text-xs text-gray-400 w-16">Previous</span>
-                          <div className="flex-1 h-6 bg-gray-100 rounded-full overflow-hidden">
+                          <span className="text-xs text-gray-400 dark:text-gray-500 w-16">Previous</span>
+                          <div className="flex-1 h-6 bg-gray-100 dark:bg-gray-600 rounded-full overflow-hidden">
                             <div className="h-full rounded-full bg-gray-400 transition-all duration-500" style={{ width: `${previousPct}%` }} />
                           </div>
-                          <span className="text-xs font-medium text-gray-700 w-28 text-right">{formatCurrency(item.previous, settings)}</span>
+                          <span className="text-xs font-medium text-gray-700 dark:text-gray-300 w-28 text-right">{formatCurrency(item.previous, settings)}</span>
                         </div>
                       </div>
                     </div>
@@ -673,14 +673,14 @@ export function AnalyticsView() {
               });
               const gradient = `conic-gradient(${stops.join(', ')})`;
               return (
-                <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
-                  <h3 className="mb-4 text-base font-semibold text-gray-900">Expense Breakdown</h3>
+                <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-6 shadow-sm">
+                  <h3 className="mb-4 text-base font-semibold text-gray-900 dark:text-gray-100">Expense Breakdown</h3>
                   <div className="flex justify-center mb-4">
                     <div className="relative" style={{ width: 160, height: 160 }}>
                       <div className="w-full h-full rounded-full" style={{ background: gradient }} />
                       <div className="absolute inset-0 flex items-center justify-center">
-                        <div className="w-20 h-20 rounded-full bg-white flex items-center justify-center">
-                          <span className="text-xs font-semibold text-gray-500">{formatCurrency(total, settings)}</span>
+                        <div className="w-20 h-20 rounded-full bg-white dark:bg-gray-800 flex items-center justify-center">
+                          <span className="text-xs font-semibold text-gray-500 dark:text-gray-400">{formatCurrency(total, settings)}</span>
                         </div>
                       </div>
                     </div>
@@ -692,18 +692,18 @@ export function AnalyticsView() {
                         <div key={cat.categoryId}>
                           <button
                             onClick={() => setExpandedCategory(isExpanded ? null : { id: cat.categoryId, type: 'expense' })}
-                            className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-sm hover:bg-gray-50 transition-colors"
+                            className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-sm hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
                           >
                             <div className="h-3 w-3 rounded-full flex-shrink-0" style={{ backgroundColor: cat.color || CHART_COLORS[index % CHART_COLORS.length] }} />
-                            <span className="flex-1 text-left text-gray-600 truncate">{cat.categoryName}</span>
-                            <span className="font-medium text-gray-900">{formatCurrency(cat.amount, settings)}</span>
-                            <span className="text-xs text-gray-400 w-10 text-right">({cat.percentage}%)</span>
-                            <ChevronDown size={14} className={`text-gray-400 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
+                            <span className="flex-1 text-left text-gray-600 dark:text-gray-400 truncate">{cat.categoryName}</span>
+                            <span className="font-medium text-gray-900 dark:text-gray-100">{formatCurrency(cat.amount, settings)}</span>
+                            <span className="text-xs text-gray-400 dark:text-gray-500 w-10 text-right">({cat.percentage}%)</span>
+                            <ChevronDown size={14} className={`text-gray-400 dark:text-gray-500 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
                           </button>
                           {isExpanded && (
-                            <div className="ml-5 mb-2 border-l-2 border-gray-100 pl-3">
+                            <div className="ml-5 mb-2 border-l-2 border-gray-100 dark:border-gray-700 pl-3">
                               {categoryTransactions.length === 0 ? (
-                                <p className="text-xs text-gray-400 py-2">No transactions</p>
+                                <p className="text-xs text-gray-400 dark:text-gray-500 py-2">No transactions</p>
                               ) : (
                                 <div className="space-y-1 py-1 max-h-60 overflow-y-auto">
                                   {categoryTransactions.map((txn) => {
@@ -711,12 +711,12 @@ export function AnalyticsView() {
                                     const subCat = findCategory(txn.categoryId);
                                     const parentCat = subCat?.parentId ? findCategory(subCat.parentId) : null;
                                     return (
-                                      <div key={txn.id} className="flex items-center gap-2 text-xs py-1 px-1 rounded hover:bg-gray-50">
-                                        <span className="text-gray-400 w-16 flex-shrink-0">{formatDate(txn.date, settings.dateFormat)}</span>
-                                        <span className="flex-1 text-gray-600 truncate">
+                                      <div key={txn.id} className="flex items-center gap-2 text-xs py-1 px-1 rounded hover:bg-gray-50 dark:hover:bg-gray-700">
+                                        <span className="text-gray-400 dark:text-gray-500 w-16 flex-shrink-0">{formatDate(txn.date, settings.dateFormat)}</span>
+                                        <span className="flex-1 text-gray-600 dark:text-gray-400 truncate">
                                           {parentCat ? `${subCat?.name}` : txn.notes || cat.categoryName}
                                         </span>
-                                        {acct && <span className="text-gray-400 truncate max-w-[80px]">{acct.name}</span>}
+                                        {acct && <span className="text-gray-400 dark:text-gray-500 truncate max-w-[80px]">{acct.name}</span>}
                                         <span className="font-medium text-danger-600 whitespace-nowrap">
                                           -{formatCurrency(txn.amount, settings)}
                                         </span>
@@ -725,7 +725,7 @@ export function AnalyticsView() {
                                   })}
                                 </div>
                               )}
-                              <p className="text-[10px] text-gray-400 pt-1">{categoryTransactions.length} transaction{categoryTransactions.length !== 1 ? 's' : ''}</p>
+                              <p className="text-[10px] text-gray-400 dark:text-gray-500 pt-1">{categoryTransactions.length} transaction{categoryTransactions.length !== 1 ? 's' : ''}</p>
                             </div>
                           )}
                         </div>
@@ -746,14 +746,14 @@ export function AnalyticsView() {
               });
               const gradient = `conic-gradient(${stops.join(', ')})`;
               return (
-                <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
-                  <h3 className="mb-4 text-base font-semibold text-gray-900">Income Breakdown</h3>
+                <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-6 shadow-sm">
+                  <h3 className="mb-4 text-base font-semibold text-gray-900 dark:text-gray-100">Income Breakdown</h3>
                   <div className="flex justify-center mb-4">
                     <div className="relative" style={{ width: 160, height: 160 }}>
                       <div className="w-full h-full rounded-full" style={{ background: gradient }} />
                       <div className="absolute inset-0 flex items-center justify-center">
-                        <div className="w-20 h-20 rounded-full bg-white flex items-center justify-center">
-                          <span className="text-xs font-semibold text-gray-500">{formatCurrency(total, settings)}</span>
+                        <div className="w-20 h-20 rounded-full bg-white dark:bg-gray-800 flex items-center justify-center">
+                          <span className="text-xs font-semibold text-gray-500 dark:text-gray-400">{formatCurrency(total, settings)}</span>
                         </div>
                       </div>
                     </div>
@@ -765,18 +765,18 @@ export function AnalyticsView() {
                         <div key={cat.categoryId}>
                           <button
                             onClick={() => setExpandedCategory(isExpanded ? null : { id: cat.categoryId, type: 'income' })}
-                            className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-sm hover:bg-gray-50 transition-colors"
+                            className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-sm hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
                           >
                             <div className="h-3 w-3 rounded-full flex-shrink-0" style={{ backgroundColor: cat.color || CHART_COLORS[index % CHART_COLORS.length] }} />
-                            <span className="flex-1 text-left text-gray-600 truncate">{cat.categoryName}</span>
-                            <span className="font-medium text-gray-900">{formatCurrency(cat.amount, settings)}</span>
-                            <span className="text-xs text-gray-400 w-10 text-right">({cat.percentage}%)</span>
-                            <ChevronDown size={14} className={`text-gray-400 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
+                            <span className="flex-1 text-left text-gray-600 dark:text-gray-400 truncate">{cat.categoryName}</span>
+                            <span className="font-medium text-gray-900 dark:text-gray-100">{formatCurrency(cat.amount, settings)}</span>
+                            <span className="text-xs text-gray-400 dark:text-gray-500 w-10 text-right">({cat.percentage}%)</span>
+                            <ChevronDown size={14} className={`text-gray-400 dark:text-gray-500 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
                           </button>
                           {isExpanded && (
-                            <div className="ml-5 mb-2 border-l-2 border-gray-100 pl-3">
+                            <div className="ml-5 mb-2 border-l-2 border-gray-100 dark:border-gray-700 pl-3">
                               {categoryTransactions.length === 0 ? (
-                                <p className="text-xs text-gray-400 py-2">No transactions</p>
+                                <p className="text-xs text-gray-400 dark:text-gray-500 py-2">No transactions</p>
                               ) : (
                                 <div className="space-y-1 py-1 max-h-60 overflow-y-auto">
                                   {categoryTransactions.map((txn) => {
@@ -784,12 +784,12 @@ export function AnalyticsView() {
                                     const subCat = findCategory(txn.categoryId);
                                     const parentCat = subCat?.parentId ? findCategory(subCat.parentId) : null;
                                     return (
-                                      <div key={txn.id} className="flex items-center gap-2 text-xs py-1 px-1 rounded hover:bg-gray-50">
-                                        <span className="text-gray-400 w-16 flex-shrink-0">{formatDate(txn.date, settings.dateFormat)}</span>
-                                        <span className="flex-1 text-gray-600 truncate">
+                                      <div key={txn.id} className="flex items-center gap-2 text-xs py-1 px-1 rounded hover:bg-gray-50 dark:hover:bg-gray-700">
+                                        <span className="text-gray-400 dark:text-gray-500 w-16 flex-shrink-0">{formatDate(txn.date, settings.dateFormat)}</span>
+                                        <span className="flex-1 text-gray-600 dark:text-gray-400 truncate">
                                           {parentCat ? `${subCat?.name}` : txn.notes || cat.categoryName}
                                         </span>
-                                        {acct && <span className="text-gray-400 truncate max-w-[80px]">{acct.name}</span>}
+                                        {acct && <span className="text-gray-400 dark:text-gray-500 truncate max-w-[80px]">{acct.name}</span>}
                                         <span className="font-medium text-success-600 whitespace-nowrap">
                                           +{formatCurrency(txn.amount, settings)}
                                         </span>
@@ -798,7 +798,7 @@ export function AnalyticsView() {
                                   })}
                                 </div>
                               )}
-                              <p className="text-[10px] text-gray-400 pt-1">{categoryTransactions.length} transaction{categoryTransactions.length !== 1 ? 's' : ''}</p>
+                              <p className="text-[10px] text-gray-400 dark:text-gray-500 pt-1">{categoryTransactions.length} transaction{categoryTransactions.length !== 1 ? 's' : ''}</p>
                             </div>
                           )}
                         </div>

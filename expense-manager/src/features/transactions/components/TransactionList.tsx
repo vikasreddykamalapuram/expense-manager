@@ -34,11 +34,11 @@ export function TransactionList() {
       {/* Search & Filter Bar */}
       <div className="flex flex-col gap-3 sm:flex-row">
         <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400 dark:text-gray-500" />
           <input
             type="text"
             placeholder="Search transactions..."
-            className="w-full rounded-lg border border-gray-300 py-2 pl-10 pr-4 text-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20"
+            className="w-full rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 dark:placeholder-gray-500 py-2 pl-10 pr-4 text-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20"
             value={filters.searchQuery || ''}
             onChange={(e) => updateFilters({ searchQuery: e.target.value })}
           />
@@ -67,9 +67,9 @@ export function TransactionList() {
 
       {/* Filter Panel */}
       {showFilters && (
-        <div className="flex flex-wrap gap-2 rounded-xl bg-white p-4 shadow-sm border border-gray-200">
+        <div className="flex flex-wrap gap-2 rounded-xl bg-white dark:bg-gray-800 p-4 shadow-sm border border-gray-200 dark:border-gray-700">
           <select
-            className="rounded-lg border border-gray-300 px-3 py-1.5 text-sm"
+            className="rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 px-3 py-1.5 text-sm"
             value={filters.type || ''}
             onChange={(e) =>
               updateFilters({ type: (e.target.value as 'income' | 'expense' | 'transfer') || undefined })
@@ -82,7 +82,7 @@ export function TransactionList() {
           </select>
           {state.accounts.length > 0 && (
             <select
-              className="rounded-lg border border-gray-300 px-3 py-1.5 text-sm"
+              className="rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 px-3 py-1.5 text-sm"
               value={filters.accountId || ''}
               onChange={(e) => updateFilters({ accountId: e.target.value || undefined })}
             >
@@ -93,7 +93,7 @@ export function TransactionList() {
             </select>
           )}
           <select
-            className="rounded-lg border border-gray-300 px-3 py-1.5 text-sm"
+            className="rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 px-3 py-1.5 text-sm"
             value={filters.sortBy}
             onChange={(e) => updateFilters({ sortBy: e.target.value as TransactionFilters['sortBy'] })}
           >
@@ -131,7 +131,7 @@ export function TransactionList() {
             return (
               <div
                 key={tx.id}
-                className="group flex items-center gap-4 rounded-xl bg-white p-4 shadow-sm border border-gray-100 transition-all hover:shadow-md"
+                className="group flex items-center gap-4 rounded-xl bg-white dark:bg-gray-800 p-4 shadow-sm border border-gray-100 dark:border-gray-700 transition-all hover:shadow-md"
               >
                 <div
                   className="flex h-10 w-10 items-center justify-center rounded-xl"
@@ -148,46 +148,46 @@ export function TransactionList() {
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
-                    <p className="text-sm font-semibold text-gray-900 truncate">
+                    <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 truncate">
                       {isTransfer ? 'Transfer' : displayName}
                     </p>
                     {tx.isRecurring && (
-                      <span className="text-[10px] font-medium uppercase text-primary-600 bg-primary-50 px-1.5 py-0.5 rounded">
+                      <span className="text-[10px] font-medium uppercase text-primary-600 bg-primary-50 dark:bg-primary-900/30 px-1.5 py-0.5 rounded">
                         Recurring
                       </span>
                     )}
                   </div>
                   <div className="flex items-center gap-2 mt-0.5">
                     {isTransfer ? (
-                      <span className="text-xs text-gray-500">
-                        <span className="font-medium text-gray-600">From:</span> {account?.name || 'Unknown'}
+                      <span className="text-xs text-gray-500 dark:text-gray-400">
+                        <span className="font-medium text-gray-600 dark:text-gray-400">From:</span> {account?.name || 'Unknown'}
                         <span className="mx-1.5 text-primary-400">→</span>
-                        <span className="font-medium text-gray-600">To:</span> {toAccount?.name || 'Unknown'}
+                        <span className="font-medium text-gray-600 dark:text-gray-400">To:</span> {toAccount?.name || 'Unknown'}
                       </span>
                     ) : (
                       <>
-                        <span className="text-xs text-gray-500">
+                        <span className="text-xs text-gray-500 dark:text-gray-400">
                           {formatDate(tx.date, settings.dateFormat)}
                         </span>
                         {account && (
-                          <span className="text-xs text-gray-400">
+                          <span className="text-xs text-gray-400 dark:text-gray-500">
                             · {account.name}
                           </span>
                         )}
                       </>
                     )}
                     {isTransfer && (
-                      <span className="text-xs text-gray-500 ml-1">
+                      <span className="text-xs text-gray-500 dark:text-gray-400 ml-1">
                         · {formatDate(tx.date, settings.dateFormat)}
                       </span>
                     )}
                     {tx.notes && (
-                      <span className="text-xs text-gray-400 truncate max-w-[200px]">
+                      <span className="text-xs text-gray-400 dark:text-gray-500 truncate max-w-[200px]">
                         · {tx.notes}
                       </span>
                     )}
                     {tx.paymentMethod && (
-                      <span className="text-[10px] font-medium text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded">
+                      <span className="text-[10px] font-medium text-gray-400 dark:text-gray-500 bg-gray-100 dark:bg-gray-700 px-1.5 py-0.5 rounded">
                         {PAYMENT_METHODS.find((pm) => pm.value === tx.paymentMethod)?.label || tx.paymentMethod}
                       </span>
                     )}
@@ -208,14 +208,14 @@ export function TransactionList() {
                   <div className="flex gap-1 opacity-0 transition-opacity group-hover:opacity-100">
                     <button
                       onClick={() => setEditingTx(tx)}
-                      className="rounded-lg p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600"
+                      className="rounded-lg p-1.5 text-gray-400 dark:text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-600 hover:text-gray-600 dark:hover:text-gray-300"
                       aria-label="Edit transaction"
                     >
                       <Edit2 size={14} />
                     </button>
                     <button
                       onClick={() => setDeleteConfirm(tx.id)}
-                      className="rounded-lg p-1.5 text-gray-400 hover:bg-danger-50 hover:text-danger-600"
+                      className="rounded-lg p-1.5 text-gray-400 dark:text-gray-500 hover:bg-danger-50 hover:text-danger-600"
                       aria-label="Delete transaction"
                     >
                       <Trash2 size={14} />
@@ -245,7 +245,7 @@ export function TransactionList() {
         title="Delete Transaction"
         size="sm"
       >
-        <p className="text-sm text-gray-600">
+        <p className="text-sm text-gray-600 dark:text-gray-400">
           Are you sure you want to delete this transaction? This action cannot be undone.
         </p>
         <div className="mt-4 flex justify-end gap-3">

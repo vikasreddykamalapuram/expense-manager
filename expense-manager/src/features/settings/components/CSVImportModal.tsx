@@ -239,12 +239,14 @@ export function CSVImportModal({ isOpen, onClose }: CSVImportModalProps) {
 
         // Create new parent category if not found
         if (!parentCategoryId) {
-          const newCatId = `import-${mainCatName.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`;
+          const baseId = `import-${mainCatName.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`;
+          const catType: 'income' | 'expense' = p.type === 'income' ? 'income' : 'expense';
+          // Use type-suffixed ID to allow same name for both income and expense
+          const newCatId = `${baseId}-${catType}`;
           const alreadyCreated = currentCategories.find((c) => c.id === newCatId && !c.parentId);
           if (alreadyCreated) {
             parentCategoryId = alreadyCreated.id;
           } else {
-            const catType: 'income' | 'expense' = p.type === 'income' ? 'income' : 'expense';
             const newCategory: Category = {
               id: newCatId,
               name: mainCatName,
@@ -357,14 +359,14 @@ export function CSVImportModal({ isOpen, onClose }: CSVImportModalProps) {
             <div className={`flex h-7 w-7 items-center justify-center rounded-full text-xs font-bold ${
               stepNumber >= s.num
                 ? 'bg-primary-600 text-white'
-                : 'bg-gray-200 text-gray-500'
+                : 'bg-gray-200 dark:bg-gray-600 text-gray-500 dark:text-gray-400'
             }`}>
               {stepNumber > s.num ? <Check size={14} /> : s.num}
             </div>
             <span className={`text-xs font-medium hidden sm:inline ${
-              stepNumber >= s.num ? 'text-primary-700' : 'text-gray-400'
+              stepNumber >= s.num ? 'text-primary-700' : 'text-gray-400 dark:text-gray-500'
             }`}>{s.label}</span>
-            {i < 3 && <div className={`h-px w-6 ${stepNumber > s.num ? 'bg-primary-400' : 'bg-gray-200'}`} />}
+            {i < 3 && <div className={`h-px w-6 ${stepNumber > s.num ? 'bg-primary-400' : 'bg-gray-200 dark:bg-gray-600'}`} />}
           </div>
         ))}
       </div>
@@ -373,18 +375,18 @@ export function CSVImportModal({ isOpen, onClose }: CSVImportModalProps) {
       {step === 'upload' && (
         <div className="space-y-4">
           <div
-            className="flex flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed border-gray-300 bg-gray-50 p-10 cursor-pointer hover:border-primary-400 hover:bg-primary-50/30 transition-all"
+            className="flex flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900 p-10 cursor-pointer hover:border-primary-400 hover:bg-primary-50/30 transition-all"
             onClick={() => fileInputRef.current?.click()}
           >
             <div className="rounded-full bg-primary-100 p-3">
               <FileSpreadsheet className="text-primary-600" size={28} />
             </div>
             <div className="text-center">
-              <p className="text-sm font-medium text-gray-700">
-                Click to upload a CSV file
+              <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                Click to uploada CSV file
               </p>
-              <p className="text-xs text-gray-400 mt-1">
-                Supports .csv files exported from expense tracker apps
+              <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
+                Supports .csvfiles exported from expense tracker apps
               </p>
             </div>
             {fileName && (
@@ -419,8 +421,8 @@ export function CSVImportModal({ isOpen, onClose }: CSVImportModalProps) {
       {/* Step 2: Column Mapping */}
       {step === 'mapping' && csv && (
         <div className="space-y-4">
-          <p className="text-sm text-gray-600">
-            We found <strong>{csv.rowCount}</strong> rows with <strong>{csv.headers.length}</strong> columns.
+          <p className="text-sm text-gray-600 dark:text-gray-400">
+            We found<strong>{csv.rowCount}</strong> rows with <strong>{csv.headers.length}</strong> columns.
             Map your CSV columns to the right fields:
           </p>
 
@@ -475,7 +477,7 @@ export function CSVImportModal({ isOpen, onClose }: CSVImportModalProps) {
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-3 border-t border-gray-200 pt-3">
+          <div className="grid grid-cols-2 gap-3 border-t border-gray-200 dark:border-gray-700 pt-3">
             <Select
               label="Date Format"
               value={dateFormat}
@@ -506,13 +508,13 @@ export function CSVImportModal({ isOpen, onClose }: CSVImportModalProps) {
 
           {/* Sample data preview */}
           <div>
-            <p className="text-xs font-medium text-gray-500 mb-1.5">Sample Data (first 3 rows)</p>
-            <div className="overflow-x-auto rounded-lg border border-gray-200">
+            <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1.5">Sample Data (first 3 rows)</p>
+            <div className="overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-700">
               <table className="w-full text-xs">
                 <thead>
-                  <tr className="bg-gray-50">
+                  <tr className="bg-gray-50 dark:bg-gray-900">
                     {csv.headers.map((h, i) => (
-                      <th key={i} className="px-3 py-2 text-left font-medium text-gray-600 whitespace-nowrap">
+                      <th key={i} className="px-3 py-2 text-left font-medium text-gray-600 dark:text-gray-400 whitespace-nowrap">
                         {h}
                       </th>
                     ))}
@@ -520,9 +522,9 @@ export function CSVImportModal({ isOpen, onClose }: CSVImportModalProps) {
                 </thead>
                 <tbody>
                   {csv.rows.slice(0, 3).map((row, i) => (
-                    <tr key={i} className="border-t border-gray-100">
+                    <tr key={i} className="border-t border-gray-100 dark:border-gray-700">
                       {row.map((cell, j) => (
-                        <td key={j} className="px-3 py-1.5 text-gray-700 whitespace-nowrap max-w-[200px] truncate">
+                        <td key={j} className="px-3 py-1.5 text-gray-700 dark:text-gray-300 whitespace-nowrap max-w-[200px] truncate">
                           {cell}
                         </td>
                       ))}
@@ -571,8 +573,8 @@ export function CSVImportModal({ isOpen, onClose }: CSVImportModalProps) {
 
           {/* Category mapping preview */}
           <div>
-            <p className="text-xs font-medium text-gray-500 mb-1.5">Category Mapping</p>
-            <div className="max-h-32 overflow-y-auto rounded-lg border border-gray-200 p-2 space-y-1">
+            <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1.5">Category Mapping</p>
+            <div className="max-h-32 overflow-y-auto rounded-lg border border-gray-200 dark:border-gray-700 p-2 space-y-1">
               {Array.from(new Set(importResult.parsed.map((p) => p.category))).sort().map((cat) => {
                 const matched = matchCategory(cat);
                 const existingCat = matched ? state.categories.find((c) => c.id === matched) : null;
@@ -581,8 +583,8 @@ export function CSVImportModal({ isOpen, onClose }: CSVImportModalProps) {
                   : null;
                 return (
                   <div key={cat} className="flex items-center gap-2 text-xs">
-                    <span className="font-medium text-gray-700 min-w-[120px] truncate">{cat}</span>
-                    <ArrowRight size={10} className="text-gray-300 shrink-0" />
+                    <span className="font-medium text-gray-700 dark:text-gray-300 min-w-[120px] truncate">{cat}</span>
+                    <ArrowRight size={10} className="text-gray-300 dark:text-gray-500 shrink-0" />
                     {existingCat ? (
                       <span className="text-success-600">✓ {existingCat.name}</span>
                     ) : nameMatch ? (
@@ -598,26 +600,26 @@ export function CSVImportModal({ isOpen, onClose }: CSVImportModalProps) {
 
           {/* Preview table */}
           <div>
-            <p className="text-xs font-medium text-gray-500 mb-1.5">
-              Transaction Preview (first 10 of {importResult.parsed.length})
+            <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1.5">
+              Transaction Preview(first 10 of {importResult.parsed.length})
             </p>
-            <div className="overflow-x-auto rounded-lg border border-gray-200">
+            <div className="overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-700">
               <table className="w-full text-xs">
                 <thead>
-                  <tr className="bg-gray-50">
-                    <th className="px-2 py-2 text-left font-medium text-gray-600">Date</th>
-                    <th className="px-2 py-2 text-left font-medium text-gray-600">Type</th>
-                    <th className="px-2 py-2 text-right font-medium text-gray-600">Amount</th>
-                    <th className="px-2 py-2 text-left font-medium text-gray-600">Category</th>
-                    <th className="px-2 py-2 text-left font-medium text-gray-600">Subcategory</th>
-                    <th className="px-2 py-2 text-left font-medium text-gray-600">Account</th>
-                    <th className="px-2 py-2 text-left font-medium text-gray-600">Notes</th>
+                  <tr className="bg-gray-50 dark:bg-gray-900">
+                    <th className="px-2 py-2 text-left font-medium text-gray-600 dark:text-gray-400">Date</th>
+                    <th className="px-2 py-2 text-left font-medium text-gray-600 dark:text-gray-400">Type</th>
+                    <th className="px-2 py-2 text-right font-medium text-gray-600 dark:text-gray-400">Amount</th>
+                    <th className="px-2 py-2 text-left font-medium text-gray-600 dark:text-gray-400">Category</th>
+                    <th className="px-2 py-2 text-left font-medium text-gray-600 dark:text-gray-400">Subcategory</th>
+                    <th className="px-2 py-2 text-left font-medium text-gray-600 dark:text-gray-400">Account</th>
+                    <th className="px-2 py-2 text-left font-medium text-gray-600 dark:text-gray-400">Notes</th>
                   </tr>
                 </thead>
                 <tbody>
                   {importResult.parsed.slice(0, 10).map((p, i) => (
-                    <tr key={i} className="border-t border-gray-100">
-                      <td className="px-2 py-1.5 text-gray-700 whitespace-nowrap">{p.date}</td>
+                    <tr key={i} className="border-t border-gray-100 dark:border-gray-700">
+                      <td className="px-2 py-1.5 text-gray-700 dark:text-gray-300 whitespace-nowrap">{p.date}</td>
                       <td className="px-2 py-1.5">
                         <span className={`inline-flex rounded-full px-1.5 py-0.5 text-[10px] font-medium ${
                           p.type === 'income'
@@ -627,11 +629,11 @@ export function CSVImportModal({ isOpen, onClose }: CSVImportModalProps) {
                           {p.type}
                         </span>
                       </td>
-                      <td className="px-2 py-1.5 text-right font-medium text-gray-900">{p.amount.toFixed(2)}</td>
-                      <td className="px-2 py-1.5 text-gray-700 max-w-[120px] truncate">{p.category}</td>
-                      <td className="px-2 py-1.5 text-gray-500 max-w-[120px] truncate">{p.subcategory || '—'}</td>
-                      <td className="px-2 py-1.5 text-gray-500 max-w-[100px] truncate">{p.account || '—'}</td>
-                      <td className="px-2 py-1.5 text-gray-500 max-w-[180px] truncate">{p.notes}</td>
+                      <td className="px-2 py-1.5 text-right font-medium text-gray-900 dark:text-gray-100">{p.amount.toFixed(2)}</td>
+                      <td className="px-2 py-1.5 text-gray-700 dark:text-gray-300 max-w-[120px] truncate">{p.category}</td>
+                      <td className="px-2 py-1.5 text-gray-500 dark:text-gray-400 max-w-[120px] truncate">{p.subcategory || '—'}</td>
+                      <td className="px-2 py-1.5 text-gray-500 dark:text-gray-400 max-w-[100px] truncate">{p.account || '—'}</td>
+                      <td className="px-2 py-1.5 text-gray-500 dark:text-gray-400 max-w-[180px] truncate">{p.notes}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -662,8 +664,8 @@ export function CSVImportModal({ isOpen, onClose }: CSVImportModalProps) {
           )}
 
           {/* Import target selection */}
-          <div className="rounded-lg border border-gray-200 p-3 space-y-2">
-            <p className="text-xs font-medium text-gray-600">Import destination</p>
+          <div className="rounded-lg border border-gray-200 dark:border-gray-700 p-3 space-y-2">
+            <p className="text-xs font-medium text-gray-600 dark:text-gray-400">Import destination</p>
             <div className="flex gap-2">
               <button
                 type="button"
@@ -671,11 +673,11 @@ export function CSVImportModal({ isOpen, onClose }: CSVImportModalProps) {
                 className={`flex-1 rounded-lg border-2 p-2.5 text-left transition-all ${
                   importTarget === 'current'
                     ? 'border-primary-500 bg-primary-50'
-                    : 'border-gray-200 hover:border-gray-300'
+                    : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-500'
                 }`}
               >
-                <p className="text-sm font-medium text-gray-900">Current Profile</p>
-                <p className="text-[11px] text-gray-500">
+                <p className="text-sm font-medium text-gray-900 dark:text-gray-100">Current Profile</p>
+                <p className="text-[11px] text-gray-500 dark:text-gray-400">
                   Add to "{state.profiles.find((p) => p.id === state.activeProfileId)?.name || 'Personal'}"
                 </p>
               </button>
@@ -685,11 +687,11 @@ export function CSVImportModal({ isOpen, onClose }: CSVImportModalProps) {
                 className={`flex-1 rounded-lg border-2 p-2.5 text-left transition-all ${
                   importTarget === 'new'
                     ? 'border-primary-500 bg-primary-50'
-                    : 'border-gray-200 hover:border-gray-300'
+                    : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-500'
                 }`}
               >
-                <p className="text-sm font-medium text-gray-900">New Profile</p>
-                <p className="text-[11px] text-gray-500">Keep existing data untouched</p>
+                <p className="text-sm font-medium text-gray-900 dark:text-gray-100">New Profile</p>
+                <p className="text-[11px] text-gray-500 dark:text-gray-400">Keep existing data untouched</p>
               </button>
             </div>
             {importTarget === 'new' && (
@@ -724,9 +726,9 @@ export function CSVImportModal({ isOpen, onClose }: CSVImportModalProps) {
             <Check className="text-success-600" size={32} />
           </div>
           <div>
-            <h3 className="text-lg font-bold text-gray-900">Import Successful!</h3>
-            <p className="text-sm text-gray-600 mt-1">
-              <strong>{importedCount}</strong> transactions have been imported into your account.
+            <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100">Import Successful!</h3>
+            <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+              <strong>{importedCount}</strong> transactions have been importedinto your account.
             </p>
             {importResult && importResult.skipped.length > 0 && (
               <p className="text-xs text-amber-600 mt-1">

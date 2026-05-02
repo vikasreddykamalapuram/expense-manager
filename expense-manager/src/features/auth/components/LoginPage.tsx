@@ -73,7 +73,7 @@ export function LoginPage() {
   const authConfigured = isAnyAuthConfigured();
 
   return (
-    <div className="flex min-h-screen bg-gradient-to-br from-primary-50 via-white to-primary-50">
+    <div className="flex min-h-screen bg-gradient-to-br from-primary-50 via-white to-primary-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
       {/* Left: Branding */}
       <div className="hidden lg:flex lg:w-1/2 flex-col justify-center items-center bg-gradient-to-br from-primary-600 to-primary-800 p-12 text-white">
         <div className="max-w-md space-y-8">
@@ -123,14 +123,14 @@ export function LoginPage() {
               <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary-600">
                 <Wallet className="h-6 w-6 text-white" />
               </div>
-              <h1 className="text-2xl font-bold text-gray-900">ExpenseIQ</h1>
+              <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">ExpenseIQ</h1>
             </div>
-            <p className="text-sm text-gray-500">Personal Finance Manager</p>
+            <p className="text-sm text-gray-500 dark:text-gray-400">Personal Finance Manager</p>
           </div>
 
           <div className="space-y-2">
-            <h2 className="text-2xl font-bold text-gray-900">Welcome</h2>
-            <p className="text-sm text-gray-500">
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Welcome</h2>
+            <p className="text-sm text-gray-500 dark:text-gray-400">
               Sign in to enable cloud backup, or continue without an account.
             </p>
           </div>
@@ -159,11 +159,11 @@ export function LoginPage() {
             ) : (
               <button
                 disabled
-                className="flex w-full items-center justify-center gap-3 rounded-xl border-2 border-gray-200 bg-gray-50 px-4 py-3 text-sm font-medium text-gray-400 cursor-not-allowed"
+                className="flex w-full items-center justify-center gap-3 rounded-xl border-2 border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 px-4 py-3 text-sm font-medium text-gray-400 dark:text-gray-500 cursor-not-allowed"
               >
                 <GoogleIcon />
                 Continue with Google
-                <span className="ml-auto text-xs text-gray-400">Not configured</span>
+                <span className="ml-auto text-xs text-gray-400 dark:text-gray-500">Not configured</span>
               </button>
             )}
 
@@ -171,7 +171,7 @@ export function LoginPage() {
             {isMicrosoftConfigured() ? (
               <button
                 onClick={handleMicrosoftLogin}
-                className="flex w-full items-center justify-center gap-3 rounded-xl border-2 border-gray-200 bg-white px-4 py-3 text-sm font-medium text-gray-700 shadow-sm transition-all hover:border-blue-300 hover:bg-blue-50 hover:shadow-md active:scale-[0.98]"
+                className="flex w-full items-center justify-center gap-3 rounded-xl border-2 border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 px-4 py-3 text-sm font-medium text-gray-700 dark:text-gray-300 shadow-sm transition-all hover:border-blue-300 hover:bg-blue-50 hover:shadow-md active:scale-[0.98]"
               >
                 <MicrosoftIcon />
                 Continue with Microsoft
@@ -179,11 +179,11 @@ export function LoginPage() {
             ) : (
               <button
                 disabled
-                className="flex w-full items-center justify-center gap-3 rounded-xl border-2 border-gray-200 bg-gray-50 px-4 py-3 text-sm font-medium text-gray-400 cursor-not-allowed"
+                className="flex w-full items-center justify-center gap-3 rounded-xl border-2 border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 px-4 py-3 text-sm font-medium text-gray-400 dark:text-gray-500 cursor-not-allowed"
               >
                 <MicrosoftIcon />
                 Continue with Microsoft
-                <span className="ml-auto text-xs text-gray-400">Not configured</span>
+                <span className="ml-auto text-xs text-gray-400 dark:text-gray-500">Not configured</span>
               </button>
             )}
           </div>
@@ -204,23 +204,23 @@ VITE_MICROSOFT_CLIENT_ID=your-azure-app-client-id`}
           {/* Divider */}
           <div className="relative">
             <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-gray-200" />
+              <div className="w-full border-t border-gray-200 dark:border-gray-700" />
             </div>
             <div className="relative flex justify-center text-xs">
-              <span className="bg-white px-4 text-gray-400 uppercase tracking-wider">or</span>
+              <span className="bg-white dark:bg-gray-800 px-4 text-gray-400 dark:text-gray-500 uppercase tracking-wider">or</span>
             </div>
           </div>
 
           {/* Skip / Continue without account */}
           <button
             onClick={handleSkip}
-            className="flex w-full items-center justify-center gap-2 rounded-xl bg-gray-900 px-4 py-3 text-sm font-medium text-white shadow-sm transition-all hover:bg-gray-800 active:scale-[0.98]"
+            className="flex w-full items-center justify-center gap-2 rounded-xl bg-gray-900 dark:bg-gray-100 px-4 py-3 text-sm font-medium text-white dark:text-gray-900 shadow-sm transition-all hover:bg-gray-800 dark:hover:bg-gray-200 active:scale-[0.98]"
           >
             Continue without account
             <ArrowRight size={16} />
           </button>
 
-          <p className="text-center text-xs text-gray-400">
+          <p className="text-center text-xs text-gray-400 dark:text-gray-500">
             Your data is always stored locally. Sign-in only enables cloud backup.
           </p>
         </div>

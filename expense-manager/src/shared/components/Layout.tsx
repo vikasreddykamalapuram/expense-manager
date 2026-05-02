@@ -9,6 +9,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { classNames } from '../utils/helpers';
 import { useAppContext } from '../../context/AppContext';
 import { useAuth } from '../../context/AuthContext';
+import { useTheme } from '../hooks/useTheme';
 
 const navItems = [
   { path: '/', icon: LayoutDashboard, label: 'Dashboard' },
@@ -23,6 +24,7 @@ const navItems = [
 export function Layout() {
   const { state, actions } = useAppContext();
   const { user, isAuthenticated, logout } = useAuth();
+  useTheme();
   const navigate = useNavigate();
   const { profiles, activeProfileId } = state;
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -67,7 +69,7 @@ export function Layout() {
   };
 
   return (
-    <div className="flex h-screen bg-gray-50">
+    <div className="flex h-screen bg-gray-50 dark:bg-gray-900">
       {/* Mobile overlay */}
       {sidebarOpen && (
         <div
@@ -79,21 +81,21 @@ export function Layout() {
       {/* Sidebar */}
       <aside
         className={classNames(
-          'fixed inset-y-0 left-0 z-50 flex w-64 flex-col bg-white shadow-xl transition-transform duration-300 lg:static lg:translate-x-0',
+          'fixed inset-y-0 left-0 z-50 flex w-64 flex-col bg-white dark:bg-gray-800 shadow-xl transition-transform duration-300 lg:static lg:translate-x-0',
           sidebarOpen ? 'translate-x-0' : '-translate-x-full'
         )}
       >
         {/* Logo */}
-        <div className="flex h-16 items-center gap-3 border-b border-gray-100 px-6">
+        <div className="flex h-16 items-center gap-3 border-b border-gray-100 dark:border-gray-700 px-6">
           <div className="rounded-xl bg-primary-600 p-2">
             <Wallet className="h-5 w-5 text-white" />
           </div>
           <div>
-            <h1 className="text-lg font-bold text-gray-900">ExpenseIQ</h1>
-            <p className="text-[10px] font-medium uppercase tracking-wider text-gray-400">Finance Manager</p>
+            <h1 className="text-lg font-bold text-gray-900 dark:text-gray-100">ExpenseIQ</h1>
+            <p className="text-[10px] font-medium uppercase tracking-wider text-gray-400 dark:text-gray-500">Finance Manager</p>
           </div>
           <button
-            className="ml-auto rounded-lg p-1 text-gray-400 hover:bg-gray-100 lg:hidden"
+            className="ml-auto rounded-lg p-1 text-gray-400 dark:text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-600 lg:hidden"
             onClick={() => setSidebarOpen(false)}
           >
             <X size={20} />
@@ -111,8 +113,8 @@ export function Layout() {
                 classNames(
                   'flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all',
                   isActive
-                    ? 'bg-primary-50 text-primary-700 shadow-sm'
-                    : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                    ? 'bg-primary-50 dark:bg-primary-900/30 text-primary-700 dark:text-primary-400 shadow-sm'
+                    : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-gray-200'
                 )
               }
               end={path === '/'}
@@ -124,7 +126,7 @@ export function Layout() {
         </nav>
 
         {/* Footer */}
-        <div className="border-t border-gray-100 p-4">
+        <div className="border-t border-gray-100 dark:border-gray-700 p-4">
           {isAuthenticated && user ? (
             <div className="rounded-xl bg-gradient-to-r from-green-500 to-emerald-600 p-4 text-white">
               <p className="text-xs font-medium opacity-80">Signed in via {user.provider === 'google' ? 'Google' : 'Microsoft'}</p>
@@ -142,9 +144,9 @@ export function Layout() {
       {/* Main Content */}
       <div className="flex flex-1 flex-col overflow-hidden">
         {/* Top Bar */}
-        <header className="flex h-16 items-center gap-4 border-b border-gray-200 bg-white px-4 lg:px-8">
+        <header className="flex h-16 items-center gap-4 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-4 lg:px-8">
           <button
-            className="rounded-lg p-2 text-gray-500 hover:bg-gray-100 lg:hidden"
+            className="rounded-lg p-2 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 lg:hidden"
             onClick={() => setSidebarOpen(true)}
             aria-label="Open menu"
           >
@@ -156,20 +158,20 @@ export function Layout() {
           <div className="relative" ref={dropdownRef}>
             <button
               onClick={() => setProfileDropdownOpen(!profileDropdownOpen)}
-              className="flex items-center gap-2 rounded-lg border border-gray-200 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+              className="flex items-center gap-2 rounded-lg border border-gray-200 dark:border-gray-700 px-3 py-1.5 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
             >
               <span>{activeProfile?.icon || '💰'}</span>
               <span className="max-w-[120px] truncate">{activeProfile?.name || 'Personal'}</span>
               <ChevronDown size={14} className={classNames(
-                'text-gray-400 transition-transform',
+                'text-gray-400 dark:text-gray-500 transition-transform',
                 profileDropdownOpen ? 'rotate-180' : ''
               )} />
             </button>
 
             {profileDropdownOpen && (
-              <div className="absolute right-0 top-full mt-1 w-64 rounded-xl border border-gray-200 bg-white shadow-lg z-50">
+              <div className="absolute right-0 top-full mt-1 w-64 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-lg z-50">
                 <div className="p-2">
-                  <p className="px-2 py-1 text-[10px] font-semibold uppercase tracking-wider text-gray-400">Profiles</p>
+                  <p className="px-2 py-1 text-[10px] font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">Profiles</p>
                   {profiles.map((p) => (
                     <button
                       key={p.id}
@@ -177,8 +179,8 @@ export function Layout() {
                       className={classNames(
                         'flex w-full items-center gap-2 rounded-lg px-2 py-2 text-sm transition-colors',
                         p.id === activeProfileId
-                          ? 'bg-primary-50 text-primary-700 font-medium'
-                          : 'text-gray-700 hover:bg-gray-50'
+                          ? 'bg-primary-50 dark:bg-primary-900/30 text-primary-700 dark:text-primary-400 font-medium'
+                          : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
                       )}
                     >
                       <span className="text-base">{p.icon}</span>
@@ -189,7 +191,7 @@ export function Layout() {
                     </button>
                   ))}
                 </div>
-                <div className="border-t border-gray-100 p-2">
+                <div className="border-t border-gray-100 dark:border-gray-700 p-2">
                   {showNewProfile ? (
                     <div className="flex gap-1">
                       <input
@@ -198,7 +200,7 @@ export function Layout() {
                         onChange={(e) => setNewProfileName(e.target.value)}
                         onKeyDown={(e) => e.key === 'Enter' && handleCreateProfile()}
                         placeholder="Profile name..."
-                        className="flex-1 rounded-lg border border-gray-300 px-2 py-1.5 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
+                        className="flex-1 rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 px-2 py-1.5 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
                         autoFocus
                       />
                       <button
@@ -212,7 +214,7 @@ export function Layout() {
                   ) : (
                     <button
                       onClick={() => setShowNewProfile(true)}
-                      className="flex w-full items-center gap-2 rounded-lg px-2 py-2 text-sm text-gray-600 hover:bg-gray-50"
+                      className="flex w-full items-center gap-2 rounded-lg px-2 py-2 text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700"
                     >
                       <Plus size={16} />
                       New Profile
@@ -227,8 +229,8 @@ export function Layout() {
           {isAuthenticated && user ? (
             <div className="flex items-center gap-2">
               <div className="hidden sm:block text-right">
-                <p className="text-xs font-medium text-gray-700 truncate max-w-[120px]">{user.name}</p>
-                <p className="text-[10px] text-gray-400 truncate max-w-[120px]">{user.email}</p>
+                <p className="text-xs font-medium text-gray-700 dark:text-gray-300 truncate max-w-[120px]">{user.name}</p>
+                <p className="text-[10px] text-gray-400 dark:text-gray-500 truncate max-w-[120px]">{user.email}</p>
               </div>
               {user.avatar ? (
                 <img
@@ -244,7 +246,7 @@ export function Layout() {
               )}
               <button
                 onClick={() => { logout(); }}
-                className="rounded-lg p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors"
+                className="rounded-lg p-1.5 text-gray-400 dark:text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-600 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
                 title="Sign out"
               >
                 <LogOut size={16} />
@@ -253,7 +255,7 @@ export function Layout() {
           ) : (
             <button
               onClick={() => navigate('/login')}
-              className="flex items-center gap-1.5 rounded-lg border border-gray-200 px-3 py-1.5 text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors"
+              className="flex items-center gap-1.5 rounded-lg border border-gray-200 dark:border-gray-700 px-3 py-1.5 text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
             >
               <LogIn size={16} />
               <span className="hidden sm:inline">Sign in</span>

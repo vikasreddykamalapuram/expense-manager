@@ -130,7 +130,7 @@ export function AccountForm({ editAccount, onClose }: AccountFormProps) {
           label: m.label,
         }))}
       />
-      <p className="text-xs text-gray-500 -mt-4">{meta.description}</p>
+      <p className="text-xs text-gray-500 dark:text-gray-400 -mt-4">{meta.description}</p>
 
       {/* Account Subtype (Bank / Loan) */}
       {type === 'bank' && (
@@ -237,7 +237,7 @@ export function AccountForm({ editAccount, onClose }: AccountFormProps) {
 
       {/* Color Picker */}
       <div>
-        <label className="mb-1.5 block text-sm font-medium text-gray-700">Color</label>
+        <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">Color</label>
         <div className="flex flex-wrap gap-2">
           {ACCOUNT_COLORS.map((c) => (
             <button
@@ -245,7 +245,7 @@ export function AccountForm({ editAccount, onClose }: AccountFormProps) {
               type="button"
               onClick={() => setColor(c)}
               className={`h-8 w-8 rounded-full transition-all ${
-                color === c ? 'ring-2 ring-offset-2 ring-primary-500 scale-110' : 'hover:scale-105'
+                color === c ? 'ring-2 ring-offset-2 dark:ring-offset-gray-800 ring-primary-500 scale-110' : 'hover:scale-105'
               }`}
               style={{ backgroundColor: c }}
               aria-label={`Select color ${c}`}

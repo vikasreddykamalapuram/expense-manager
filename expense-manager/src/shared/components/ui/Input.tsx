@@ -13,7 +13,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
     return (
       <div className="w-full">
         {label && (
-          <label htmlFor={inputId} className="mb-1.5 block text-sm font-medium text-gray-700">
+          <label htmlFor={inputId} className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">
             {label}
           </label>
         )}
@@ -21,16 +21,16 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
           ref={ref}
           id={inputId}
           className={classNames(
-            'w-full rounded-lg border px-3 py-2 text-sm text-gray-900 placeholder-gray-400 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-0',
+            'w-full rounded-lg border px-3 py-2 text-sm text-gray-900 placeholder-gray-400 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-0 dark:bg-gray-700 dark:text-gray-100 dark:placeholder-gray-500',
             error
               ? 'border-danger-500 focus:border-danger-500 focus:ring-danger-500/20'
-              : 'border-gray-300 focus:border-primary-500 focus:ring-primary-500/20',
+              : 'border-gray-300 focus:border-primary-500 focus:ring-primary-500/20 dark:border-gray-600',
             className
           )}
           {...props}
         />
         {error && <p className="mt-1 text-xs text-danger-600">{error}</p>}
-        {helperText && !error && <p className="mt-1 text-xs text-gray-500">{helperText}</p>}
+        {helperText && !error && <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">{helperText}</p>}
       </div>
     );
   }
@@ -49,17 +49,17 @@ export function Select({ label, error, options, className, id, ...props }: Selec
   return (
     <div className="w-full">
       {label && (
-        <label htmlFor={selectId} className="mb-1.5 block text-sm font-medium text-gray-700">
+        <label htmlFor={selectId} className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">
           {label}
         </label>
       )}
       <select
         id={selectId}
         className={classNames(
-          'w-full rounded-lg border px-3 py-2 text-sm text-gray-900 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-0',
+          'w-full rounded-lg border px-3 py-2 text-sm text-gray-900 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-0 dark:bg-gray-700 dark:text-gray-100 dark:border-gray-600',
           error
             ? 'border-danger-500 focus:border-danger-500 focus:ring-danger-500/20'
-            : 'border-gray-300 focus:border-primary-500 focus:ring-primary-500/20',
+            : 'border-gray-300 focus:border-primary-500 focus:ring-primary-500/20 dark:border-gray-600',
           className
         )}
         {...props}
