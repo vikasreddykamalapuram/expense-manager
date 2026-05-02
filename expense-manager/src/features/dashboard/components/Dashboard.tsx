@@ -1,6 +1,6 @@
 import { TrendingUp, TrendingDown, Wallet, ArrowRight, PlusCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
+import { Cell, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 import { useAppContext } from '../../../context/AppContext';
 import { useTransactions } from '../../../shared/hooks/useTransactions';
 import { StatCard } from '../../../shared/components/ui/StatCard';
@@ -124,43 +124,47 @@ export function Dashboard() {
               <div className="flex h-[250px] items-center justify-center text-sm text-gray-400 dark:text-gray-500">
                 No expenses this month
               </div>
-            ) : (
-              <div className="flex items-center gap-6">
-                <ResponsiveContainer width="50%" height={200}>
-                  <PieChart>
-                    <Pie
-                      data={expenseByCategory}
-                      dataKey="amount"
-                      nameKey="categoryName"
-                      cx="50%"
-                      cy="50%"
-                      innerRadius={50}
-                      outerRadius={80}
-                      paddingAngle={3}
-                    >
-                      {expenseByCategory.map((entry, index) => (
-                        <Cell key={entry.categoryId} fill={entry.color || CHART_COLORS[index % CHART_COLORS.length]} />
-                      ))}
-                    </Pie>
-                    <Tooltip formatter={(value) => formatCurrency(Number(value), settings)} />
-                  </PieChart>
-                </ResponsiveContainer>
-                <div className="flex-1 space-y-2">
-                  {expenseByCategory.map((cat) => (
-                    <div key={cat.categoryId} className="flex items-center gap-2 text-sm">
-                      <div
-                        className="h-3 w-3 rounded-full"
-                        style={{ backgroundColor: cat.color }}
-                      />
-                      <span className="flex-1 truncate text-gray-600 dark:text-gray-400">{cat.categoryName}</span>
-                      <span className="font-medium text-gray-900 dark:text-gray-100">
-                        {formatCurrency(cat.amount, settings)}
-                      </span>
+            ) : (() => {
+              const total = expenseByCategory.reduce((s, c) => s + c.amount, 0);
+              let cumulative = 0;
+              const stops = expenseByCategory.map((cat, index) => {
+                const start = cumulative;
+                cumulative += (cat.amount / total) * 100;
+                return `${cat.color || CHART_COLORS[index % CHART_COLORS.length]} ${start}% ${cumulative}%`;
+              });
+              const gradient = `conic-gradient(${stops.join(', ')})`;
+              return (
+                <div>
+                  <div className="flex justify-center mb-4">
+                    <div className="relative" style={{ width: 160, height: 160 }}>
+                      <div className="w-full h-full rounded-full" style={{ background: gradient }} />
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <div className="w-20 h-20 rounded-full bg-white dark:bg-gray-800 flex items-center justify-center">
+                          <span className="text-xs font-semibold text-gray-500 dark:text-gray-400">{formatCurrency(total, settings)}</span>
+                        </div>
+                      </div>
                     </div>
-                  ))}
+                  </div>
+                  <div className="space-y-1.5">
+                    {expenseByCategory.map((cat, index) => (
+                      <div key={cat.categoryId} className="flex items-center gap-2 text-sm">
+                        <div
+                          className="h-3 w-3 rounded-full flex-shrink-0"
+                          style={{ backgroundColor: cat.color || CHART_COLORS[index % CHART_COLORS.length] }}
+                        />
+                        <span className="flex-1 truncate text-gray-600 dark:text-gray-400">{cat.categoryName}</span>
+                        <span className="text-xs text-gray-400 dark:text-gray-500">
+                          {total > 0 ? Math.round((cat.amount / total) * 100) : 0}%
+                        </span>
+                        <span className="font-medium text-gray-900 dark:text-gray-100">
+                          {formatCurrency(cat.amount, settings)}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
-              </div>
-            )}
+              );
+            })()}
           </div>
 
           {/* Recent Transactions */}
