@@ -2,7 +2,7 @@ import { useState, useRef } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import {
   Upload, FileSpreadsheet, ArrowRight, ArrowLeft, Check,
-  AlertTriangle, ChevronDown, ChevronRight,
+  AlertTriangle, ChevronDown, ChevronRight, RefreshCw,
 } from 'lucide-react';
 import { useAppContext } from '../../../context/AppContext';
 import { Button } from '../../../shared/components/ui/Button';
@@ -41,6 +41,7 @@ export function CSVImportModal({ isOpen, onClose }: CSVImportModalProps) {
   const [importedCount, setImportedCount] = useState(0);
   const [showSkipped, setShowSkipped] = useState(false);
   const [parseError, setParseError] = useState('');
+  const [importing, setImporting] = useState(false);
 
   const reset = () => {
     setStep('upload');
@@ -53,6 +54,7 @@ export function CSVImportModal({ isOpen, onClose }: CSVImportModalProps) {
     setNewProfileName('');
     setImportResult(null);
     setImportedCount(0);
+    setImporting(false);
     setShowSkipped(false);
     setParseError('');
   };
@@ -119,29 +121,35 @@ export function CSVImportModal({ isOpen, onClose }: CSVImportModalProps) {
 
   // Step 3 → 4: Actually import
   const handleImport = async () => {
-    if (!importResult) return;
+    if (!importResult || importing) return;
+    setImporting(true);
 
-    const now = new Date().toISOString();
+    try {
+      const now = new Date().toISOString();
 
-    // If importing into a new profile, create it and switch first
-    if (importTarget === 'new' && newProfileName.trim()) {
-      const profileId = uuidv4();
-      const profile = {
-        id: profileId,
-        name: newProfileName.trim(),
-        icon: '📥',
-        createdAt: now,
-      };
-      await actions.addProfile(profile);
-      await actions.switchProfile(profileId);
-    }
+      // If importing into a new profile, create it and switch first
+      if (importTarget === 'new' && newProfileName.trim()) {
+        const profileId = uuidv4();
+        const profile = {
+          id: profileId,
+          name: newProfileName.trim(),
+          icon: '📥',
+          createdAt: now,
+        };
+        await actions.addProfile(profile);
+        await actions.switchProfile(profileId);
+        // Small delay to let the profile switch propagate to state
+        await new Promise((r) => setTimeout(r, 100));
+      }
 
-    // After potential profile switch, work with current state categories
-    let currentCategories = [...state.categories];
-    let addedCategoryCount = 0;
+      // Re-read current categories and accounts AFTER potential profile switch
+      // For new profiles, start with default categories and no accounts
+      const isNewProfile = importTarget === 'new';
+      let currentCategories = isNewProfile ? [...state.categories] : [...state.categories];
+      let addedCategoryCount = 0;
 
-    // --- Auto-create accounts from CSV account column ---
-    const currentAccounts = [...state.accounts];
+      // --- Auto-create accounts from CSV account column ---
+      const currentAccounts = isNewProfile ? [] : [...state.accounts];
     const accountNameToId = new Map<string, string>();
     // Index existing accounts by lowercase name
     for (const a of currentAccounts) {
@@ -271,13 +279,17 @@ export function CSVImportModal({ isOpen, onClose }: CSVImportModalProps) {
     }
 
     // Save all transactions (existing + new)
-    const allTxns = [...state.transactions, ...transactions];
+    const existingTxns = isNewProfile ? [] : [...state.transactions];
+    const allTxns = [...existingTxns, ...transactions];
     await actions.saveTransactions(allTxns);
 
     setImportedCount(transactions.length);
     setStep('result');
 
     console.log(`CSV Import: ${transactions.length} transactions imported, ${addedCategoryCount} new categories created, ${newAccounts.length} new accounts created, ${importResult.skipped.length} rows skipped`);
+    } finally {
+      setImporting(false);
+    }
   };
 
   const mappingValid = mapping.date && mapping.amount;
@@ -651,11 +663,11 @@ export function CSVImportModal({ isOpen, onClose }: CSVImportModalProps) {
               Back
             </Button>
             <Button
-              disabled={importResult.parsed.length === 0 || (importTarget === 'new' && !newProfileName.trim())}
-              icon={<Upload size={14} />}
+              disabled={importResult.parsed.length === 0 || (importTarget === 'new' && !newProfileName.trim()) || importing}
+              icon={importing ? <RefreshCw size={14} className="animate-spin" /> : <Upload size={14} />}
               onClick={handleImport}
             >
-              Import {importResult.parsed.length} Transactions
+              {importing ? 'Importing...' : `Import ${importResult.parsed.length} Transactions`}
             </Button>
           </div>
         </div>
