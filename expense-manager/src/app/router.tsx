@@ -9,6 +9,8 @@ import { CategoriesPage } from '../features/categories/components/CategoriesPage
 import { SettingsPage } from '../features/settings/components/SettingsPage';
 import { LoginPage } from '../features/auth/components/LoginPage';
 
+const basename = import.meta.env.BASE_URL.replace(/\/$/, '') || '/';
+
 export const router = createBrowserRouter([
   {
     path: '/login',
@@ -27,4 +29,4 @@ export const router = createBrowserRouter([
       { path: 'settings', element: <SettingsPage /> },
     ],
   },
-]);
+], { basename });

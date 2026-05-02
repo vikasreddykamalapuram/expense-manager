@@ -10,6 +10,7 @@ import { classNames } from '../utils/helpers';
 import { useAppContext } from '../../context/AppContext';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../hooks/useTheme';
+import { FloatingAssistant } from '../../features/assistant/components/FloatingAssistant';
 
 const navItems = [
   { path: '/', icon: LayoutDashboard, label: 'Dashboard' },
@@ -268,6 +269,9 @@ export function Layout() {
           <Outlet />
         </main>
       </div>
+
+      {/* Floating AI Assistant */}
+      <FloatingAssistant />
     </div>
   );
 }

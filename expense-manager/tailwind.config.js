@@ -41,6 +41,15 @@ export default {
           600: '#d97706',
         },
       },
+      animation: {
+        'pulse-glow': 'pulse-glow 2s ease-in-out infinite',
+      },
+      keyframes: {
+        'pulse-glow': {
+          '0%, 100%': { boxShadow: '0 0 8px 2px rgba(59, 130, 246, 0.4)' },
+          '50%': { boxShadow: '0 0 20px 6px rgba(59, 130, 246, 0.6)' },
+        },
+      },
     },
   },
   plugins: [],

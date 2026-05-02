@@ -40,10 +40,10 @@ export function LoginPage() {
     login(user);
     navigate('/');
 
-    // Request Drive access token in the background (for cloud backup).
-    // If the user dismisses the popup, backup will re-request when needed.
+    // Store client ID for later Drive token requests (triggered on first backup attempt).
     sessionStorage.setItem('em_google_client_id', AUTH_CONFIG.google.clientId);
-    requestGoogleDriveToken();
+    // Don't request Drive token here — it opens another popup which causes
+    // multi-tab issues on mobile. The backup service will request it when needed.
   };
 
   /** Use Google Identity Services token client to get an access token with Drive scope */
@@ -182,6 +182,7 @@ export function LoginPage() {
                   size="large"
                   width="340"
                   text="continue_with"
+                  ux_mode="popup"
                 />
               </div>
             ) : (
