@@ -101,6 +101,7 @@ export function TransactionForm({ editTransaction, onClose }: TransactionFormPro
   };
 
   return (
+    <>
     <form onSubmit={handleSubmit} className="space-y-6">
       {/* Type Toggle */}
       <div className="flex gap-1 rounded-xl bg-gray-100 dark:bg-gray-700 p-1">
@@ -243,23 +244,6 @@ export function TransactionForm({ editTransaction, onClose }: TransactionFormPro
         </div>
       )}
 
-      {/* Inline Category Creation Modal */}
-      <Modal
-        isOpen={showCategoryForm}
-        onClose={() => setShowCategoryForm(false)}
-        title={newCategoryParentId ? 'New Subcategory' : 'New Category'}
-      >
-        <CategoryForm
-          defaultType={type === 'income' ? 'income' : 'expense'}
-          defaultParentId={newCategoryParentId}
-          onClose={() => setShowCategoryForm(false)}
-          onCreated={(newCatId) => {
-            setCategoryId(newCatId);
-            setShowCategoryForm(false);
-          }}
-        />
-      </Modal>
-
       {/* Payment Method */}
       <Select
         label="Payment Method"
@@ -335,5 +319,23 @@ export function TransactionForm({ editTransaction, onClose }: TransactionFormPro
         )}
       </div>
     </form>
+
+    {/* Inline Category Creation Modal — outside form to prevent submit bubbling */}
+    <Modal
+      isOpen={showCategoryForm}
+      onClose={() => setShowCategoryForm(false)}
+      title={newCategoryParentId ? 'New Subcategory' : 'New Category'}
+    >
+      <CategoryForm
+        defaultType={type === 'income' ? 'income' : 'expense'}
+        defaultParentId={newCategoryParentId}
+        onClose={() => setShowCategoryForm(false)}
+        onCreated={(newCatId) => {
+          setCategoryId(newCatId);
+          setShowCategoryForm(false);
+        }}
+      />
+    </Modal>
+    </>
   );
 }
