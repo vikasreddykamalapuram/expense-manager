@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import {
   ChevronLeft, ChevronRight, CalendarDays, TrendingUp, TrendingDown,
-  Wallet, List as ListIcon, LineChart as LineChartIcon,
+  Wallet, List as ListIcon, LineChart as LineChartIcon, ChevronDown,
 } from 'lucide-react';
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip,
@@ -60,9 +60,10 @@ export function AnalyticsView() {
   const [trendRange, setTrendRange] = useState<TrendRange>('3m');
   const [trendCustomStart, setTrendCustomStart] = useState('');
   const [trendCustomEnd, setTrendCustomEnd] = useState('');
+  const [expandedCategory, setExpandedCategory] = useState<string | null>(null);
 
   const { state } = useAppContext();
-  const { settings, categories } = state;
+  const { settings, categories, accounts } = state;
   const { getMonthlyStats, getYearlyStats, getRangeStats, allTransactions } = useTransactions();
 
   const findCategory = (id: string) => categories.find((c) => c.id === id);
@@ -174,6 +175,20 @@ export function AnalyticsView() {
     () => stats.byCategory.filter((c) => c.type === 'income'),
     [stats]
   );
+
+  // ─── Transactions for expanded category (filtered by date range) ───
+  const categoryTransactions = useMemo(() => {
+    if (!expandedCategory) return [];
+    const { start, end } = activeDateRange;
+    return allTransactions
+      .filter((t) => t.categoryId === expandedCategory && t.date >= start && t.date <= end)
+      .sort((a, b) => b.date.localeCompare(a.date));
+  }, [expandedCategory, activeDateRange, allTransactions]);
+
+  // Reset expanded category when view/period changes
+  useEffect(() => {
+    setExpandedCategory(null);
+  }, [viewMode, selectedMonth, selectedYear, selectedWeek, periodStart, periodEnd]);
 
   // ─── Comparison data ───
   const comparisonData = useMemo(() => {
@@ -665,15 +680,52 @@ export function AnalyticsView() {
                       </div>
                     </div>
                   </div>
-                  <div className="space-y-2">
-                    {expenseCategories.map((cat, index) => (
-                      <div key={cat.categoryId} className="flex items-center gap-2 text-sm">
-                        <div className="h-3 w-3 rounded-full flex-shrink-0" style={{ backgroundColor: cat.color || CHART_COLORS[index % CHART_COLORS.length] }} />
-                        <span className="flex-1 text-gray-600 truncate">{cat.categoryName}</span>
-                        <span className="font-medium text-gray-900">{formatCurrency(cat.amount, settings)}</span>
-                        <span className="text-xs text-gray-400">({cat.percentage}%)</span>
-                      </div>
-                    ))}
+                  <div className="space-y-1">
+                    {expenseCategories.map((cat, index) => {
+                      const isExpanded = expandedCategory === cat.categoryId;
+                      return (
+                        <div key={cat.categoryId}>
+                          <button
+                            onClick={() => setExpandedCategory(isExpanded ? null : cat.categoryId)}
+                            className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-sm hover:bg-gray-50 transition-colors"
+                          >
+                            <div className="h-3 w-3 rounded-full flex-shrink-0" style={{ backgroundColor: cat.color || CHART_COLORS[index % CHART_COLORS.length] }} />
+                            <span className="flex-1 text-left text-gray-600 truncate">{cat.categoryName}</span>
+                            <span className="font-medium text-gray-900">{formatCurrency(cat.amount, settings)}</span>
+                            <span className="text-xs text-gray-400 w-10 text-right">({cat.percentage}%)</span>
+                            <ChevronDown size={14} className={`text-gray-400 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
+                          </button>
+                          {isExpanded && (
+                            <div className="ml-5 mb-2 border-l-2 border-gray-100 pl-3">
+                              {categoryTransactions.length === 0 ? (
+                                <p className="text-xs text-gray-400 py-2">No transactions</p>
+                              ) : (
+                                <div className="space-y-1 py-1 max-h-60 overflow-y-auto">
+                                  {categoryTransactions.map((txn) => {
+                                    const acct = txn.accountId ? accounts.find((a) => a.id === txn.accountId) : null;
+                                    const subCat = findCategory(txn.categoryId);
+                                    const parentCat = subCat?.parentId ? findCategory(subCat.parentId) : null;
+                                    return (
+                                      <div key={txn.id} className="flex items-center gap-2 text-xs py-1 px-1 rounded hover:bg-gray-50">
+                                        <span className="text-gray-400 w-16 flex-shrink-0">{formatDate(txn.date, settings.dateFormat)}</span>
+                                        <span className="flex-1 text-gray-600 truncate">
+                                          {parentCat ? `${subCat?.name}` : txn.notes || cat.categoryName}
+                                        </span>
+                                        {acct && <span className="text-gray-400 truncate max-w-[80px]">{acct.name}</span>}
+                                        <span className="font-medium text-danger-600 whitespace-nowrap">
+                                          -{formatCurrency(txn.amount, settings)}
+                                        </span>
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              )}
+                              <p className="text-[10px] text-gray-400 pt-1">{categoryTransactions.length} transaction{categoryTransactions.length !== 1 ? 's' : ''}</p>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
               );
@@ -701,15 +753,52 @@ export function AnalyticsView() {
                       </div>
                     </div>
                   </div>
-                  <div className="space-y-2">
-                    {incomeCategories.map((cat, index) => (
-                      <div key={cat.categoryId} className="flex items-center gap-2 text-sm">
-                        <div className="h-3 w-3 rounded-full flex-shrink-0" style={{ backgroundColor: cat.color || CHART_COLORS[index % CHART_COLORS.length] }} />
-                        <span className="flex-1 text-gray-600 truncate">{cat.categoryName}</span>
-                        <span className="font-medium text-gray-900">{formatCurrency(cat.amount, settings)}</span>
-                        <span className="text-xs text-gray-400">({cat.percentage}%)</span>
-                      </div>
-                    ))}
+                  <div className="space-y-1">
+                    {incomeCategories.map((cat, index) => {
+                      const isExpanded = expandedCategory === cat.categoryId;
+                      return (
+                        <div key={cat.categoryId}>
+                          <button
+                            onClick={() => setExpandedCategory(isExpanded ? null : cat.categoryId)}
+                            className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-sm hover:bg-gray-50 transition-colors"
+                          >
+                            <div className="h-3 w-3 rounded-full flex-shrink-0" style={{ backgroundColor: cat.color || CHART_COLORS[index % CHART_COLORS.length] }} />
+                            <span className="flex-1 text-left text-gray-600 truncate">{cat.categoryName}</span>
+                            <span className="font-medium text-gray-900">{formatCurrency(cat.amount, settings)}</span>
+                            <span className="text-xs text-gray-400 w-10 text-right">({cat.percentage}%)</span>
+                            <ChevronDown size={14} className={`text-gray-400 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
+                          </button>
+                          {isExpanded && (
+                            <div className="ml-5 mb-2 border-l-2 border-gray-100 pl-3">
+                              {categoryTransactions.length === 0 ? (
+                                <p className="text-xs text-gray-400 py-2">No transactions</p>
+                              ) : (
+                                <div className="space-y-1 py-1 max-h-60 overflow-y-auto">
+                                  {categoryTransactions.map((txn) => {
+                                    const acct = txn.accountId ? accounts.find((a) => a.id === txn.accountId) : null;
+                                    const subCat = findCategory(txn.categoryId);
+                                    const parentCat = subCat?.parentId ? findCategory(subCat.parentId) : null;
+                                    return (
+                                      <div key={txn.id} className="flex items-center gap-2 text-xs py-1 px-1 rounded hover:bg-gray-50">
+                                        <span className="text-gray-400 w-16 flex-shrink-0">{formatDate(txn.date, settings.dateFormat)}</span>
+                                        <span className="flex-1 text-gray-600 truncate">
+                                          {parentCat ? `${subCat?.name}` : txn.notes || cat.categoryName}
+                                        </span>
+                                        {acct && <span className="text-gray-400 truncate max-w-[80px]">{acct.name}</span>}
+                                        <span className="font-medium text-success-600 whitespace-nowrap">
+                                          +{formatCurrency(txn.amount, settings)}
+                                        </span>
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              )}
+                              <p className="text-[10px] text-gray-400 pt-1">{categoryTransactions.length} transaction{categoryTransactions.length !== 1 ? 's' : ''}</p>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
               );
