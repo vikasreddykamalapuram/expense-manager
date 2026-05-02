@@ -287,7 +287,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
     switchProfile: useCallback(async (profileId: string) => {
       profileIdRef.current = profileId;
       localStorage.setItem('em_active_profile', profileId);
-      const data = await repository.loadProfileData(profileId);
+      const [data, profiles] = await Promise.all([
+        repository.loadProfileData(profileId),
+        repository.getProfiles(),
+      ]);
+      dispatch({ type: 'SET_PROFILES', payload: profiles });
       dispatch({ type: 'LOAD_PROFILE_DATA', payload: { profileId, ...data } });
     }, []),
 

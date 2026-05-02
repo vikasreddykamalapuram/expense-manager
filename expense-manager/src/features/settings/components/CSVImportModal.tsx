@@ -8,7 +8,8 @@ import { useAppContext } from '../../../context/AppContext';
 import { Button } from '../../../shared/components/ui/Button';
 import { Input, Select } from '../../../shared/components/ui/Input';
 import { Modal } from '../../../shared/components/ui/Modal';
-import { Transaction, Account } from '../../../shared/types';
+import { Transaction, Account, Category } from '../../../shared/types';
+import { repository } from '../../../shared/services/repository';
 import {
   parseCSV, ParsedCSV, ColumnMapping, guessColumnMapping,
   detectDateFormat, processCSVImport, matchCategory,
@@ -126,167 +127,164 @@ export function CSVImportModal({ isOpen, onClose }: CSVImportModalProps) {
 
     try {
       const now = new Date().toISOString();
+      let targetProfileId = state.activeProfileId;
 
-      // If importing into a new profile, create it and switch first
+      // If importing into a new profile, create it first
       if (importTarget === 'new' && newProfileName.trim()) {
-        const profileId = uuidv4();
+        targetProfileId = uuidv4();
         const profile = {
-          id: profileId,
+          id: targetProfileId,
           name: newProfileName.trim(),
           icon: '📥',
           createdAt: now,
         };
-        await actions.addProfile(profile);
-        await actions.switchProfile(profileId);
-        // Small delay to let the profile switch propagate to state
-        await new Promise((r) => setTimeout(r, 100));
+        await repository.addProfile(profile);
       }
 
-      // Re-read current categories and accounts AFTER potential profile switch
-      // For new profiles, start with default categories and no accounts
-      const isNewProfile = importTarget === 'new';
-      let currentCategories = isNewProfile ? [...state.categories] : [...state.categories];
+      // Load existing data for the target profile directly from DB
+      // This avoids stale React state issues entirely
+      const existingData = importTarget === 'new'
+        ? { transactions: [], categories: [], accounts: [] }
+        : {
+            transactions: await repository.getTransactions(targetProfileId),
+            categories: await repository.getCustomCategories(targetProfileId),
+            accounts: await repository.getAccounts(targetProfileId),
+          };
+
+      // Build category list: default categories + existing custom ones
+      let currentCategories: Category[] = [...state.categories.filter(c => !c.isCustom), ...existingData.categories];
       let addedCategoryCount = 0;
 
       // --- Auto-create accounts from CSV account column ---
-      const currentAccounts = isNewProfile ? [] : [...state.accounts];
-    const accountNameToId = new Map<string, string>();
-    // Index existing accounts by lowercase name
-    for (const a of currentAccounts) {
-      accountNameToId.set(a.name.toLowerCase(), a.id);
-    }
-
-    // Collect unique account names from parsed data
-    const uniqueAccountNames = new Set<string>();
-    for (const p of importResult.parsed) {
-      if (p.account && p.account.trim()) {
-        uniqueAccountNames.add(p.account.trim());
+      const currentAccounts = [...existingData.accounts];
+      const accountNameToId = new Map<string, string>();
+      for (const a of currentAccounts) {
+        accountNameToId.set(a.name.toLowerCase(), a.id);
       }
-    }
 
-    // Create missing accounts
-    const newAccounts: Account[] = [];
-    const accountColors = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#06b6d4', '#84cc16'];
-    let colorIdx = 0;
-    for (const name of uniqueAccountNames) {
-      if (!accountNameToId.has(name.toLowerCase())) {
-        const id = `import-acct-${name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`;
-        // Guess account type from name
-        const lower = name.toLowerCase();
-        const isCC = /credit\s*card|cc\b|visa|master\s*card|amex|rupay/i.test(lower);
-        const isLoan = /loan|emi|mortgage/i.test(lower);
-        const isCash = /cash|wallet/i.test(lower);
-        const isUPI = /upi|gpay|phonepe|paytm/i.test(lower);
+      const uniqueAccountNames = new Set<string>();
+      for (const p of importResult.parsed) {
+        if (p.account && p.account.trim()) {
+          uniqueAccountNames.add(p.account.trim());
+        }
+      }
 
-        const acct: Account = {
-          id,
-          name,
-          type: isCC ? 'credit_card' : isLoan ? 'loan' : isCash ? 'cash' : isUPI ? 'wallet' : 'bank',
-          kind: (isCC || isLoan) ? 'liability' : 'asset',
-          institution: undefined,
-          openingBalance: 0,
-          color: accountColors[colorIdx % accountColors.length],
-          icon: isCC ? '💳' : isLoan ? '🏦' : isCash ? '💵' : isUPI ? '📱' : '🏧',
-          isActive: true,
+      const newAccounts: Account[] = [];
+      const accountColors = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#06b6d4', '#84cc16'];
+      let colorIdx = 0;
+      for (const name of uniqueAccountNames) {
+        if (!accountNameToId.has(name.toLowerCase())) {
+          const id = `import-acct-${name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`;
+          const lower = name.toLowerCase();
+          const isCC = /credit\s*card|cc\b|visa|master\s*card|amex|rupay/i.test(lower);
+          const isLoan = /loan|emi|mortgage/i.test(lower);
+          const isCash = /cash|wallet/i.test(lower);
+          const isUPI = /upi|gpay|phonepe|paytm/i.test(lower);
+
+          const acct: Account = {
+            id,
+            name,
+            type: isCC ? 'credit_card' : isLoan ? 'loan' : isCash ? 'cash' : isUPI ? 'wallet' : 'bank',
+            kind: (isCC || isLoan) ? 'liability' : 'asset',
+            institution: undefined,
+            openingBalance: 0,
+            color: accountColors[colorIdx % accountColors.length],
+            icon: isCC ? '💳' : isLoan ? '🏦' : isCash ? '💵' : isUPI ? '📱' : '🏧',
+            isActive: true,
+            createdAt: now,
+            updatedAt: now,
+          };
+          newAccounts.push(acct);
+          accountNameToId.set(name.toLowerCase(), id);
+          colorIdx++;
+        }
+      }
+
+      const transactions: Transaction[] = importResult.parsed.map((p: ParsedTransaction) => {
+        let effectiveCategory = p.category;
+        if (p.subcategory) {
+          const subMatch = matchCategory(p.subcategory);
+          const parentMatch = matchCategory(p.category);
+          if (subMatch && subMatch !== parentMatch) {
+            effectiveCategory = p.subcategory;
+          }
+        }
+
+        let categoryId = matchCategory(effectiveCategory);
+
+        if (categoryId && !currentCategories.find((c) => c.id === categoryId)) {
+          categoryId = null;
+        }
+
+        if (!categoryId) {
+          const existing = currentCategories.find(
+            (c) => c.name.toLowerCase() === effectiveCategory.toLowerCase() && c.type === p.type
+          );
+          if (existing) {
+            categoryId = existing.id;
+          }
+        }
+
+        if (!categoryId) {
+          const newCatId = `import-${effectiveCategory.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`;
+          const alreadyCreated = currentCategories.find((c) => c.id === newCatId);
+          if (alreadyCreated) {
+            categoryId = alreadyCreated.id;
+          } else {
+            const catType: 'income' | 'expense' = p.type === 'income' ? 'income' : 'expense';
+            const newCategory: Category = {
+              id: newCatId,
+              name: effectiveCategory,
+              type: catType,
+              icon: catType === 'income' ? 'TrendingUp' : 'Tag',
+              color: catType === 'income' ? '#10b981' : '#64748b',
+              isCustom: true,
+            };
+            currentCategories = [...currentCategories, newCategory];
+            addedCategoryCount++;
+            categoryId = newCatId;
+          }
+        }
+
+        const noteParts: string[] = [];
+        if (p.subcategory) noteParts.push(`[${p.subcategory}]`);
+        if (p.notes) noteParts.push(p.notes);
+        const finalNotes = noteParts.join(' ');
+        const accountId = p.account ? accountNameToId.get(p.account.trim().toLowerCase()) : undefined;
+
+        return {
+          id: uuidv4(),
+          type: p.type as 'income' | 'expense',
+          amount: p.amount,
+          categoryId: categoryId!,
+          date: p.date,
+          notes: finalNotes,
+          accountId,
+          isRecurring: false,
           createdAt: now,
           updatedAt: now,
         };
-        newAccounts.push(acct);
-        accountNameToId.set(name.toLowerCase(), id);
-        colorIdx++;
-      }
-    }
+      });
 
-    const transactions: Transaction[] = importResult.parsed.map((p: ParsedTransaction) => {
-      // Smart re-categorization: if subcategory strongly matches a different category,
-      // override the parent category from CSV (handles mis-categorized source data)
-      let effectiveCategory = p.category;
-      if (p.subcategory) {
-        const subMatch = matchCategory(p.subcategory);
-        const parentMatch = matchCategory(p.category);
-        if (subMatch && subMatch !== parentMatch) {
-          // Subcategory suggests a different category — use it
-          effectiveCategory = p.subcategory;
-        }
+      // Persist directly to IndexedDB with explicit profileId
+      const newCustomCats = currentCategories.filter((c) => c.isCustom);
+      await repository.saveCustomCategories(targetProfileId, newCustomCats);
+
+      if (newAccounts.length > 0) {
+        const allAccounts = [...currentAccounts, ...newAccounts];
+        await repository.saveAccounts(targetProfileId, allAccounts);
       }
 
-      let categoryId = matchCategory(effectiveCategory);
+      const allTxns = [...existingData.transactions, ...transactions];
+      await repository.saveTransactions(targetProfileId, allTxns);
 
-      if (categoryId && !currentCategories.find((c) => c.id === categoryId)) {
-        categoryId = null;
-      }
+      // Now switch to the profile and reload data into React state
+      await actions.switchProfile(targetProfileId);
 
-      if (!categoryId) {
-        const existing = currentCategories.find(
-          (c) => c.name.toLowerCase() === effectiveCategory.toLowerCase() && c.type === p.type
-        );
-        if (existing) {
-          categoryId = existing.id;
-        }
-      }
+      setImportedCount(transactions.length);
+      setStep('result');
 
-      if (!categoryId) {
-        const newCatId = `import-${effectiveCategory.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`;
-        const alreadyCreated = currentCategories.find((c) => c.id === newCatId);
-        if (alreadyCreated) {
-          categoryId = alreadyCreated.id;
-        } else {
-          const catType: 'income' | 'expense' = p.type === 'income' ? 'income' : 'expense';
-          const newCategory = {
-            id: newCatId,
-            name: effectiveCategory,
-            type: catType,
-            icon: catType === 'income' ? 'TrendingUp' : 'Tag',
-            color: catType === 'income' ? '#10b981' : '#64748b',
-            isCustom: true,
-          };
-          currentCategories = [...currentCategories, newCategory];
-          addedCategoryCount++;
-          categoryId = newCatId;
-        }
-      }
-
-      const noteParts: string[] = [];
-      if (p.subcategory) noteParts.push(`[${p.subcategory}]`);
-      if (p.notes) noteParts.push(p.notes);
-      const finalNotes = noteParts.join(' ');
-
-      // Resolve account ID from account name
-      const accountId = p.account ? accountNameToId.get(p.account.trim().toLowerCase()) : undefined;
-
-      return {
-        id: uuidv4(),
-        type: p.type as 'income' | 'expense',
-        amount: p.amount,
-        categoryId: categoryId!,
-        date: p.date,
-        notes: finalNotes,
-        accountId,
-        isRecurring: false,
-        createdAt: now,
-        updatedAt: now,
-      };
-    });
-
-    // Save new categories (custom ones only)
-    const newCustomCats = currentCategories.filter((c) => c.isCustom);
-    await actions.saveCustomCategories(newCustomCats);
-
-    // Save new accounts from CSV
-    if (newAccounts.length > 0) {
-      const allAccounts = [...currentAccounts, ...newAccounts];
-      await actions.saveAccounts(allAccounts);
-    }
-
-    // Save all transactions (existing + new)
-    const existingTxns = isNewProfile ? [] : [...state.transactions];
-    const allTxns = [...existingTxns, ...transactions];
-    await actions.saveTransactions(allTxns);
-
-    setImportedCount(transactions.length);
-    setStep('result');
-
-    console.log(`CSV Import: ${transactions.length} transactions imported, ${addedCategoryCount} new categories created, ${newAccounts.length} new accounts created, ${importResult.skipped.length} rows skipped`);
+      console.log(`CSV Import: ${transactions.length} transactions imported, ${addedCategoryCount} new categories created, ${newAccounts.length} new accounts created, ${importResult.skipped.length} rows skipped`);
     } finally {
       setImporting(false);
     }
