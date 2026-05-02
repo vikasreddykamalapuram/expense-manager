@@ -8,7 +8,7 @@ import { useAppContext } from '../../../context/AppContext';
 import { Button } from '../../../shared/components/ui/Button';
 import { Input, Select } from '../../../shared/components/ui/Input';
 import { Modal } from '../../../shared/components/ui/Modal';
-import { Transaction } from '../../../shared/types';
+import { Transaction, Account } from '../../../shared/types';
 import {
   parseCSV, ParsedCSV, ColumnMapping, guessColumnMapping,
   detectDateFormat, processCSVImport, matchCategory,
@@ -140,6 +140,55 @@ export function CSVImportModal({ isOpen, onClose }: CSVImportModalProps) {
     let currentCategories = [...state.categories];
     let addedCategoryCount = 0;
 
+    // --- Auto-create accounts from CSV account column ---
+    const currentAccounts = [...state.accounts];
+    const accountNameToId = new Map<string, string>();
+    // Index existing accounts by lowercase name
+    for (const a of currentAccounts) {
+      accountNameToId.set(a.name.toLowerCase(), a.id);
+    }
+
+    // Collect unique account names from parsed data
+    const uniqueAccountNames = new Set<string>();
+    for (const p of importResult.parsed) {
+      if (p.account && p.account.trim()) {
+        uniqueAccountNames.add(p.account.trim());
+      }
+    }
+
+    // Create missing accounts
+    const newAccounts: Account[] = [];
+    const accountColors = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#06b6d4', '#84cc16'];
+    let colorIdx = 0;
+    for (const name of uniqueAccountNames) {
+      if (!accountNameToId.has(name.toLowerCase())) {
+        const id = `import-acct-${name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`;
+        // Guess account type from name
+        const lower = name.toLowerCase();
+        const isCC = /credit\s*card|cc\b|visa|master\s*card|amex|rupay/i.test(lower);
+        const isLoan = /loan|emi|mortgage/i.test(lower);
+        const isCash = /cash|wallet/i.test(lower);
+        const isUPI = /upi|gpay|phonepe|paytm/i.test(lower);
+
+        const acct: Account = {
+          id,
+          name,
+          type: isCC ? 'credit_card' : isLoan ? 'loan' : isCash ? 'cash' : isUPI ? 'wallet' : 'bank',
+          kind: (isCC || isLoan) ? 'liability' : 'asset',
+          institution: undefined,
+          openingBalance: 0,
+          color: accountColors[colorIdx % accountColors.length],
+          icon: isCC ? '💳' : isLoan ? '🏦' : isCash ? '💵' : isUPI ? '📱' : '🏧',
+          isActive: true,
+          createdAt: now,
+          updatedAt: now,
+        };
+        newAccounts.push(acct);
+        accountNameToId.set(name.toLowerCase(), id);
+        colorIdx++;
+      }
+    }
+
     const transactions: Transaction[] = importResult.parsed.map((p: ParsedTransaction) => {
       let categoryId = matchCategory(p.category);
 
@@ -180,8 +229,10 @@ export function CSVImportModal({ isOpen, onClose }: CSVImportModalProps) {
       const noteParts: string[] = [];
       if (p.subcategory) noteParts.push(`[${p.subcategory}]`);
       if (p.notes) noteParts.push(p.notes);
-      if (p.account) noteParts.push(`via ${p.account}`);
       const finalNotes = noteParts.join(' ');
+
+      // Resolve account ID from account name
+      const accountId = p.account ? accountNameToId.get(p.account.trim().toLowerCase()) : undefined;
 
       return {
         id: uuidv4(),
@@ -190,6 +241,7 @@ export function CSVImportModal({ isOpen, onClose }: CSVImportModalProps) {
         categoryId: categoryId!,
         date: p.date,
         notes: finalNotes,
+        accountId,
         isRecurring: false,
         createdAt: now,
         updatedAt: now,
@@ -200,6 +252,12 @@ export function CSVImportModal({ isOpen, onClose }: CSVImportModalProps) {
     const newCustomCats = currentCategories.filter((c) => c.isCustom);
     await actions.saveCustomCategories(newCustomCats);
 
+    // Save new accounts from CSV
+    if (newAccounts.length > 0) {
+      const allAccounts = [...currentAccounts, ...newAccounts];
+      await actions.saveAccounts(allAccounts);
+    }
+
     // Save all transactions (existing + new)
     const allTxns = [...state.transactions, ...transactions];
     await actions.saveTransactions(allTxns);
@@ -207,7 +265,7 @@ export function CSVImportModal({ isOpen, onClose }: CSVImportModalProps) {
     setImportedCount(transactions.length);
     setStep('result');
 
-    console.log(`CSV Import: ${transactions.length} transactions imported, ${addedCategoryCount} new categories created, ${importResult.skipped.length} rows skipped`);
+    console.log(`CSV Import: ${transactions.length} transactions imported, ${addedCategoryCount} new categories created, ${newAccounts.length} new accounts created, ${importResult.skipped.length} rows skipped`);
   };
 
   const mappingValid = mapping.date && mapping.amount;
