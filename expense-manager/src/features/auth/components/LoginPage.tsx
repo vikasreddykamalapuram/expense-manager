@@ -46,28 +46,6 @@ export function LoginPage() {
     // multi-tab issues on mobile. The backup service will request it when needed.
   };
 
-  /** Use Google Identity Services token client to get an access token with Drive scope */
-  const requestGoogleDriveToken = () => {
-    const google = (window as unknown as { google?: { accounts?: { oauth2?: { initTokenClient: (config: {
-      client_id: string; scope: string; callback: (resp: { access_token?: string; error?: string }) => void;
-    }) => { requestAccessToken: () => void } } } } })?.google;
-
-    if (!google?.accounts?.oauth2?.initTokenClient) {
-      return;
-    }
-
-    const tokenClient = google.accounts.oauth2.initTokenClient({
-      client_id: AUTH_CONFIG.google.clientId,
-      scope: 'https://www.googleapis.com/auth/drive.appdata',
-      callback: (tokenResponse) => {
-        if (tokenResponse.access_token) {
-          sessionStorage.setItem('em_google_access_token', tokenResponse.access_token);
-        }
-      },
-    });
-
-    tokenClient.requestAccessToken();
-  };
 
   const handleMicrosoftLogin = async () => {
     try {
