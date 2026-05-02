@@ -38,22 +38,21 @@ export function LoginPage() {
     };
 
     login(user);
+    navigate('/');
 
-    // Request an access token with Drive scope for cloud backup
-    // Store client ID for backup service token refresh, then request Drive token
+    // Request Drive access token in the background (for cloud backup).
+    // If the user dismisses the popup, backup will re-request when needed.
     sessionStorage.setItem('em_google_client_id', AUTH_CONFIG.google.clientId);
-    requestGoogleDriveToken(() => navigate('/'));
+    requestGoogleDriveToken();
   };
 
   /** Use Google Identity Services token client to get an access token with Drive scope */
-  const requestGoogleDriveToken = (onDone: () => void) => {
+  const requestGoogleDriveToken = () => {
     const google = (window as unknown as { google?: { accounts?: { oauth2?: { initTokenClient: (config: {
       client_id: string; scope: string; callback: (resp: { access_token?: string; error?: string }) => void;
     }) => { requestAccessToken: () => void } } } } })?.google;
 
     if (!google?.accounts?.oauth2?.initTokenClient) {
-      // GIS library not loaded — skip Drive token, user can still use the app
-      onDone();
       return;
     }
 
@@ -64,7 +63,6 @@ export function LoginPage() {
         if (tokenResponse.access_token) {
           sessionStorage.setItem('em_google_access_token', tokenResponse.access_token);
         }
-        onDone();
       },
     });
 
