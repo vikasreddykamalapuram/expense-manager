@@ -201,40 +201,53 @@ export function CSVImportModal({ isOpen, onClose }: CSVImportModalProps) {
       }
 
       const transactions: Transaction[] = importResult.parsed.map((p: ParsedTransaction) => {
-        let effectiveCategory = p.category;
-        if (p.subcategory) {
-          const subMatch = matchCategory(p.subcategory);
-          const parentMatch = matchCategory(p.category);
-          if (subMatch && subMatch !== parentMatch) {
-            effectiveCategory = p.subcategory;
-          }
-        }
+        // ─── Category resolution strategy ───
+        // 1. Use the CSV's main category as the parent category
+        // 2. If there's a subcategory, create it as a child of the parent
+        // 3. Do NOT override parent based on subcategory keywords
+        //    (e.g., "Shopping" under "Pinks" stays under "Pinks", not moved to Shopping)
+        // 4. Transaction type is determined by the CSV type column, NOT by category name
 
-        let categoryId = matchCategory(effectiveCategory);
+        const mainCatName = p.category;
+        const subCatName = p.subcategory;
 
-        if (categoryId && !currentCategories.find((c) => c.id === categoryId)) {
-          categoryId = null;
-        }
+        // Find or create the main category
+        let parentCategoryId: string | null = null;
 
-        if (!categoryId) {
-          const existing = currentCategories.find(
-            (c) => c.name.toLowerCase() === effectiveCategory.toLowerCase() && c.type === p.type
-          );
+        // First try alias matching for known categories
+        const aliasMatch = matchCategory(mainCatName);
+        if (aliasMatch) {
+          const existing = currentCategories.find((c) => c.id === aliasMatch && !c.parentId);
           if (existing) {
-            categoryId = existing.id;
+            // Ensure the category type matches the transaction type
+            // (don't assign an income category to an expense transaction)
+            if (existing.type === p.type) {
+              parentCategoryId = existing.id;
+            }
           }
         }
 
-        if (!categoryId) {
-          const newCatId = `import-${effectiveCategory.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`;
-          const alreadyCreated = currentCategories.find((c) => c.id === newCatId);
+        // Try exact name match (case-insensitive)
+        if (!parentCategoryId) {
+          const nameMatch = currentCategories.find(
+            (c) => c.name.toLowerCase() === mainCatName.toLowerCase() && !c.parentId && c.type === p.type
+          );
+          if (nameMatch) {
+            parentCategoryId = nameMatch.id;
+          }
+        }
+
+        // Create new parent category if not found
+        if (!parentCategoryId) {
+          const newCatId = `import-${mainCatName.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`;
+          const alreadyCreated = currentCategories.find((c) => c.id === newCatId && !c.parentId);
           if (alreadyCreated) {
-            categoryId = alreadyCreated.id;
+            parentCategoryId = alreadyCreated.id;
           } else {
             const catType: 'income' | 'expense' = p.type === 'income' ? 'income' : 'expense';
             const newCategory: Category = {
               id: newCatId,
-              name: effectiveCategory,
+              name: mainCatName,
               type: catType,
               icon: catType === 'income' ? 'TrendingUp' : 'Tag',
               color: catType === 'income' ? '#10b981' : '#64748b',
@@ -242,12 +255,45 @@ export function CSVImportModal({ isOpen, onClose }: CSVImportModalProps) {
             };
             currentCategories = [...currentCategories, newCategory];
             addedCategoryCount++;
-            categoryId = newCatId;
+            parentCategoryId = newCatId;
+          }
+        }
+
+        // Now handle subcategory — assign transaction to subcategory if present
+        let finalCategoryId = parentCategoryId;
+
+        if (subCatName && subCatName.trim()) {
+          const subKey = `${parentCategoryId}__${subCatName.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`;
+          const existingSub = currentCategories.find(
+            (c) => c.parentId === parentCategoryId && c.name.toLowerCase() === subCatName.toLowerCase()
+          );
+
+          if (existingSub) {
+            finalCategoryId = existingSub.id;
+          } else {
+            const newSubId = `import-sub-${subKey}`;
+            const alreadyCreatedSub = currentCategories.find((c) => c.id === newSubId);
+            if (alreadyCreatedSub) {
+              finalCategoryId = alreadyCreatedSub.id;
+            } else {
+              const parent = currentCategories.find((c) => c.id === parentCategoryId);
+              const subCategory: Category = {
+                id: newSubId,
+                name: subCatName,
+                type: parent?.type || (p.type === 'income' ? 'income' : 'expense'),
+                icon: parent?.icon || 'Tag',
+                color: parent?.color || '#64748b',
+                isCustom: true,
+                parentId: parentCategoryId!,
+              };
+              currentCategories = [...currentCategories, subCategory];
+              addedCategoryCount++;
+              finalCategoryId = newSubId;
+            }
           }
         }
 
         const noteParts: string[] = [];
-        if (p.subcategory) noteParts.push(`[${p.subcategory}]`);
         if (p.notes) noteParts.push(p.notes);
         const finalNotes = noteParts.join(' ');
         const accountId = p.account ? accountNameToId.get(p.account.trim().toLowerCase()) : undefined;
@@ -256,7 +302,7 @@ export function CSVImportModal({ isOpen, onClose }: CSVImportModalProps) {
           id: uuidv4(),
           type: p.type as 'income' | 'expense',
           amount: p.amount,
-          categoryId: categoryId!,
+          categoryId: finalCategoryId!,
           date: p.date,
           notes: finalNotes,
           accountId,

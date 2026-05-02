@@ -358,15 +358,17 @@ export function detectTransactionType(
   if (catLower.includes('modified bal') || catLower.includes('balance adj') || catLower.includes('balance adjustment'))
     return 'transfer';
 
-  // Explicit type column
+  // Explicit type column — these are definitive, return immediately
   if (['income', 'credit', 'cr', 'credited', 'earning', 'inflow'].includes(typeLower)) return 'income';
   if (['expense', 'debit', 'dr', 'debited', 'spending', 'outflow', 'exp'].includes(typeLower)) return 'expense';
 
-  // Check category for income hints
-  if (['salary', 'income', 'refund', 'cashback', 'interest', 'dividend', 'bonus', 'reimbursement'].some(
-    (k) => catLower.includes(k)
-  )) {
-    return 'income';
+  // Only use category-based hints when NO explicit type was given
+  if (!typeLower) {
+    if (['salary', 'income', 'refund', 'cashback', 'interest', 'dividend', 'bonus', 'reimbursement'].some(
+      (k) => catLower.includes(k)
+    )) {
+      return 'income';
+    }
   }
 
   // Use amount sign

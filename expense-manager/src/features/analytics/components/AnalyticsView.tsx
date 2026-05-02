@@ -60,7 +60,7 @@ export function AnalyticsView() {
   const [trendRange, setTrendRange] = useState<TrendRange>('3m');
   const [trendCustomStart, setTrendCustomStart] = useState('');
   const [trendCustomEnd, setTrendCustomEnd] = useState('');
-  const [expandedCategory, setExpandedCategory] = useState<string | null>(null);
+  const [expandedCategory, setExpandedCategory] = useState<{ id: string; type: 'expense' | 'income' } | null>(null);
 
   const { state } = useAppContext();
   const { settings, categories, accounts } = state;
@@ -176,14 +176,19 @@ export function AnalyticsView() {
     [stats]
   );
 
-  // ─── Transactions for expanded category (filtered by date range) ───
+  // ─── Transactions for expanded category (filtered by date range and type) ───
+  // Include transactions assigned to the parent OR any of its subcategories
   const categoryTransactions = useMemo(() => {
     if (!expandedCategory) return [];
+    const childIds = categories
+      .filter((c) => c.parentId === expandedCategory.id)
+      .map((c) => c.id);
+    const matchIds = new Set([expandedCategory.id, ...childIds]);
     const { start, end } = activeDateRange;
     return allTransactions
-      .filter((t) => t.categoryId === expandedCategory && t.date >= start && t.date <= end)
+      .filter((t) => matchIds.has(t.categoryId) && t.type === expandedCategory.type && t.date >= start && t.date <= end)
       .sort((a, b) => b.date.localeCompare(a.date));
-  }, [expandedCategory, activeDateRange, allTransactions]);
+  }, [expandedCategory, activeDateRange, allTransactions, categories]);
 
   // Reset expanded category when view/period changes
   useEffect(() => {
@@ -682,11 +687,11 @@ export function AnalyticsView() {
                   </div>
                   <div className="space-y-1">
                     {expenseCategories.map((cat, index) => {
-                      const isExpanded = expandedCategory === cat.categoryId;
+                      const isExpanded = expandedCategory?.id === cat.categoryId && expandedCategory?.type === 'expense';
                       return (
                         <div key={cat.categoryId}>
                           <button
-                            onClick={() => setExpandedCategory(isExpanded ? null : cat.categoryId)}
+                            onClick={() => setExpandedCategory(isExpanded ? null : { id: cat.categoryId, type: 'expense' })}
                             className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-sm hover:bg-gray-50 transition-colors"
                           >
                             <div className="h-3 w-3 rounded-full flex-shrink-0" style={{ backgroundColor: cat.color || CHART_COLORS[index % CHART_COLORS.length] }} />
@@ -755,11 +760,11 @@ export function AnalyticsView() {
                   </div>
                   <div className="space-y-1">
                     {incomeCategories.map((cat, index) => {
-                      const isExpanded = expandedCategory === cat.categoryId;
+                      const isExpanded = expandedCategory?.id === cat.categoryId && expandedCategory?.type === 'income';
                       return (
                         <div key={cat.categoryId}>
                           <button
-                            onClick={() => setExpandedCategory(isExpanded ? null : cat.categoryId)}
+                            onClick={() => setExpandedCategory(isExpanded ? null : { id: cat.categoryId, type: 'income' })}
                             className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-sm hover:bg-gray-50 transition-colors"
                           >
                             <div className="h-3 w-3 rounded-full flex-shrink-0" style={{ backgroundColor: cat.color || CHART_COLORS[index % CHART_COLORS.length] }} />
