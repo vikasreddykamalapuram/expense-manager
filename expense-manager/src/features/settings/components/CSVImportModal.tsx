@@ -190,7 +190,19 @@ export function CSVImportModal({ isOpen, onClose }: CSVImportModalProps) {
     }
 
     const transactions: Transaction[] = importResult.parsed.map((p: ParsedTransaction) => {
-      let categoryId = matchCategory(p.category);
+      // Smart re-categorization: if subcategory strongly matches a different category,
+      // override the parent category from CSV (handles mis-categorized source data)
+      let effectiveCategory = p.category;
+      if (p.subcategory) {
+        const subMatch = matchCategory(p.subcategory);
+        const parentMatch = matchCategory(p.category);
+        if (subMatch && subMatch !== parentMatch) {
+          // Subcategory suggests a different category — use it
+          effectiveCategory = p.subcategory;
+        }
+      }
+
+      let categoryId = matchCategory(effectiveCategory);
 
       if (categoryId && !currentCategories.find((c) => c.id === categoryId)) {
         categoryId = null;
@@ -198,7 +210,7 @@ export function CSVImportModal({ isOpen, onClose }: CSVImportModalProps) {
 
       if (!categoryId) {
         const existing = currentCategories.find(
-          (c) => c.name.toLowerCase() === p.category.toLowerCase() && c.type === p.type
+          (c) => c.name.toLowerCase() === effectiveCategory.toLowerCase() && c.type === p.type
         );
         if (existing) {
           categoryId = existing.id;
@@ -206,7 +218,7 @@ export function CSVImportModal({ isOpen, onClose }: CSVImportModalProps) {
       }
 
       if (!categoryId) {
-        const newCatId = `import-${p.category.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`;
+        const newCatId = `import-${effectiveCategory.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`;
         const alreadyCreated = currentCategories.find((c) => c.id === newCatId);
         if (alreadyCreated) {
           categoryId = alreadyCreated.id;
@@ -214,7 +226,7 @@ export function CSVImportModal({ isOpen, onClose }: CSVImportModalProps) {
           const catType: 'income' | 'expense' = p.type === 'income' ? 'income' : 'expense';
           const newCategory = {
             id: newCatId,
-            name: p.category,
+            name: effectiveCategory,
             type: catType,
             icon: catType === 'income' ? 'TrendingUp' : 'Tag',
             color: catType === 'income' ? '#10b981' : '#64748b',

@@ -472,9 +472,28 @@ export function matchCategory(rawCategory: string): string | null {
   const lower = stripEmojis(rawCategory).toLowerCase().trim();
   if (!lower) return null;
 
-  // Exact or substring match
+  // Phase 1: Exact match on alias
   for (const [catId, aliases] of Object.entries(CATEGORY_ALIASES)) {
-    if (aliases.some((alias) => lower === alias || lower.includes(alias) || alias.includes(lower))) {
+    if (aliases.some((alias) => lower === alias)) {
+      return catId;
+    }
+  }
+
+  // Phase 2: Input contains a full alias (e.g. "health & medical" contains "medical")
+  // Prefer longest alias match to avoid false positives
+  let bestMatch: { catId: string; len: number } | null = null;
+  for (const [catId, aliases] of Object.entries(CATEGORY_ALIASES)) {
+    for (const alias of aliases) {
+      if (lower.includes(alias) && alias.length > (bestMatch?.len || 0)) {
+        bestMatch = { catId, len: alias.length };
+      }
+    }
+  }
+  if (bestMatch) return bestMatch.catId;
+
+  // Phase 3: Alias contains the input (e.g. alias "fast tag" contains input "fast")
+  for (const [catId, aliases] of Object.entries(CATEGORY_ALIASES)) {
+    if (aliases.some((alias) => alias.includes(lower) && lower.length >= 3)) {
       return catId;
     }
   }
