@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
-import { Download, Upload, Trash2, AlertTriangle, FileSpreadsheet, Cloud, CloudOff, LogOut, RefreshCw, CheckCircle2, XCircle, Sun, Moon, Monitor } from 'lucide-react';
+import { Download, Upload, Trash2, AlertTriangle, FileSpreadsheet, Cloud, CloudOff, LogOut, RefreshCw, CheckCircle2, XCircle, Sun, Moon, Monitor, Palette, Check } from 'lucide-react';
+import type { AccentColor, DarkMode } from '../../../shared/types';
 import { useAppContext } from '../../../context/AppContext';
 import { useAuth } from '../../../context/AuthContext';
 import { useTheme } from '../../../shared/hooks/useTheme';
@@ -14,7 +15,7 @@ import { backupService, BackupMetadata } from '../../../shared/services/backupSe
 export function SettingsPage() {
   const { state, actions } = useAppContext();
   const { user, isAuthenticated, logout } = useAuth();
-  const { theme, setTheme } = useTheme();
+  const { theme, effectiveTheme, setTheme, accentColor, setAccentColor, darkMode, setDarkMode } = useTheme();
   const { settings } = state;
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [showClearConfirm, setShowClearConfirm] = useState(false);
@@ -134,7 +135,7 @@ export function SettingsPage() {
         <p className="text-sm text-gray-500 dark:text-gray-400">Customize your experience</p>
       </div>
 
-      {/* Currency */}
+      {/* Preferences */}
       <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-6 shadow-sm">
         <h3 className="mb-4 text-base font-semibold text-gray-900 dark:text-gray-100">Preferences</h3>
         <div className="space-y-4">
@@ -158,6 +159,17 @@ export function SettingsPage() {
               { value: 'DD MMM YYYY', label: 'DD MMM YYYY' },
             ]}
           />
+        </div>
+      </div>
+
+      {/* Style */}
+      <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-6 shadow-sm">
+        <div className="mb-4 flex items-center gap-2">
+          <Palette size={18} className="text-primary-500" />
+          <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100">Style</h3>
+        </div>
+        <div className="space-y-5">
+          {/* Theme mode */}
           <div>
             <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">Theme</label>
             <div className="flex gap-2">
@@ -179,6 +191,89 @@ export function SettingsPage() {
                 >
                   <Icon size={16} />
                   {label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Dark style - only visible when dark mode is active */}
+          {effectiveTheme === 'dark' && (
+            <div>
+              <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">Dark Style</label>
+              <div className="flex gap-2">
+                {([
+                  { value: 'default' as DarkMode, label: 'Default Gray', swatch: '#1f2937' },
+                  { value: 'black' as DarkMode, label: 'AMOLED Black', swatch: '#000000' },
+                ]).map(({ value, label, swatch }) => (
+                  <button
+                    key={value}
+                    type="button"
+                    onClick={() => setDarkMode(value)}
+                    className={classNames(
+                      'flex flex-1 items-center justify-center gap-2.5 rounded-lg border px-3 py-2.5 text-sm font-medium transition-all',
+                      darkMode === value
+                        ? 'border-primary-500 bg-primary-900/30 text-primary-400'
+                        : 'border-gray-600 bg-gray-700 text-gray-400 hover:bg-gray-600'
+                    )}
+                  >
+                    <span
+                      className="inline-block h-4 w-4 rounded-full border border-gray-500"
+                      style={{ backgroundColor: swatch }}
+                    />
+                    {label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Accent color */}
+          <div>
+            <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">Accent Color</label>
+            <div className="grid grid-cols-5 gap-3">
+              {([
+                { value: 'blue' as AccentColor, label: 'Blue', hex: '#3b82f6' },
+                { value: 'purple' as AccentColor, label: 'Purple', hex: '#8b5cf6' },
+                { value: 'emerald' as AccentColor, label: 'Emerald', hex: '#10b981' },
+                { value: 'pink' as AccentColor, label: 'Pink', hex: '#ec4899' },
+                { value: 'orange' as AccentColor, label: 'Orange', hex: '#f97316' },
+                { value: 'cyan' as AccentColor, label: 'Cyan', hex: '#06b6d4' },
+                { value: 'rose' as AccentColor, label: 'Rose', hex: '#f43f5e' },
+                { value: 'magenta' as AccentColor, label: 'Magenta', hex: '#d946ef' },
+                { value: 'amber' as AccentColor, label: 'Amber', hex: '#f59e0b' },
+                { value: 'teal' as AccentColor, label: 'Teal', hex: '#14b8a6' },
+              ]).map(({ value, label, hex }) => (
+                <button
+                  key={value}
+                  type="button"
+                  onClick={() => setAccentColor(value)}
+                  className="group flex flex-col items-center gap-1.5"
+                  title={label}
+                >
+                  <span
+                    className={classNames(
+                      'relative flex h-10 w-10 items-center justify-center rounded-full transition-all',
+                      accentColor === value
+                        ? 'ring-2 ring-offset-2 ring-offset-white dark:ring-offset-gray-800'
+                        : 'hover:scale-110'
+                    )}
+                    style={{
+                      backgroundColor: hex,
+                      ...(accentColor === value ? { ringColor: hex } : {}),
+                    }}
+                  >
+                    {accentColor === value && (
+                      <Check size={18} className="text-white drop-shadow-sm" strokeWidth={3} />
+                    )}
+                  </span>
+                  <span className={classNames(
+                    'text-[11px]',
+                    accentColor === value
+                      ? 'font-semibold text-gray-900 dark:text-gray-100'
+                      : 'text-gray-500 dark:text-gray-400'
+                  )}>
+                    {label}
+                  </span>
                 </button>
               ))}
             </div>

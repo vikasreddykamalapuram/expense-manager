@@ -127,6 +127,8 @@ export const DEFAULT_SETTINGS: Settings = {
   dateFormat: 'DD/MM/YYYY',
   theme: 'system',
   defaultView: 'dashboard',
+  accentColor: 'blue',
+  darkMode: 'default',
 };
 
 export const STORAGE_KEYS = {

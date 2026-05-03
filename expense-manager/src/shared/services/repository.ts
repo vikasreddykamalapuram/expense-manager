@@ -179,7 +179,7 @@ class ExpenseRepository {
 
   async getSettings(profileId: string): Promise<Settings> {
     const row = await db.settings.get(profileId);
-    return row?.data ?? { ...DEFAULT_SETTINGS };
+    return { ...DEFAULT_SETTINGS, ...(row?.data ?? {}) };
   }
 
   async saveSettings(profileId: string, settings: Settings): Promise<void> {

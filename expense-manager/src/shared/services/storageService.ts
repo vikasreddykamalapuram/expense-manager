@@ -241,7 +241,8 @@ class StorageService {
 
   // Settings
   getSettings(): Settings {
-    return this.getItem<Settings>(STORAGE_KEYS.SETTINGS, DEFAULT_SETTINGS);
+    const stored = this.getItem<Partial<Settings>>(STORAGE_KEYS.SETTINGS, {});
+    return { ...DEFAULT_SETTINGS, ...stored };
   }
 
   saveSettings(settings: Settings): void {

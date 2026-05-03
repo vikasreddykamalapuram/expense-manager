@@ -56,12 +56,17 @@ export interface Budget {
   createdAt: string;
 }
 
+export type AccentColor = 'blue' | 'magenta' | 'teal' | 'pink' | 'purple' | 'emerald' | 'orange' | 'rose' | 'amber' | 'cyan';
+export type DarkMode = 'default' | 'black';
+
 export interface Settings {
   currency: string;
   currencySymbol: string;
   dateFormat: string;
   theme: 'light' | 'dark' | 'system';
   defaultView: 'dashboard' | 'transactions';
+  accentColor: AccentColor;
+  darkMode: DarkMode;
 }
 
 export interface MonthlyStats {
