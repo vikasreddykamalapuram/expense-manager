@@ -1,4 +1,4 @@
-import { Category } from '../types';
+import { Category, Settings } from '../types';
 
 export const EXPENSE_CATEGORIES: Category[] = [
   { id: 'food-dining', name: 'Food & Dining', type: 'expense', icon: 'UtensilsCrossed', color: '#ef4444', isCustom: false },
@@ -121,12 +121,12 @@ export const CURRENCIES = [
   { code: 'CAD', symbol: 'C$', name: 'Canadian Dollar' },
 ];
 
-export const DEFAULT_SETTINGS = {
+export const DEFAULT_SETTINGS: Settings = {
   currency: 'INR',
   currencySymbol: '₹',
   dateFormat: 'DD/MM/YYYY',
-  theme: 'system' as const,
-  defaultView: 'dashboard' as const,
+  theme: 'system',
+  defaultView: 'dashboard',
 };
 
 export const STORAGE_KEYS = {

@@ -6,7 +6,7 @@ import {
   TrendingUp, TrendingDown,
 } from 'lucide-react';
 import { useAppContext } from '../../../context/AppContext';
-import { Budget, Category, Transaction } from '../../../shared/types';
+import { Budget, Category, Settings, Transaction } from '../../../shared/types';
 import { Modal } from '../../../shared/components/ui/Modal';
 import { Button } from '../../../shared/components/ui/Button';
 import { Input, Select } from '../../../shared/components/ui/Input';
@@ -422,7 +422,7 @@ interface InsightCardProps {
     budgetAmount: number;
     budget: Budget | undefined;
   }>;
-  settings: { currency: string; currencySymbol: string; dateFormat: string; theme: string; defaultView: string };
+  settings: Settings;
   prevMonthSpending: Record<string, number>;
 }
 
@@ -510,7 +510,7 @@ interface BudgetModalProps {
   selectedMonth: string;
   existingBudgets: Budget[];
   onSave: (budget: Budget) => Promise<void>;
-  settings: { currency: string; currencySymbol: string; dateFormat: string; theme: string; defaultView: string };
+  settings: Settings;
 }
 
 function BudgetModal({
