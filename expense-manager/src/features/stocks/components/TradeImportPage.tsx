@@ -5,7 +5,6 @@ import {
   ChevronRight, Loader2, X,
 } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
-import * as XLSX from 'xlsx';
 import { useAppContext } from '../../../context/AppContext';
 import { parseTradeData, BrokerFormat } from '../../../shared/services/brokerParser';
 import { StockTransaction } from '../../../shared/types';
@@ -57,6 +56,7 @@ export function TradeImportPage() {
 
   const readFileContent = useCallback(async (file: File): Promise<string> => {
     if (file.name.endsWith('.xlsx') || file.name.endsWith('.xls')) {
+      const XLSX = await import('xlsx');
       const buffer = await file.arrayBuffer();
       const workbook = XLSX.read(buffer, { type: 'array' });
       const sheet = workbook.Sheets[workbook.SheetNames[0]];

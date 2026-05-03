@@ -40,6 +40,20 @@ export default defineConfig({
     }),
   ],
   base: '/expense-manager/',
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'vendor-react': ['react', 'react-dom', 'react-router-dom'],
+          'vendor-charts': ['recharts'],
+          'vendor-xlsx': ['xlsx'],
+          'vendor-pdf': ['pdfjs-dist'],
+          'vendor-auth': ['@azure/msal-browser', '@azure/msal-react'],
+          'vendor-dexie': ['dexie'],
+        },
+      },
+    },
+  },
   test: {
     globals: true,
     environment: 'jsdom',

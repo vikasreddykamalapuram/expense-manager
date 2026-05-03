@@ -1,4 +1,5 @@
 // PDF Bank Statement Parser — extracts transactions from Indian bank PDF statements
+// Uses X-coordinate column mapping for reliable column detection across bank formats
 import * as pdfjsLib from 'pdfjs-dist';
 import type { TextItem } from 'pdfjs-dist/types/src/display/api';
 import pdfjsWorker from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
@@ -8,60 +9,297 @@ import { suggestCategory } from './statementParser';
 // Configure PDF.js worker using Vite's ?url import (bundled with the package)
 pdfjsLib.GlobalWorkerOptions.workerSrc = pdfjsWorker;
 
-// ─── Text Extraction ────────────────────────────────────
+// ─── Types ──────────────────────────────────────────────
 
-interface TextLine {
-  y: number;
+interface TextBlock {
   text: string;
+  x: number;
+  y: number;
+  width: number;
+  fontSize: number;
 }
 
-async function extractTextLines(file: File, password?: string): Promise<string[]> {
+interface PageData {
+  items: TextBlock[];
+  width: number;
+  height: number;
+}
+
+interface TextRow {
+  y: number;
+  items: TextBlock[]; // sorted left-to-right by x
+}
+
+type ColumnType = 'date' | 'description' | 'debit' | 'credit' | 'balance' | 'reference';
+
+interface ColumnRange {
+  xMin: number;
+  xMax: number;
+}
+
+interface ColumnLayout {
+  date: ColumnRange;
+  description: ColumnRange;
+  debit: ColumnRange | null;
+  credit: ColumnRange | null;
+  balance: ColumnRange | null;
+  reference: ColumnRange | null;
+}
+
+// ─── Text Extraction ────────────────────────────────────
+
+async function extractPageData(file: File, password?: string): Promise<PageData[]> {
   const buffer = await file.arrayBuffer();
   const loadingTask = pdfjsLib.getDocument({ data: buffer, ...(password ? { password } : {}) });
   const pdf = await loadingTask.promise;
-  const allLines: TextLine[] = [];
+  const pages: PageData[] = [];
 
   for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
     const page = await pdf.getPage(pageNum);
+    const viewport = page.getViewport({ scale: 1 });
     const content = await page.getTextContent();
-
-    // Group text items by Y-coordinate (same line = within ±2px)
-    const lineMap = new Map<number, { x: number; str: string }[]>();
+    const items: TextBlock[] = [];
 
     for (const item of content.items) {
       if (!('str' in item)) continue;
       const textItem = item as TextItem;
       if (!textItem.str.trim()) continue;
 
-      const y = Math.round(textItem.transform[5]); // Y position
-      const x = textItem.transform[4]; // X position
-
-      // Find existing line within ±2px tolerance
-      let lineY: number | null = null;
-      for (const existingY of lineMap.keys()) {
-        if (Math.abs(existingY - y) <= 2) {
-          lineY = existingY;
-          break;
-        }
-      }
-
-      const targetY = lineY ?? y;
-      if (!lineMap.has(targetY)) lineMap.set(targetY, []);
-      lineMap.get(targetY)!.push({ x, str: textItem.str });
+      items.push({
+        text: textItem.str,
+        x: textItem.transform[4],
+        y: textItem.transform[5],
+        width: textItem.width,
+        fontSize: textItem.transform[0],
+      });
     }
 
-    // Sort lines top-to-bottom (higher Y = higher on page in PDF coords)
-    const sortedYs = [...lineMap.keys()].sort((a, b) => b - a);
-    for (const y of sortedYs) {
-      const items = lineMap.get(y)!;
-      // Sort items left-to-right within line
-      items.sort((a, b) => a.x - b.x);
-      const lineText = items.map((i) => i.str).join(' ').trim();
-      if (lineText) allLines.push({ y, text: lineText });
+    pages.push({ items, width: viewport.width, height: viewport.height });
+  }
+
+  return pages;
+}
+
+// ─── Row Grouping ───────────────────────────────────────
+
+const Y_TOLERANCE = 3;
+
+function groupIntoRows(items: TextBlock[]): TextRow[] {
+  const rowMap = new Map<number, TextBlock[]>();
+
+  for (const item of items) {
+    const y = Math.round(item.y);
+    let matchedY: number | null = null;
+    for (const existingY of rowMap.keys()) {
+      if (Math.abs(existingY - y) <= Y_TOLERANCE) {
+        matchedY = existingY;
+        break;
+      }
+    }
+    const targetY = matchedY ?? y;
+    if (!rowMap.has(targetY)) rowMap.set(targetY, []);
+    rowMap.get(targetY)!.push(item);
+  }
+
+  // Sort rows top-to-bottom (higher Y = higher on page in PDF coords)
+  const sortedYs = [...rowMap.keys()].sort((a, b) => b - a);
+  return sortedYs.map((y) => ({
+    y,
+    items: rowMap.get(y)!.sort((a, b) => a.x - b.x),
+  }));
+}
+
+function rowToText(row: TextRow): string {
+  return row.items.map((i) => i.text).join(' ').trim();
+}
+
+// ─── Header Detection ───────────────────────────────────
+
+const HEADER_KEYWORDS: Record<ColumnType, string[]> = {
+  date: ['date', 'txn date', 'transaction date', 'trans date', 'value date', 'posting date'],
+  description: ['description', 'narration', 'particulars', 'remarks', 'transaction remarks', 'details', 'transaction details'],
+  debit: ['debit', 'withdrawal', 'dr', 'debit amount', 'withdrawal (dr)', 'withdrawal(dr)', 'withdrawals', 'debit(dr)'],
+  credit: ['credit', 'deposit', 'cr', 'credit amount', 'deposit (cr)', 'deposit(cr)', 'deposits', 'credit(cr)'],
+  balance: ['balance', 'closing balance', 'running balance', 'bal'],
+  reference: ['ref', 'reference', 'cheque', 'chq', 'ref no', 'cheque no', 'ref no./cheque no.'],
+};
+
+/** Check whether a single text block (or a few merged blocks) matches a header keyword. */
+function matchHeaderColumn(text: string): ColumnType | null {
+  const lower = text.toLowerCase().trim();
+  if (!lower) return null;
+  for (const [col, keywords] of Object.entries(HEADER_KEYWORDS) as [ColumnType, string[]][]) {
+    for (const kw of keywords) {
+      if (lower === kw || lower.replace(/\s+/g, ' ') === kw) return col;
+    }
+  }
+  // Partial / substring match for composite header cells
+  for (const [col, keywords] of Object.entries(HEADER_KEYWORDS) as [ColumnType, string[]][]) {
+    for (const kw of keywords) {
+      if (lower.includes(kw)) return col;
+    }
+  }
+  return null;
+}
+
+/**
+ * Try to detect the header row within a set of rows. Some banks split headers
+ * across two consecutive rows (e.g., "Withdrawal" on one line, "(Dr)" on the next).
+ * We merge up to two rows when checking.
+ */
+function detectHeaderRow(
+  rows: TextRow[],
+  pageWidth: number,
+): { layout: ColumnLayout; headerEndIndex: number } | null {
+  for (let i = 0; i < Math.min(rows.length, 60); i++) {
+    // Try single row first, then merged with the next row
+    const candidates = [rows[i].items];
+    if (i + 1 < rows.length) {
+      candidates.push([...rows[i].items, ...rows[i + 1].items].sort((a, b) => a.x - b.x));
+    }
+
+    for (let ci = 0; ci < candidates.length; ci++) {
+      const items = candidates[ci];
+      const layout = tryBuildLayout(items, pageWidth);
+      if (layout) {
+        return { layout, headerEndIndex: i + 1 + ci };
+      }
+    }
+  }
+  return null;
+}
+
+function tryBuildLayout(items: TextBlock[], pageWidth: number): ColumnLayout | null {
+  // Merge adjacent items that might form a multi-word header (e.g. "Txn" + "Date")
+  const merged = mergeAdjacentItems(items);
+
+  const detected: { col: ColumnType; x: number; xEnd: number }[] = [];
+
+  for (const item of merged) {
+    const col = matchHeaderColumn(item.text);
+    if (col) {
+      // Avoid duplicate column types — keep the first occurrence
+      if (!detected.some((d) => d.col === col)) {
+        detected.push({ col, x: item.x, xEnd: item.x + item.width });
+      }
     }
   }
 
-  return allLines.map((l) => l.text);
+  // Need at least date + description + one amount column
+  const hasDate = detected.some((d) => d.col === 'date');
+  const hasDesc = detected.some((d) => d.col === 'description');
+  const hasAmount = detected.some((d) => d.col === 'debit' || d.col === 'credit' || d.col === 'balance');
+
+  if (!hasDate || !hasDesc || !hasAmount) return null;
+
+  // Sort by x position to compute boundaries
+  detected.sort((a, b) => a.x - b.x);
+
+  const buildRange = (col: ColumnType): ColumnRange | null => {
+    const idx = detected.findIndex((d) => d.col === col);
+    if (idx === -1) return null;
+    const entry = detected[idx];
+    const xMin = idx === 0
+      ? 0
+      : (detected[idx - 1].xEnd + entry.x) / 2;
+    const xMax = idx === detected.length - 1
+      ? pageWidth
+      : (entry.xEnd + detected[idx + 1].x) / 2;
+    return { xMin, xMax };
+  };
+
+  const dateRange = buildRange('date');
+  const descRange = buildRange('description');
+  if (!dateRange || !descRange) return null;
+
+  return {
+    date: dateRange,
+    description: descRange,
+    debit: buildRange('debit'),
+    credit: buildRange('credit'),
+    balance: buildRange('balance'),
+    reference: buildRange('reference'),
+  };
+}
+
+/** Merge adjacent text blocks that are close together (gap < 10px) into single items. */
+function mergeAdjacentItems(items: TextBlock[]): TextBlock[] {
+  if (items.length === 0) return [];
+  const sorted = [...items].sort((a, b) => a.x - b.x);
+  const result: TextBlock[] = [{ ...sorted[0] }];
+
+  for (let i = 1; i < sorted.length; i++) {
+    const prev = result[result.length - 1];
+    const cur = sorted[i];
+    const gap = cur.x - (prev.x + prev.width);
+    if (gap < 10 && gap >= -2) {
+      // Merge
+      prev.text = prev.text + ' ' + cur.text;
+      prev.width = (cur.x + cur.width) - prev.x;
+    } else {
+      result.push({ ...cur });
+    }
+  }
+  return result;
+}
+
+// ─── Column Assignment ──────────────────────────────────
+
+interface AssignedRow {
+  date: string;
+  description: string;
+  debit: string;
+  credit: string;
+  balance: string;
+  reference: string;
+}
+
+function assignItemsToColumns(row: TextRow, layout: ColumnLayout): AssignedRow {
+  const result: AssignedRow = { date: '', description: '', debit: '', credit: '', balance: '', reference: '' };
+  const buckets: Record<keyof AssignedRow, string[]> = {
+    date: [], description: [], debit: [], credit: [], balance: [], reference: [],
+  };
+
+  for (const item of row.items) {
+    const mid = item.x + item.width / 2;
+    const col = findColumn(mid, layout);
+    buckets[col].push(item.text);
+  }
+
+  for (const key of Object.keys(buckets) as (keyof AssignedRow)[]) {
+    result[key] = buckets[key].join(' ').trim();
+  }
+  return result;
+}
+
+function findColumn(xMid: number, layout: ColumnLayout): keyof AssignedRow {
+  // Check specific columns first (narrower ranges), fall back to description
+  const checks: { key: keyof AssignedRow; range: ColumnRange | null }[] = [
+    { key: 'date', range: layout.date },
+    { key: 'debit', range: layout.debit },
+    { key: 'credit', range: layout.credit },
+    { key: 'balance', range: layout.balance },
+    { key: 'reference', range: layout.reference },
+    { key: 'description', range: layout.description },
+  ];
+
+  let bestCol: keyof AssignedRow = 'description';
+  let bestDist = Infinity;
+
+  for (const { key, range } of checks) {
+    if (!range) continue;
+    if (xMid >= range.xMin && xMid <= range.xMax) {
+      // Item is within this column's range — pick the closest center
+      const center = (range.xMin + range.xMax) / 2;
+      const dist = Math.abs(xMid - center);
+      if (dist < bestDist) {
+        bestDist = dist;
+        bestCol = key;
+      }
+    }
+  }
+
+  return bestCol;
 }
 
 // ─── Bank Detection ─────────────────────────────────────
@@ -74,7 +312,6 @@ const BANK_KEYWORDS: { bank: BankFormat; patterns: RegExp[] }[] = [
 ];
 
 function detectBankFromText(lines: string[]): BankFormat {
-  // Check first 20 lines for bank name
   const headerText = lines.slice(0, 20).join(' ');
   for (const { bank, patterns } of BANK_KEYWORDS) {
     if (patterns.some((p) => p.test(headerText))) return bank;
@@ -87,7 +324,7 @@ function detectBankFromText(lines: string[]): BankFormat {
 function extractAccountNumber(lines: string[]): string | undefined {
   for (const line of lines.slice(0, 30)) {
     const match = line.match(/(?:account|a\/c|acct)[^\d]*(\d{4,})/i);
-    if (match) return match[1].slice(-4); // last 4 digits only
+    if (match) return match[1].slice(-4);
   }
   return undefined;
 }
@@ -96,7 +333,6 @@ function extractAccountNumber(lines: string[]): string | undefined {
 
 function extractStatementPeriod(lines: string[]): { start: string; end: string } | undefined {
   for (const line of lines.slice(0, 30)) {
-    // "01/04/2024 to 30/04/2024" or "01-Apr-2024 to 30-Apr-2024"
     const rangeMatch = line.match(
       /(\d{1,2}[/\-.](?:\d{1,2}|[A-Za-z]{3,9})[/\-.](?:\d{4}|\d{2}))\s*(?:to|[-–])\s*(\d{1,2}[/\-.](?:\d{1,2}|[A-Za-z]{3,9})[/\-.](?:\d{4}|\d{2}))/i
     );
@@ -164,12 +400,12 @@ function formatDate(year: number, month: number, day: number): string | null {
 function parseAmount(str: string): number | null {
   if (!str || !str.trim()) return null;
 
-  let cleaned = str.trim()
+  const cleaned = str.trim()
     .replace(/[₹$€£¥]/g, '')
     .replace(/\s/g, '')
-    .replace(/,/g, '') // handles Indian format 1,50,000.00
-    .replace(/\(([^)]+)\)/, '-$1') // (500) → -500
-    .replace(/(Dr|Cr|DR|CR)\.?$/i, ''); // remove Dr/Cr suffixes
+    .replace(/,/g, '')
+    .replace(/\(([^)]+)\)/, '-$1')
+    .replace(/(Dr|Cr|DR|CR)\.?$/i, '');
 
   if (!cleaned || cleaned === '-' || cleaned === '.') return null;
 
@@ -177,133 +413,96 @@ function parseAmount(str: string): number | null {
   return isNaN(num) ? null : Math.round(num * 100) / 100;
 }
 
-// ─── Date pattern at start of line ──────────────────────
+// ─── Skip Patterns ──────────────────────────────────────
 
-const DATE_START_RE = /^(\d{1,2}[/\-.](?:\d{1,2}|[A-Za-z]{3,9})[/\-.](?:\d{4}|\d{2}))\b/;
+const SKIP_PATTERNS = [
+  /opening balance/i, /closing balance/i, /b\/f/i, /c\/f/i,
+  /brought forward/i, /carried forward/i, /\btotal\b/i, /page\s*\d+/i,
+  /statement\s+(of|summary|generated)/i, /generated\s+on/i, /disclaimer/i,
+  /^$/, /^\s+$/,
+];
 
-function extractDateFromLine(line: string): { date: string; rest: string } | null {
-  const match = line.match(DATE_START_RE);
+function shouldSkipRow(text: string): boolean {
+  return SKIP_PATTERNS.some((p) => p.test(text));
+}
+
+// ─── Dr/Cr Indicator Handling ───────────────────────────
+
+function extractDrCr(text: string): 'dr' | 'cr' | null {
+  const match = text.match(/\b(Dr|Cr|DR|CR)\b/i);
   if (!match) return null;
-  const dateStr = parseDateStr(match[1]);
+  return match[1].toLowerCase() === 'cr' ? 'cr' : 'dr';
+}
+
+// ─── Transaction Extraction from Column-Mapped Rows ─────
+
+interface RawTransaction {
+  date: string;
+  description: string;
+  debit: number | null;
+  credit: number | null;
+  balance: number | null;
+  reference?: string;
+}
+
+function parseTransactionFromRow(
+  assigned: AssignedRow,
+  layout: ColumnLayout,
+): RawTransaction | null {
+  // Parse date
+  const dateStr = parseDateStr(assigned.date);
   if (!dateStr) return null;
-  return { date: dateStr, rest: line.slice(match[0].length).trim() };
-}
 
-// ─── Number extraction from end of line ─────────────────
+  const description = assigned.description
+    .replace(/\b(Dr|Cr|DR|CR)\.?\b/gi, '')
+    .replace(/\s{2,}/g, ' ')
+    .trim();
 
-function extractTrailingNumbers(text: string): { numbers: number[]; descPart: string } {
-  // Match numbers at the end of the line (may have multiple columns)
-  // Pattern: capture sequences of number-like tokens from the right
-  const numbers: number[] = [];
-  let remaining = text.trim();
+  let debit = parseAmount(assigned.debit);
+  let credit = parseAmount(assigned.credit);
+  const balance = parseAmount(assigned.balance);
+  const reference = assigned.reference || undefined;
 
-  // Repeatedly extract the last number
-  // eslint-disable-next-line no-constant-condition
-  while (true) {
-    // Match a number (with optional commas, decimal, negative) at end
-    const numMatch = remaining.match(/\s+([\d,]+\.?\d*)\s*$/);
-    if (!numMatch) break;
-    const parsed = parseAmount(numMatch[1]);
-    if (parsed === null) break;
-    numbers.unshift(parsed);
-    remaining = remaining.slice(0, remaining.length - numMatch[0].length).trim();
+  // Handle single amount column with Dr/Cr indicator
+  // If layout has no separate debit/credit columns, or only one of them
+  if (!layout.debit && !layout.credit) {
+    // No amount columns detected — shouldn't happen with a valid layout
+    return null;
   }
 
-  return { numbers, descPart: remaining };
-}
-
-// ─── Transaction line parsing ───────────────────────────
-
-function parseTransactionLine(
-  line: string,
-  bank: BankFormat,
-): { date: string; description: string; debit: number | null; credit: number | null; balance: number | null; reference?: string } | null {
-  const dateResult = extractDateFromLine(line);
-  if (!dateResult) return null;
-
-  const { date, rest } = dateResult;
-  if (!rest) return null;
-
-  const { numbers, descPart } = extractTrailingNumbers(rest);
-  if (numbers.length === 0) return null;
-
-  let debit: number | null = null;
-  let credit: number | null = null;
-  let balance: number | null = null;
-  let description = descPart;
-
-  // Check if line contains Dr/Cr indicator
-  const drCrIndicator = rest.match(/\b(Dr|Cr|DR|CR)\b/i);
-
-  if (bank === 'hdfc' || bank === 'sbi' || bank === 'axis') {
-    // Format: Date | Desc [| Ref] | Debit | Credit | Balance
-    // Typically 3 numbers at the end: withdrawal, deposit, balance
-    // But one of debit/credit is usually 0 or empty
-    if (numbers.length >= 3) {
-      balance = numbers[numbers.length - 1];
-      credit = numbers[numbers.length - 2];
-      debit = numbers[numbers.length - 3];
-      // If debit and credit are both > 0, one might be a ref number — use balance difference heuristic
-      if (debit > 0 && credit > 0) {
-        // Keep as is — user will see both
-      }
-    } else if (numbers.length === 2) {
-      // Could be amount + balance
-      balance = numbers[1];
-      if (drCrIndicator && drCrIndicator[1].toLowerCase() === 'cr') {
-        credit = numbers[0];
-      } else {
-        debit = numbers[0];
-      }
-    } else if (numbers.length === 1) {
-      if (drCrIndicator && drCrIndicator[1].toLowerCase() === 'cr') {
-        credit = numbers[0];
-      } else {
-        debit = numbers[0];
-      }
+  if (layout.debit && !layout.credit) {
+    // Single "Debit" column — check for Dr/Cr indicator in description or amount text
+    const drCr = extractDrCr(assigned.debit) ?? extractDrCr(assigned.description);
+    const amt = debit;
+    debit = null;
+    credit = null;
+    if (drCr === 'cr' && amt !== null) {
+      credit = Math.abs(amt);
+    } else if (amt !== null) {
+      debit = Math.abs(amt);
     }
-  } else if (bank === 'icici') {
-    // ICICI: Date | Description | Debit/Credit amount | Balance
-    if (numbers.length >= 2) {
-      balance = numbers[numbers.length - 1];
-      const amt = numbers[numbers.length - 2];
-      // Detect Dr/Cr from text
-      if (drCrIndicator && drCrIndicator[1].toLowerCase() === 'cr') {
-        credit = amt;
-      } else {
-        debit = amt;
-      }
-    } else if (numbers.length === 1) {
-      if (drCrIndicator && drCrIndicator[1].toLowerCase() === 'cr') {
-        credit = numbers[0];
-      } else {
-        debit = numbers[0];
-      }
-    }
-  } else {
-    // Generic: try to determine from number count
-    if (numbers.length >= 3) {
-      balance = numbers[numbers.length - 1];
-      credit = numbers[numbers.length - 2];
-      debit = numbers[numbers.length - 3];
-    } else if (numbers.length === 2) {
-      balance = numbers[1];
-      if (drCrIndicator && drCrIndicator[1].toLowerCase() === 'cr') {
-        credit = numbers[0];
-      } else {
-        debit = numbers[0];
-      }
-    } else if (numbers.length === 1) {
-      if (drCrIndicator && drCrIndicator[1].toLowerCase() === 'cr') {
-        credit = numbers[0];
-      } else {
-        debit = numbers[0];
-      }
+  } else if (!layout.debit && layout.credit) {
+    // Single "Credit" column — check for Dr/Cr indicator
+    const drCr = extractDrCr(assigned.credit) ?? extractDrCr(assigned.description);
+    const amt = credit;
+    debit = null;
+    credit = null;
+    if (drCr === 'dr' && amt !== null) {
+      debit = Math.abs(amt);
+    } else if (amt !== null) {
+      credit = Math.abs(amt);
     }
   }
 
-  // Clean description: remove Dr/Cr markers
-  description = description.replace(/\b(Dr|Cr|DR|CR)\.?\b/gi, '').replace(/\s{2,}/g, ' ').trim();
+  // Handle negative amounts: negative debit = credit and vice versa
+  if (debit !== null && debit < 0) {
+    credit = Math.abs(debit);
+    debit = null;
+  }
+  if (credit !== null && credit < 0) {
+    debit = Math.abs(credit);
+    credit = null;
+  }
 
   // Zero amounts are effectively null
   if (debit === 0) debit = null;
@@ -311,7 +510,7 @@ function parseTransactionLine(
 
   if (debit === null && credit === null) return null;
 
-  return { date, description, debit, credit, balance };
+  return { date: dateStr, description, debit, credit, balance, reference };
 }
 
 // ─── Main PDF Parser ────────────────────────────────────
@@ -324,9 +523,9 @@ export async function parsePdfStatement(
 ): Promise<ParseResult> {
   const errors: string[] = [];
 
-  let lines: string[];
+  let pages: PageData[];
   try {
-    lines = await extractTextLines(file, password);
+    pages = await extractPageData(file, password);
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err);
     if (msg.toLowerCase().includes('password')) {
@@ -338,15 +537,16 @@ export async function parsePdfStatement(
     return { transactions: [], errors: [`Failed to read PDF: ${msg}`] };
   }
 
-  if (lines.length === 0) {
+  // Flatten all items for text-line checks (bank detection, account, period)
+  const allItems = pages.flatMap((p) => p.items);
+  if (allItems.length === 0) {
     return {
       transactions: [],
       errors: ['This appears to be a scanned PDF. Please use a text-based PDF export from your bank\'s website.'],
     };
   }
 
-  // Check if there's enough text (scanned PDFs may extract very little)
-  const totalTextLength = lines.reduce((sum, l) => sum + l.length, 0);
+  const totalTextLength = allItems.reduce((sum, item) => sum + item.text.length, 0);
   if (totalTextLength < 50) {
     return {
       transactions: [],
@@ -354,45 +554,107 @@ export async function parsePdfStatement(
     };
   }
 
-  const bank: BankFormat = bankHint ?? detectBankFromText(lines);
-  const accountNumber = extractAccountNumber(lines);
-  const statementPeriod = extractStatementPeriod(lines);
+  // Build flat text lines for bank detection, account number, period extraction
+  const flatRows = groupIntoRows(allItems);
+  const flatLines = flatRows.map(rowToText);
 
+  const bank: BankFormat = bankHint ?? detectBankFromText(flatLines);
+  const accountNumber = extractAccountNumber(flatLines);
+  const statementPeriod = extractStatementPeriod(flatLines);
+
+  // Process each page: detect header, then extract transactions
   const transactions: ParsedTransaction[] = [];
+  let activeLayout: ColumnLayout | null = null;
+  let lastTransaction: RawTransaction | null = null;
 
-  for (let i = 0; i < lines.length; i++) {
-    const parsed = parseTransactionLine(lines[i], bank);
-    if (!parsed) continue;
+  for (const page of pages) {
+    const rows = groupIntoRows(page.items);
 
-    let amount: number;
-    let txnType: 'income' | 'expense' | 'transfer';
+    // Try to detect a header on this page (re-detect per page for repeated headers)
+    const headerResult = detectHeaderRow(rows, page.width);
+    let startIdx = 0;
 
-    if (parsed.debit !== null && parsed.debit > 0) {
-      amount = parsed.debit;
-      txnType = 'expense';
-    } else if (parsed.credit !== null && parsed.credit > 0) {
-      amount = parsed.credit;
-      txnType = 'income';
-    } else {
-      errors.push(`Line ${i + 1}: Could not determine amount`);
-      continue;
+    if (headerResult) {
+      activeLayout = headerResult.layout;
+      startIdx = headerResult.headerEndIndex;
     }
 
-    const suggestion = suggestCategory(parsed.description, categories);
-    if (suggestion.category === 'transfer') {
-      txnType = 'transfer';
-    }
+    if (!activeLayout) continue;
 
-    transactions.push({
-      date: parsed.date,
-      description: parsed.description,
-      amount,
-      type: txnType,
-      category: suggestion.category,
-      categoryId: suggestion.categoryId,
-      reference: parsed.reference,
-      balance: parsed.balance ?? undefined,
-    });
+    for (let i = startIdx; i < rows.length; i++) {
+      const row = rows[i];
+      const lineText = rowToText(row);
+
+      if (shouldSkipRow(lineText)) continue;
+
+      const assigned = assignItemsToColumns(row, activeLayout);
+
+      // Check if this is a continuation line (no date, no amounts — just description)
+      const hasDate = !!parseDateStr(assigned.date);
+      const hasDebit = parseAmount(assigned.debit) !== null;
+      const hasCredit = parseAmount(assigned.credit) !== null;
+      const hasDescription = !!assigned.description.trim();
+
+      if (!hasDate && !hasDebit && !hasCredit && hasDescription && lastTransaction) {
+        // Append to previous transaction's description
+        lastTransaction.description = (lastTransaction.description + ' ' + assigned.description.trim())
+          .replace(/\s{2,}/g, ' ')
+          .trim();
+        // Update the last pushed transaction
+        const lastPushed = transactions[transactions.length - 1];
+        if (lastPushed) {
+          lastPushed.description = lastTransaction.description;
+          // Re-run category suggestion with updated description
+          const suggestion = suggestCategory(lastTransaction.description, categories);
+          lastPushed.category = suggestion.category;
+          lastPushed.categoryId = suggestion.categoryId;
+          if (suggestion.category === 'transfer') {
+            lastPushed.type = 'transfer';
+          }
+        }
+        continue;
+      }
+
+      const parsed = parseTransactionFromRow(assigned, activeLayout);
+      if (!parsed) continue;
+
+      if (!parsed.description && lastTransaction) {
+        // Empty description — unusual, skip
+        continue;
+      }
+
+      lastTransaction = parsed;
+
+      let amount: number;
+      let txnType: 'income' | 'expense' | 'transfer';
+
+      if (parsed.debit !== null && parsed.debit > 0) {
+        amount = parsed.debit;
+        txnType = 'expense';
+      } else if (parsed.credit !== null && parsed.credit > 0) {
+        amount = parsed.credit;
+        txnType = 'income';
+      } else {
+        errors.push(`Row at Y=${row.y}: Could not determine amount`);
+        continue;
+      }
+
+      const suggestion = suggestCategory(parsed.description, categories);
+      if (suggestion.category === 'transfer') {
+        txnType = 'transfer';
+      }
+
+      transactions.push({
+        date: parsed.date,
+        description: parsed.description,
+        amount,
+        type: txnType,
+        category: suggestion.category,
+        categoryId: suggestion.categoryId,
+        reference: parsed.reference,
+        balance: parsed.balance ?? undefined,
+      });
+    }
   }
 
   // Derive period from transactions if not found in header
