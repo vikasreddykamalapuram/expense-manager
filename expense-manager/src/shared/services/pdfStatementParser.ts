@@ -15,9 +15,10 @@ interface TextLine {
   text: string;
 }
 
-async function extractTextLines(file: File): Promise<string[]> {
+async function extractTextLines(file: File, password?: string): Promise<string[]> {
   const buffer = await file.arrayBuffer();
-  const pdf = await pdfjsLib.getDocument({ data: buffer }).promise;
+  const loadingTask = pdfjsLib.getDocument({ data: buffer, ...(password ? { password } : {}) });
+  const pdf = await loadingTask.promise;
   const allLines: TextLine[] = [];
 
   for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
@@ -319,18 +320,19 @@ export async function parsePdfStatement(
   file: File,
   categories: Array<{ id: string; name: string; type: 'income' | 'expense' }>,
   bankHint?: BankFormat,
+  password?: string,
 ): Promise<ParseResult> {
   const errors: string[] = [];
 
   let lines: string[];
   try {
-    lines = await extractTextLines(file);
+    lines = await extractTextLines(file, password);
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err);
     if (msg.toLowerCase().includes('password')) {
       return {
         transactions: [],
-        errors: ['This PDF is password-protected. Please remove the password and try again.'],
+        errors: [password ? 'Incorrect password. Please try again.' : 'PASSWORD_REQUIRED'],
       };
     }
     return { transactions: [], errors: [`Failed to read PDF: ${msg}`] };

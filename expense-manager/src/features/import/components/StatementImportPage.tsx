@@ -57,6 +57,10 @@ export function StatementImportPage() {
   const [isImporting, setIsImporting] = useState<boolean>(false);
   const [parsing, setParsing] = useState<boolean>(false);
   const [dragOver, setDragOver] = useState<boolean>(false);
+  const [pdfPassword, setPdfPassword] = useState<string>('');
+  const [showPasswordPrompt, setShowPasswordPrompt] = useState<boolean>(false);
+  const [pendingPdfFile, setPendingPdfFile] = useState<File | null>(null);
+  const [passwordError, setPasswordError] = useState<string>('');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const accountOptions = useMemo(() => [
@@ -105,7 +109,16 @@ export function StatementImportPage() {
     if (ext === 'pdf') {
       setParsing(true);
       parsePdfStatement(file, allCategories, bank)
-        .then(applyResult)
+        .then((result) => {
+          if (result.errors.length === 1 && result.errors[0] === 'PASSWORD_REQUIRED') {
+            setPendingPdfFile(file);
+            setPasswordError('');
+            setPdfPassword('');
+            setShowPasswordPrompt(true);
+            return;
+          }
+          applyResult(result);
+        })
         .catch(() => {
           setParseResult({ transactions: [], errors: ['Failed to parse PDF file.'] });
         })
@@ -133,6 +146,45 @@ export function StatementImportPage() {
     const file = e.target.files?.[0];
     if (file) handleFile(file);
   }, [handleFile]);
+
+  const handlePasswordSubmit = useCallback(() => {
+    if (!pendingPdfFile || !pdfPassword.trim()) return;
+    const bank = selectedBank === 'auto' ? undefined : (selectedBank as BankFormat);
+    setParsing(true);
+    setShowPasswordPrompt(false);
+
+    const applyResult = (result: ParseResult) => {
+      setParseResult(result);
+      const initialSelected = new Set<number>();
+      result.transactions.forEach((_: ParsedTransaction, idx: number) => initialSelected.add(idx));
+      setSelectedRows(initialSelected);
+      setCategoryOverrides(new Map());
+      if (result.transactions.length > 0) {
+        setStep('preview');
+      }
+    };
+
+    parsePdfStatement(pendingPdfFile, allCategories, bank, pdfPassword.trim())
+      .then((result) => {
+        if (result.errors.length === 1 && result.errors[0] === 'PASSWORD_REQUIRED') {
+          setPasswordError('Incorrect password. Please try again.');
+          setShowPasswordPrompt(true);
+          return;
+        }
+        if (result.errors.some((e) => e.startsWith('Incorrect password'))) {
+          setPasswordError('Incorrect password. Please try again.');
+          setShowPasswordPrompt(true);
+          return;
+        }
+        setPendingPdfFile(null);
+        setPdfPassword('');
+        applyResult(result);
+      })
+      .catch(() => {
+        setParseResult({ transactions: [], errors: ['Failed to parse PDF file.'] });
+      })
+      .finally(() => setParsing(false));
+  }, [pendingPdfFile, pdfPassword, selectedBank, allCategories]);
 
   // ─── Duplicate detection ────────────────────────────────
 
@@ -295,6 +347,51 @@ export function StatementImportPage() {
 
   return (
     <div className="mx-auto max-w-5xl space-y-6">
+      {/* PDF Password Prompt Modal */}
+      {showPasswordPrompt && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="w-full max-w-sm rounded-xl bg-white dark:bg-gray-800 p-6 shadow-2xl border border-gray-200 dark:border-gray-700">
+            <div className="mb-4 flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-900/30">
+                <FileUp className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Password Protected PDF</h3>
+                <p className="text-sm text-gray-500 dark:text-gray-400">Enter the password to open this file</p>
+              </div>
+            </div>
+            {passwordError && (
+              <div className="mb-3 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 p-3 text-sm text-red-700 dark:text-red-300">
+                {passwordError}
+              </div>
+            )}
+            <input
+              type="password"
+              value={pdfPassword}
+              onChange={(e) => setPdfPassword(e.target.value)}
+              onKeyDown={(e) => { if (e.key === 'Enter') handlePasswordSubmit(); }}
+              placeholder="Enter PDF password"
+              className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-4 py-2.5 text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+              autoFocus
+            />
+            <div className="mt-4 flex gap-3">
+              <button
+                onClick={() => { setShowPasswordPrompt(false); setPendingPdfFile(null); setPdfPassword(''); setPasswordError(''); }}
+                className="flex-1 rounded-lg border border-gray-300 dark:border-gray-600 px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handlePasswordSubmit}
+                disabled={!pdfPassword.trim()}
+                className="flex-1 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                Unlock & Import
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       {/* Page Header */}
       <div>
         <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Import Bank Statement</h1>
