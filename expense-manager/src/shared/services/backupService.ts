@@ -44,7 +44,7 @@ async function getGoogleAccessToken(): Promise<string | null> {
     }
 
     // Dynamic import to get the client ID without circular deps
-    const clientId = sessionStorage.getItem('em_google_client_id');
+    const clientId = localStorage.getItem('em_google_client_id') || sessionStorage.getItem('em_google_client_id');
     if (!clientId) {
       resolve(null);
       return;

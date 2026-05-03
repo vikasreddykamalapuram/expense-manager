@@ -42,7 +42,7 @@ export function LoginPage() {
     navigate('/');
 
     // Store client ID for later Drive token requests (triggered on first backup attempt).
-    sessionStorage.setItem('em_google_client_id', AUTH_CONFIG.google.clientId);
+    localStorage.setItem('em_google_client_id', AUTH_CONFIG.google.clientId);
     // Don't request Drive token here — it opens another popup which causes
     // multi-tab issues on mobile. The backup service will request it when needed.
   };

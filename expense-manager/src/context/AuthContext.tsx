@@ -20,12 +20,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Restore auth state on mount
   useEffect(() => {
     try {
-      const stored = sessionStorage.getItem(AUTH_STORAGE_KEY);
+      // Check localStorage first (persistent), then sessionStorage (legacy)
+      const stored = localStorage.getItem(AUTH_STORAGE_KEY) || sessionStorage.getItem(AUTH_STORAGE_KEY);
       if (stored) {
         const parsed = JSON.parse(stored) as AuthUser;
         setUser(parsed);
+        // Migrate from sessionStorage to localStorage if needed
+        if (!localStorage.getItem(AUTH_STORAGE_KEY)) {
+          localStorage.setItem(AUTH_STORAGE_KEY, stored);
+        }
+        sessionStorage.removeItem(AUTH_STORAGE_KEY);
       }
     } catch {
+      localStorage.removeItem(AUTH_STORAGE_KEY);
       sessionStorage.removeItem(AUTH_STORAGE_KEY);
     }
     setIsLoading(false);
@@ -33,13 +40,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = useCallback((authUser: AuthUser) => {
     setUser(authUser);
-    // Store in sessionStorage (cleared on tab close — more secure than localStorage)
-    sessionStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(authUser));
+    localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(authUser));
   }, []);
 
   const logout = useCallback(() => {
     setUser(null);
-    sessionStorage.removeItem(AUTH_STORAGE_KEY);
+    localStorage.removeItem(AUTH_STORAGE_KEY);
   }, []);
 
   return (
