@@ -168,6 +168,10 @@ class ExpenseRepository {
     }
   }
 
+  async deleteBudget(_profileId: string, id: string): Promise<void> {
+    await db.budgets.delete(id);
+  }
+
   // ─── Settings ───────────────────────────────────────
 
   async getSettings(profileId: string): Promise<Settings> {
@@ -221,8 +225,36 @@ class ExpenseRepository {
   async importData(profileId: string, jsonString: string): Promise<boolean> {
     try {
       const data = JSON.parse(jsonString);
-      if (!data.version || !data.transactions) {
-        throw new Error('Invalid data format');
+      if (!data.version || !data.transactions || !Array.isArray(data.transactions)) {
+        throw new Error('Invalid data format: missing version or transactions array');
+      }
+      // Validate transaction records have required fields
+      for (const txn of data.transactions) {
+        if (!txn.id || typeof txn.amount !== 'number' || !txn.type || !txn.date || !txn.categoryId) {
+          throw new Error('Invalid transaction record: missing required fields (id, amount, type, date, categoryId)');
+        }
+        if (!['income', 'expense', 'transfer'].includes(txn.type)) {
+          throw new Error(`Invalid transaction type: ${txn.type}`);
+        }
+        if (txn.amount < 0) {
+          throw new Error('Transaction amount cannot be negative');
+        }
+      }
+      // Validate categories if present
+      if (data.categories && Array.isArray(data.categories)) {
+        for (const cat of data.categories) {
+          if (!cat.id || !cat.name || !cat.type) {
+            throw new Error('Invalid category record: missing required fields (id, name, type)');
+          }
+        }
+      }
+      // Validate accounts if present
+      if (data.accounts && Array.isArray(data.accounts)) {
+        for (const acct of data.accounts) {
+          if (!acct.id || !acct.name || !acct.type) {
+            throw new Error('Invalid account record: missing required fields (id, name, type)');
+          }
+        }
       }
       await db.transaction('rw', [db.transactions, db.categories, db.budgets, db.accounts, db.settings], async () => {
         await this.saveTransactions(profileId, data.transactions);

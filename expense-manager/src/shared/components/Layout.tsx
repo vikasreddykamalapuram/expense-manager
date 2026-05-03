@@ -2,7 +2,7 @@ import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard, ArrowLeftRight, PlusCircle, CalendarDays,
   Settings, Wallet, Menu, X, Landmark, Tag, ChevronDown,
-  Plus, LogIn, LogOut,
+  Plus, LogIn, LogOut, Target,
 } from 'lucide-react';
 import { useState, useRef, useEffect } from 'react';
 import { v4 as uuidv4 } from 'uuid';
@@ -19,6 +19,7 @@ const navItems = [
   { path: '/transactions', icon: ArrowLeftRight, label: 'Transactions' },
   { path: '/add', icon: PlusCircle, label: 'Add New' },
   { path: '/analytics', icon: CalendarDays, label: 'Analytics' },
+  { path: '/budgets', icon: Target, label: 'Budgets' },
   { path: '/accounts', icon: Landmark, label: 'Accounts' },
   { path: '/categories', icon: Tag, label: 'Categories' },
   { path: '/settings', icon: Settings, label: 'Settings' },

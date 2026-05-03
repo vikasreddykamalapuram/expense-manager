@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { Send, Sparkles, Trash2, User } from 'lucide-react';
+import DOMPurify from 'dompurify';
 import { useAppContext } from '../../../context/AppContext';
 import { processQuery, AssistantResponse } from '../../../shared/services/aiAssistant';
 import { classNames } from '../../../shared/utils/helpers';
@@ -96,9 +97,10 @@ export function AssistantPage() {
       formatted = formatted.replace(
         /🔴/g, '<span class="text-red-500 dark:text-red-400">🔴</span>'
       );
+      const sanitized = DOMPurify.sanitize(formatted, { ALLOWED_TAGS: ['strong', 'span'], ALLOWED_ATTR: ['class'] });
       return (
         <span key={i}>
-          <span dangerouslySetInnerHTML={{ __html: formatted }} />
+          <span dangerouslySetInnerHTML={{ __html: sanitized }} />
           {i < lines.length - 1 && <br />}
         </span>
       );

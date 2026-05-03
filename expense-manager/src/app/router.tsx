@@ -7,6 +7,7 @@ import { AnalyticsView } from '../features/analytics/components/AnalyticsView';
 import { AccountsPage } from '../features/accounts/components/AccountsPage';
 import { CategoriesPage } from '../features/categories/components/CategoriesPage';
 import { SettingsPage } from '../features/settings/components/SettingsPage';
+import { BudgetsPage } from '../features/budgets/components/BudgetsPage';
 import { LoginPage } from '../features/auth/components/LoginPage';
 
 /** Redirect to /login if first-time visitor (no onboarding flag set) */
@@ -31,6 +32,7 @@ export const router = createBrowserRouter([
       { path: 'transactions', element: <TransactionsPage /> },
       { path: 'add', element: <AddTransactionPage /> },
       { path: 'analytics', element: <AnalyticsView /> },
+      { path: 'budgets', element: <BudgetsPage /> },
       { path: 'accounts', element: <AccountsPage /> },
       { path: 'categories', element: <CategoriesPage /> },
       { path: 'settings', element: <SettingsPage /> },

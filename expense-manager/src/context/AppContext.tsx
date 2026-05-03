@@ -27,6 +27,7 @@ type AppAction =
   | { type: 'SET_SETTINGS'; payload: Settings }
   | { type: 'SET_BUDGETS'; payload: Budget[] }
   | { type: 'ADD_BUDGET'; payload: Budget }
+  | { type: 'DELETE_BUDGET'; payload: string }
   | { type: 'SET_CATEGORIES'; payload: Category[] }
   | { type: 'SET_FILTERS'; payload: Partial<TransactionFilters> }
   | { type: 'RESET_FILTERS' }
@@ -92,6 +93,8 @@ function appReducer(state: AppState, action: AppAction): AppState {
       else budgets.push(action.payload);
       return { ...state, budgets };
     }
+    case 'DELETE_BUDGET':
+      return { ...state, budgets: state.budgets.filter((b) => b.id !== action.payload) };
     case 'SET_CATEGORIES':
       return { ...state, categories: action.payload };
     case 'SET_FILTERS':
@@ -117,6 +120,7 @@ export interface AppActions {
   deleteTransaction: (id: string) => Promise<void>;
   updateSettings: (updates: Partial<Settings>) => Promise<void>;
   setBudget: (budget: Budget) => Promise<void>;
+  deleteBudget: (id: string) => Promise<void>;
   addCategory: (category: Category) => Promise<void>;
   updateCategory: (id: string, updates: Partial<Category>) => Promise<void>;
   deleteCategory: (id: string) => Promise<void>;
@@ -226,7 +230,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
       dispatch({ type: 'ADD_BUDGET', payload: budget });
     }, []),
 
-    addCategory: useCallback(async (category: Category) => {
+    deleteBudget: useCallback(async (id: string) => {
+      await repository.deleteBudget(profileIdRef.current, id);
+      dispatch({ type: 'DELETE_BUDGET', payload: id });
+    }, []),
+
+    addCategory:useCallback(async (category: Category) => {
       const cats = await repository.addCustomCategory(profileIdRef.current, category);
       dispatch({ type: 'SET_CATEGORIES', payload: cats });
     }, []),
