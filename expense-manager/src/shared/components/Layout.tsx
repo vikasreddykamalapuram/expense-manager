@@ -237,22 +237,28 @@ export function Layout() {
           {/* User Avatar / Login */}
           {isAuthenticated && user ? (
             <div className="flex items-center gap-2">
-              <div className="hidden sm:block text-right">
-                <p className="text-xs font-medium text-gray-700 dark:text-gray-300 truncate max-w-[120px]">{user.name}</p>
-                <p className="text-[10px] text-gray-400 dark:text-gray-500 truncate max-w-[120px]">{user.email}</p>
-              </div>
-              {user.avatar ? (
-                <img
-                  src={user.avatar}
-                  alt={user.name}
-                  className="h-8 w-8 rounded-full border-2 border-primary-200"
-                  referrerPolicy="no-referrer"
-                />
-              ) : (
-                <div className="h-8 w-8 rounded-full bg-gradient-to-br from-primary-400 to-primary-600 flex items-center justify-center">
-                  <span className="text-xs font-bold text-white">{user.name.charAt(0).toUpperCase()}</span>
+              <button
+                onClick={() => navigate('/settings')}
+                className="flex items-center gap-2 rounded-lg px-2 py-1 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                title="Go to Settings"
+              >
+                <div className="hidden sm:block text-right">
+                  <p className="text-xs font-medium text-gray-700 dark:text-gray-300 truncate max-w-[120px]">{user.name}</p>
+                  <p className="text-[10px] text-gray-400 dark:text-gray-500 truncate max-w-[120px]">{user.email}</p>
                 </div>
-              )}
+                {user.avatar ? (
+                  <img
+                    src={user.avatar}
+                    alt={user.name}
+                    className="h-8 w-8 rounded-full border-2 border-primary-200"
+                    referrerPolicy="no-referrer"
+                  />
+                ) : (
+                  <div className="h-8 w-8 rounded-full bg-gradient-to-br from-primary-400 to-primary-600 flex items-center justify-center">
+                    <span className="text-xs font-bold text-white">{user.name.charAt(0).toUpperCase()}</span>
+                  </div>
+                )}
+              </button>
               <button
                 onClick={() => { logout(); }}
                 className="rounded-lg p-1.5 text-gray-400 dark:text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-600 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"

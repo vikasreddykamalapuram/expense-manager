@@ -46,6 +46,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const logout = useCallback(() => {
     setUser(null);
     localStorage.removeItem(AUTH_STORAGE_KEY);
+    // Clear OAuth access tokens to prevent stale tokens after re-login
+    sessionStorage.removeItem('em_google_access_token');
+    sessionStorage.removeItem('em_microsoft_access_token');
   }, []);
 
   return (

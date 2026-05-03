@@ -27,10 +27,13 @@ export interface BackupResult {
 
 // ─── Token Acquisition ─────────────────────────────────
 
-/** Get Google access token — re-request via GIS token client if expired/missing */
-async function getGoogleAccessToken(): Promise<string | null> {
+/** Get Google access token — optionally re-request via GIS token client */
+async function getGoogleAccessToken(promptIfNeeded = false): Promise<string | null> {
   const stored = sessionStorage.getItem('em_google_access_token');
   if (stored) return stored;
+
+  // If we shouldn't prompt, just return null (background checks like getBackupInfo)
+  if (!promptIfNeeded) return null;
 
   // Try to request a new token via GIS token client (requires user interaction)
   return new Promise((resolve) => {
@@ -43,7 +46,6 @@ async function getGoogleAccessToken(): Promise<string | null> {
       return;
     }
 
-    // Dynamic import to get the client ID without circular deps
     const clientId = localStorage.getItem('em_google_client_id') || sessionStorage.getItem('em_google_client_id');
     if (!clientId) {
       resolve(null);
@@ -86,7 +88,7 @@ async function findGoogleDriveFile(token: string): Promise<string | null> {
 }
 
 async function googleDriveBackup(profileId: string): Promise<BackupResult> {
-  const token = await getGoogleAccessToken();
+  const token = await getGoogleAccessToken(true);
   if (!token) {
     return { success: false, message: 'Not signed in with Google. Please sign in first.' };
   }
@@ -138,7 +140,7 @@ async function googleDriveBackup(profileId: string): Promise<BackupResult> {
 }
 
 async function googleDriveRestore(): Promise<{ success: boolean; data?: string; message: string }> {
-  const token = await getGoogleAccessToken();
+  const token = await getGoogleAccessToken(true);
   if (!token) {
     return { success: false, message: 'Not signed in with Google.' };
   }
@@ -166,7 +168,7 @@ async function googleDriveRestore(): Promise<{ success: boolean; data?: string; 
 }
 
 async function googleDriveGetInfo(): Promise<BackupMetadata | null> {
-  const token = await getGoogleAccessToken();
+  const token = await getGoogleAccessToken(false); // Don't prompt — background check
   if (!token) return null;
 
   try {
