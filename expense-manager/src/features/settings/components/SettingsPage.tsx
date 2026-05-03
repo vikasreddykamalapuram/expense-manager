@@ -18,6 +18,7 @@ export function SettingsPage() {
   const { settings } = state;
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [showClearConfirm, setShowClearConfirm] = useState(false);
+  const [showClearPortfolioConfirm, setShowClearPortfolioConfirm] = useState(false);
   const [showCSVImport, setShowCSVImport] = useState(false);
   const [importStatus, setImportStatus] = useState<'idle' | 'success' | 'error'>('idle');
   const [backupStatus, setBackupStatus] = useState<'idle' | 'backing-up' | 'restoring' | 'success' | 'error'>('idle');
@@ -119,6 +120,11 @@ export function SettingsPage() {
   const handleClearData = async () => {
     await actions.clearAllData();
     setShowClearConfirm(false);
+  };
+
+  const handleClearPortfolioData = async () => {
+    await actions.clearPortfolioData();
+    setShowClearPortfolioConfirm(false);
   };
 
   return (
@@ -287,16 +293,34 @@ export function SettingsPage() {
           )}
 
           <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
-            <Button
-              variant="danger"
-              icon={<Trash2 size={16} />}
-              onClick={() => setShowClearConfirm(true)}
-            >
-              Clear All Data
-            </Button>
-            <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">
-              This will permanently delete all your transactions, budgets, and categories.
-            </p>
+            <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-2">Danger Zone</p>
+            <div className="flex flex-col gap-3">
+              <div>
+                <Button
+                  variant="secondary"
+                  icon={<Trash2 size={16} />}
+                  onClick={() => setShowClearPortfolioConfirm(true)}
+                  className="!text-danger-600 !border-danger-300 hover:!bg-danger-50 dark:!border-danger-700 dark:hover:!bg-danger-900/20"
+                >
+                  Clear Portfolio Data
+                </Button>
+                <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                  Deletes all stock/trading transactions. Expense data remains untouched.
+                </p>
+              </div>
+              <div>
+                <Button
+                  variant="danger"
+                  icon={<Trash2 size={16} />}
+                  onClick={() => setShowClearConfirm(true)}
+                >
+                  Clear All Data
+                </Button>
+                <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                  Permanently deletes all transactions, budgets, and categories.
+                </p>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -425,7 +449,7 @@ export function SettingsPage() {
         </div>
       </div>
 
-      {/* Clear Confirmation */}
+      {/* Clear All Confirmation */}
       <Modal
         isOpen={showClearConfirm}
         onClose={() => setShowClearConfirm(false)}
@@ -452,6 +476,38 @@ export function SettingsPage() {
           </Button>
           <Button variant="danger" onClick={handleClearData}>
             Clear Everything
+          </Button>
+        </div>
+      </Modal>
+
+      {/* Clear Portfolio Confirmation */}
+      <Modal
+        isOpen={showClearPortfolioConfirm}
+        onClose={() => setShowClearPortfolioConfirm(false)}
+        title="Clear Portfolio Data"
+        size="sm"
+      >
+        <div className="flex items-start gap-3">
+          <div className="rounded-full bg-danger-100 p-2">
+            <AlertTriangle className="text-danger-600" size={20} />
+          </div>
+          <div>
+            <p className="text-sm text-gray-600 dark:text-gray-400">
+              This will permanently delete all your stock and trading transactions
+              ({state.stockTransactions.length} records). Your expense data, budgets, and
+              categories will not be affected.
+            </p>
+            <p className="mt-2 text-sm font-medium text-gray-900 dark:text-gray-100">
+              This action cannot be undone.
+            </p>
+          </div>
+        </div>
+        <div className="mt-4 flex justify-end gap-3">
+          <Button variant="secondary" onClick={() => setShowClearPortfolioConfirm(false)}>
+            Cancel
+          </Button>
+          <Button variant="danger" onClick={handleClearPortfolioData}>
+            Clear Portfolio
           </Button>
         </div>
       </Modal>

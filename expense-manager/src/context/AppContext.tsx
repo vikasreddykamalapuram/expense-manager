@@ -170,6 +170,7 @@ export interface AppActions {
   importData: (jsonString: string) => Promise<boolean>;
   exportData: () => Promise<string>;
   clearAllData: () => Promise<void>;
+  clearPortfolioData: () => Promise<void>;
   setFilters: (filters: Partial<TransactionFilters>) => void;
   resetFilters: () => void;
   // Bulk operations for CSV import
@@ -387,6 +388,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
       await repository.clearAllData(profileIdRef.current);
       const data = await repository.loadProfileData(profileIdRef.current);
       dispatch({ type: 'LOAD_PROFILE_DATA', payload: { profileId: profileIdRef.current, ...data } });
+    }, []),
+
+    clearPortfolioData: useCallback(async () => {
+      await repository.clearPortfolioData(profileIdRef.current);
+      dispatch({ type: 'SET_STOCK_TRANSACTIONS', payload: [] });
     }, []),
 
     setFilters: useCallback((filters: Partial<TransactionFilters>) => {

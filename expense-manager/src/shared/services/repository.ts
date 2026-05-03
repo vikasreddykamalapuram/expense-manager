@@ -284,6 +284,10 @@ class ExpenseRepository {
     });
   }
 
+  async clearPortfolioData(profileId: string): Promise<void> {
+    await db.stockTransactions.where('profileId').equals(profileId).delete();
+  }
+
   // ─── Recurring Rules ──────────────────────────────────
 
   async getRecurringRules(profileId: string): Promise<RecurringRule[]> {
