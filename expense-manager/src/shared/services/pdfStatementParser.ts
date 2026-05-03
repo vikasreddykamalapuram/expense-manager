@@ -1,11 +1,12 @@
 // PDF Bank Statement Parser — extracts transactions from Indian bank PDF statements
 import * as pdfjsLib from 'pdfjs-dist';
 import type { TextItem } from 'pdfjs-dist/types/src/display/api';
+import pdfjsWorker from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
 import type { ParseResult, ParsedTransaction, BankFormat } from './statementParser';
 import { suggestCategory } from './statementParser';
 
-// Configure PDF.js worker via CDN
-pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.mjs`;
+// Configure PDF.js worker using Vite's ?url import (bundled with the package)
+pdfjsLib.GlobalWorkerOptions.workerSrc = pdfjsWorker;
 
 // ─── Text Extraction ────────────────────────────────────
 
