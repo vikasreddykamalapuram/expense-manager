@@ -14,12 +14,13 @@ export interface TradeParseResult {
 
 // ─── Indian number format parser (handles 1,50,000.00) ──
 
-function parseIndianNumber(value: string): number {
+function parseIndianNumber(value: string | number): number {
+  if (typeof value === 'number') return isNaN(value) ? 0 : Math.round(value * 100) / 100;
   if (!value || typeof value !== 'string') return 0;
   const cleaned = value.replace(/[₹,\s]/g, '').trim();
   if (!cleaned || cleaned === '-') return 0;
   const num = parseFloat(cleaned);
-  return isNaN(num) ? 0 : num;
+  return isNaN(num) ? 0 : Math.round(num * 100) / 100;
 }
 
 // ─── Normalize symbol ──
@@ -171,6 +172,11 @@ export function detectBrokerFormat(headers: string[]): BrokerFormat {
   if (joined.includes('companyname') && joined.includes('brokerage') && joined.includes('amount')) return 'groww';
   if (joined.includes('scripname') && joined.includes('stt') && joined.includes('transactioncharges')) return 'angelone';
   if (joined.includes('scrip') && joined.includes('qty') && joined.includes('rate') && !joined.includes('scripcode')) return 'paytmmoney';
+  // Geojit DP Transactions: Booking Date, TransactionRefNo, Isin, CompanyName, ..., Credit, Debit
+  if (joined.includes('bookingdate') && joined.includes('isin') && joined.includes('companyname') && (joined.includes('credit') || joined.includes('debit'))) return 'geojit';
+  // Geojit DP Holdings: Segment, ISIN, CompanyName, NetPosition, Rate, Value
+  if (joined.includes('segment') && joined.includes('isin') && joined.includes('companyname') && joined.includes('netposition')) return 'geojit';
+  // Geojit contract note (trade book)
   if (joined.includes('settlementno') && joined.includes('netamount')) return 'geojit';
   if (joined.includes('scripcode') && joined.includes('scripname') && joined.includes('buysell')) return 'sbi_securities';
   if (joined.includes('isin') && joined.includes('tradetype') && joined.includes('amount') && !joined.includes('tradeid')) return 'upstox';
@@ -352,6 +358,116 @@ function paytmmoneyParser(row: string[], headers: string[]): Omit<StockTransacti
 }
 
 function geojitParser(row: string[], headers: string[]): Omit<StockTransaction, 'id' | 'createdAt' | 'updatedAt'> | null {
+  const joined = headers.map(normalizeHeader).join(' ');
+
+  // ── Geojit DP Holdings format ──
+  // Headers: Segment, ISIN, CompanyName, NetPosition, Rate, Value, PriceSource, PriceLastUpdated
+  if (joined.includes('netposition') && joined.includes('segment')) {
+    const iName = findCol(headers, 'CompanyName');
+    const iQty = findCol(headers, 'NetPosition');
+    const iRate = findCol(headers, 'Rate');
+    const iValue = findCol(headers, 'Value');
+    const iIsin = findCol(headers, 'ISIN');
+    const iPriceDate = findCol(headers, 'PriceLastUpdated');
+
+    const rawName = getVal(row, iName);
+    if (!rawName) return null;
+
+    // Extract symbol from company name: "BHARAT ELECTRONICS LIMITED EQ NEW FV Re 1/-" → "BEL" not available
+    // Use cleaned company name as both symbol and name
+    const cleanName = rawName
+      .replace(/\s*(EQ|EQUITY|NEW|FV|RE\.?|RS\.?|F\.V\.?)\s*[\d/\-]*\s*/gi, '')
+      .replace(/\s+LIMITED$/i, '')
+      .replace(/\s+LTD\.?$/i, '')
+      .trim();
+    const symbol = cleanName.replace(/\s+/g, '').substring(0, 20).toUpperCase();
+
+    const qty = parseIndianNumber(getVal(row, iQty));
+    const price = parseIndianNumber(getVal(row, iRate));
+    const totalVal = parseIndianNumber(getVal(row, iValue));
+    if (qty <= 0) return null;
+
+    // Parse the price date for transaction date
+    let date = new Date().toISOString().split('T')[0];
+    const priceDateStr = getVal(row, iPriceDate);
+    if (priceDateStr) {
+      // Format: "29 Apr 2026 23:02:00"
+      const parsed = new Date(priceDateStr);
+      if (!isNaN(parsed.getTime())) {
+        date = parsed.toISOString().split('T')[0];
+      }
+    }
+
+    return {
+      date,
+      symbol,
+      name: cleanName,
+      exchange: 'NSE',
+      assetClass: detectAssetClass(symbol, rawName),
+      type: 'buy' as TradeType, // holdings are existing positions
+      quantity: qty,
+      price,
+      totalValue: totalVal || Math.round(qty * price * 100) / 100,
+      charges: emptyCharges(),
+      broker: 'Geojit',
+      notes: `ISIN: ${getVal(row, iIsin).trim()}. Imported from DP Holdings.`,
+    };
+  }
+
+  // ── Geojit DP Transactions format ──
+  // Headers: Booking Date, TransactionRefNo, Isin, CompanyName, CorpAccountDesc, BP_NM, Description, Credit, Debit
+  if (joined.includes('bookingdate') && (joined.includes('credit') || joined.includes('debit'))) {
+    const iDate = findCol(headers, 'Booking Date', 'BookingDate');
+    const iIsin = findCol(headers, 'Isin', 'ISIN');
+    const iName = findCol(headers, 'CompanyName');
+    const iDesc = findCol(headers, 'Description');
+    const iCredit = findCol(headers, 'Credit');
+    const iDebit = findCol(headers, 'Debit');
+    const iRef = findCol(headers, 'TransactionRefNo');
+
+    const rawName = getVal(row, iName);
+    if (!rawName) return null;
+
+    const cleanName = rawName
+      .replace(/\s*(EQ|EQUITY|NEW|FV|RE\.?|RS\.?|F\.V\.?)\s*[\d/\-]*\s*/gi, '')
+      .replace(/\s+LIMITED$/i, '')
+      .replace(/\s+LTD\.?$/i, '')
+      .trim();
+    const symbol = cleanName.replace(/\s+/g, '').substring(0, 20).toUpperCase();
+
+    const creditQty = parseIndianNumber(getVal(row, iCredit));
+    const debitQty = parseIndianNumber(getVal(row, iDebit));
+
+    // Credit = shares received (buy), Debit = shares given (sell)
+    const qty = creditQty > 0 ? creditQty : debitQty;
+    if (qty <= 0) return null;
+
+    const tradeType: TradeType = creditQty > 0 ? 'buy' : 'sell';
+
+    // Detect bonus/split from description
+    const desc = getVal(row, iDesc).toLowerCase();
+    let finalType: TradeType = tradeType;
+    if (desc.includes('bonus')) finalType = 'bonus';
+    else if (desc.includes('split')) finalType = 'split';
+    else if (desc.includes('ca-cr') || desc.includes('auto ca')) finalType = 'bonus'; // corporate action credit
+
+    return {
+      date: parseDate(getVal(row, iDate)),
+      symbol,
+      name: cleanName,
+      exchange: 'NSE',
+      assetClass: detectAssetClass(symbol, rawName),
+      type: finalType,
+      quantity: qty,
+      price: 0, // DP transactions don't include price
+      totalValue: 0,
+      charges: emptyCharges(),
+      broker: 'Geojit',
+      notes: `ISIN: ${getVal(row, iIsin).trim()}. Ref: ${getVal(row, iRef)}. ${getVal(row, iDesc).trim()}. Note: Price not available in DP statement.`,
+    };
+  }
+
+  // ── Geojit Contract Note / Trade Book format (original assumption) ──
   const iDate = findCol(headers, 'Trade Date', 'TradeDate');
   const iSymbol = findCol(headers, 'Symbol');
   const iType = findCol(headers, 'Buy/Sell', 'BuySell');
@@ -598,6 +714,31 @@ const PARSERS: Record<BrokerFormat, RowParser> = {
   generic: genericParser,
 };
 
+// ─── Find header row (not always row 0 — some brokers have metadata rows above) ──
+
+function findHeaderRow(rows: string[][]): number {
+  // Known header keywords that indicate a data header row
+  const headerKeywords = [
+    'date', 'tradedate', 'bookingdate', 'orderdate', 'symbol', 'scrip',
+    'quantity', 'qty', 'price', 'rate', 'amount', 'value', 'debit', 'credit',
+    'netposition', 'segment', 'buysell', 'tradetype', 'companyname', 'scripname',
+    'isin', 'exchange', 'brokerage', 'narration', 'particulars', 'stocksymbol',
+  ];
+
+  for (let i = 0; i < Math.min(rows.length, 20); i++) {
+    const row = rows[i];
+    if (row.length < 3) continue;
+
+    const normalized = row.map(normalizeHeader);
+    const matchCount = normalized.filter(h => h && headerKeywords.some(k => h.includes(k))).length;
+
+    // If 3+ cells match known header keywords, this is likely the header row
+    if (matchCount >= 3) return i;
+  }
+
+  return 0; // fallback to first row
+}
+
 // ─── Main parse function ──
 
 export function parseTradeData(csvContent: string, brokerHint?: BrokerFormat): TradeParseResult {
@@ -606,7 +747,9 @@ export function parseTradeData(csvContent: string, brokerHint?: BrokerFormat): T
     return { transactions: [], broker: 'Unknown', errors: ['File appears to be empty or has no data rows'], totalBuys: 0, totalSells: 0 };
   }
 
-  const headers = rows[0];
+  // Find the actual header row (may not be row 0 for brokers like Geojit with metadata)
+  const headerIdx = findHeaderRow(rows);
+  const headers = rows[headerIdx];
   const format = brokerHint && brokerHint !== 'generic' ? brokerHint : detectBrokerFormat(headers);
   const parser = PARSERS[format];
   const broker = BROKER_NAMES[format];
@@ -616,7 +759,7 @@ export function parseTradeData(csvContent: string, brokerHint?: BrokerFormat): T
   let totalBuys = 0;
   let totalSells = 0;
 
-  for (let i = 1; i < rows.length; i++) {
+  for (let i = headerIdx + 1; i < rows.length; i++) {
     const row = rows[i];
     if (row.length <= 1 && !row[0]) continue; // skip empty rows
 
