@@ -33,6 +33,7 @@ export interface Transaction {
   paymentMethod?: PaymentMethod;
   isRecurring: boolean;
   recurringFrequency?: 'daily' | 'weekly' | 'monthly' | 'yearly';
+  receiptId?: string; // references a receipt in the receipts store
   createdAt: string;
   updatedAt: string;
 }

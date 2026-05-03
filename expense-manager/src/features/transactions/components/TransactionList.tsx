@@ -1,10 +1,11 @@
 import { useState } from 'react';
-import { Edit2, Trash2, Search, Filter, ArrowUpDown, Receipt, ArrowLeftRight } from 'lucide-react';
+import { Edit2, Trash2, Search, Filter, ArrowUpDown, Receipt, ArrowLeftRight, Camera } from 'lucide-react';
 import { useAppContext } from '../../../context/AppContext';
 import { useTransactions } from '../../../shared/hooks/useTransactions';
 import { Button } from '../../../shared/components/ui/Button';
 import { EmptyState } from '../../../shared/components/ui/EmptyState';
 import { Modal } from '../../../shared/components/ui/Modal';
+import { ReceiptViewer } from '../../../shared/components/ReceiptViewer';
 import { TransactionForm } from './TransactionForm';
 import { PAYMENT_METHODS } from '../../../shared/constants/accounts';
 import { formatCurrency, formatDate, classNames } from '../../../shared/utils/helpers';
@@ -17,6 +18,7 @@ export function TransactionList() {
   const [editingTx, setEditingTx] = useState<Transaction | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
   const [showFilters, setShowFilters] = useState(false);
+  const [viewingReceiptId, setViewingReceiptId] = useState<string | null>(null);
 
   const getCategoryById = (id: string) => categories.find((c) => c.id === id);
 
@@ -156,6 +158,20 @@ export function TransactionList() {
                         Recurring
                       </span>
                     )}
+                    {tx.receiptId && (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setViewingReceiptId(tx.receiptId!);
+                        }}
+                        className="text-gray-400 dark:text-gray-500 hover:text-primary-600 dark:hover:text-primary-400 transition-colors"
+                        aria-label="View receipt"
+                        title="View receipt"
+                      >
+                        <Camera size={14} />
+                      </button>
+                    )}
                   </div>
                   <div className="flex items-center gap-2 mt-0.5">
                     {isTransfer ? (
@@ -257,6 +273,15 @@ export function TransactionList() {
           </Button>
         </div>
       </Modal>
+
+      {/* Receipt Viewer */}
+      {viewingReceiptId && (
+        <ReceiptViewer
+          receiptId={viewingReceiptId}
+          isOpen={true}
+          onClose={() => setViewingReceiptId(null)}
+        />
+      )}
     </div>
   );
 }

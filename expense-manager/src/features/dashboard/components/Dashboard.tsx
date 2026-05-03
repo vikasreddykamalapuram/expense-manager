@@ -1,4 +1,5 @@
-import { TrendingUp, TrendingDown, Wallet, ArrowRight, PlusCircle } from 'lucide-react';
+import { useMemo } from 'react';
+import { TrendingUp, TrendingDown, Wallet, ArrowRight, PlusCircle, Heart } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Cell, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 import { useAppContext } from '../../../context/AppContext';
@@ -8,10 +9,11 @@ import { Button } from '../../../shared/components/ui/Button';
 import { EmptyState } from '../../../shared/components/ui/EmptyState';
 import { formatCurrency, formatDate, formatMonth, getLast6Months, classNames } from '../../../shared/utils/helpers';
 import { CHART_COLORS } from '../../../shared/constants/categories';
+import { calculateHealthScore } from '../../../shared/services/healthScore';
 
 export function Dashboard() {
   const { state } = useAppContext();
-  const { settings, categories } = state;
+  const { settings, categories, transactions: allTxns, budgets, accounts } = state;
   const { currentMonthStats, totalBalance, recentTransactions, getMonthlyStats } = useTransactions();
   const navigate = useNavigate();
 
@@ -32,6 +34,17 @@ export function Dashboard() {
     .slice(0, 6);
 
   const hasData = state.transactions.length > 0;
+
+  // Health score for dashboard widget
+  const healthScore = useMemo(
+    () => calculateHealthScore(allTxns, budgets, accounts, categories, settings),
+    [allTxns, budgets, accounts, categories, settings],
+  );
+  const gaugeRadius = 36;
+  const gaugeStroke = 6;
+  const gaugeCircumference = 2 * Math.PI * gaugeRadius;
+  const gaugeOffset = gaugeCircumference - (healthScore.totalScore / 100) * gaugeCircumference;
+  const gaugeColor = healthScore.totalScore >= 80 ? '#22c55e' : healthScore.totalScore >= 60 ? '#f59e0b' : '#ef4444';
 
   return (
     <div className="space-y-6">
@@ -89,6 +102,37 @@ export function Dashboard() {
         />
       ) : (
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+          {/* Health Score Widget */}
+          <div
+            onClick={() => navigate('/health')}
+            className="cursor-pointer rounded-xl border border-gray-200 bg-white p-6 shadow-sm transition-shadow hover:shadow-md dark:border-gray-700 dark:bg-gray-800 lg:col-span-2"
+          >
+            <div className="flex items-center gap-5">
+              <div className="relative flex-shrink-0" style={{ width: 96, height: 96 }}>
+                <svg width={96} height={96} className="transform -rotate-90">
+                  <circle cx={48} cy={48} r={gaugeRadius} fill="none" stroke="currentColor" strokeWidth={gaugeStroke} className="text-gray-200 dark:text-gray-700" />
+                  <circle cx={48} cy={48} r={gaugeRadius} fill="none" stroke={gaugeColor} strokeWidth={gaugeStroke} strokeLinecap="round" strokeDasharray={gaugeCircumference} strokeDashoffset={gaugeOffset} className="transition-[stroke-dashoffset] duration-1000 ease-out" />
+                </svg>
+                <div className="absolute inset-0 flex flex-col items-center justify-center">
+                  <span className="text-xl font-bold text-gray-900 dark:text-gray-100">{healthScore.totalScore}</span>
+                  <span className="text-xs font-bold" style={{ color: gaugeColor }}>{healthScore.grade}</span>
+                </div>
+              </div>
+              <div className="flex-1">
+                <div className="flex items-center gap-2">
+                  <Heart size={18} className="text-red-500" />
+                  <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100">Financial Health</h3>
+                </div>
+                <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                  {healthScore.tips[0] || 'Track more to improve your score.'}
+                </p>
+                <span className="mt-2 inline-flex items-center gap-1 text-xs font-medium text-primary-600 dark:text-primary-400">
+                  View details <ArrowRight size={12} />
+                </span>
+              </div>
+            </div>
+          </div>
+
           {/* Monthly Trend Chart */}
           <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800">
             <h3 className="mb-4 text-base font-semibold text-gray-900 dark:text-gray-100">Monthly Trend</h3>

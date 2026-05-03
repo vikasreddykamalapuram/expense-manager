@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { v4 as uuidv4 } from 'uuid';
 import {
   FileUp, Upload, CheckCircle2, AlertTriangle, ChevronRight,
-  ChevronLeft, Check, Info, FileSpreadsheet,
+  ChevronLeft, Check, Info, FileSpreadsheet, Loader2,
 } from 'lucide-react';
 import { Button } from '../../../shared/components/ui/Button';
 import { Select } from '../../../shared/components/ui/Input';
@@ -16,6 +16,7 @@ import {
   type ParsedTransaction,
   type BankFormat,
 } from '../../../shared/services/statementParser';
+import { parsePdfStatement } from '../../../shared/services/pdfStatementParser';
 import type { Transaction, Settings } from '../../../shared/types';
 
 // ─── Wizard Steps ───────────────────────────────────────
@@ -54,6 +55,7 @@ export function StatementImportPage() {
   const [categoryOverrides, setCategoryOverrides] = useState<Map<number, string>>(new Map());
   const [importedCount, setImportedCount] = useState<number>(0);
   const [isImporting, setIsImporting] = useState<boolean>(false);
+  const [parsing, setParsing] = useState<boolean>(false);
   const [dragOver, setDragOver] = useState<boolean>(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -80,32 +82,44 @@ export function StatementImportPage() {
   // ─── File handling ──────────────────────────────────────
 
   const handleFile = useCallback((file: File) => {
-    if (!file.name.toLowerCase().endsWith('.csv')) {
-      alert('Please upload a CSV file. PDF and XLSX support coming soon.');
+    const ext = file.name.toLowerCase().split('.').pop();
+    if (ext !== 'csv' && ext !== 'pdf') {
+      alert('Please upload a CSV or PDF file.');
       return;
     }
 
     setFileName(file.name);
-    const reader = new FileReader();
-    reader.onload = (e: ProgressEvent<FileReader>) => {
-      const content = e.target?.result as string;
-      if (!content) return;
+    const bank = selectedBank === 'auto' ? undefined : (selectedBank as BankFormat);
 
-      const bank = selectedBank === 'auto' ? undefined : (selectedBank as BankFormat);
-      const result = parseBankStatement(content, allCategories, bank);
+    const applyResult = (result: ParseResult) => {
       setParseResult(result);
-
-      // Select all non-empty rows by default
       const initialSelected = new Set<number>();
       result.transactions.forEach((_: ParsedTransaction, idx: number) => initialSelected.add(idx));
       setSelectedRows(initialSelected);
       setCategoryOverrides(new Map());
-
       if (result.transactions.length > 0) {
         setStep('preview');
       }
     };
-    reader.readAsText(file);
+
+    if (ext === 'pdf') {
+      setParsing(true);
+      parsePdfStatement(file, allCategories, bank)
+        .then(applyResult)
+        .catch(() => {
+          setParseResult({ transactions: [], errors: ['Failed to parse PDF file.'] });
+        })
+        .finally(() => setParsing(false));
+    } else {
+      const reader = new FileReader();
+      reader.onload = (e: ProgressEvent<FileReader>) => {
+        const content = e.target?.result as string;
+        if (!content) return;
+        const result = parseBankStatement(content, allCategories, bank);
+        applyResult(result);
+      };
+      reader.readAsText(file);
+    }
   }, [selectedBank, allCategories]);
 
   const handleDrop = useCallback((e: React.DragEvent<HTMLDivElement>) => {
@@ -285,8 +299,7 @@ export function StatementImportPage() {
       <div>
         <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Import Bank Statement</h1>
         <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-          Upload a CSV bank statement to import transactions automatically.
-          PDF support coming soon.
+          Upload a CSV or PDF bank statement to import transactions automatically.
         </p>
       </div>
 
@@ -343,6 +356,7 @@ export function StatementImportPage() {
             accountOptions={accountOptions}
             fileName={fileName}
             parseResult={parseResult}
+            parsing={parsing}
             dragOver={dragOver}
             setDragOver={setDragOver}
             handleDrop={handleDrop}
@@ -404,6 +418,7 @@ interface UploadStepProps {
   accountOptions: { value: string; label: string }[];
   fileName: string;
   parseResult: ParseResult | null;
+  parsing: boolean;
   dragOver: boolean;
   setDragOver: (v: boolean) => void;
   handleDrop: (e: React.DragEvent<HTMLDivElement>) => void;
@@ -414,7 +429,7 @@ interface UploadStepProps {
 function UploadStep({
   selectedBank, setSelectedBank,
   selectedAccountId, setSelectedAccountId,
-  accountOptions, fileName, parseResult,
+  accountOptions, fileName, parseResult, parsing,
   dragOver, setDragOver,
   handleDrop, handleFileInput, fileInputRef,
 }: UploadStepProps) {
@@ -453,23 +468,27 @@ function UploadStep({
           'rounded-full p-4',
           dragOver ? 'bg-primary-100 dark:bg-primary-900/40' : 'bg-gray-100 dark:bg-gray-700',
         )}>
-          <Upload className={classNames(
-            'h-8 w-8',
-            dragOver ? 'text-primary-600 dark:text-primary-400' : 'text-gray-400 dark:text-gray-500',
-          )} />
+          {parsing ? (
+            <Loader2 className="h-8 w-8 text-primary-600 dark:text-primary-400 animate-spin" />
+          ) : (
+            <Upload className={classNames(
+              'h-8 w-8',
+              dragOver ? 'text-primary-600 dark:text-primary-400' : 'text-gray-400 dark:text-gray-500',
+            )} />
+          )}
         </div>
         <div className="text-center">
           <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
-            {fileName ? fileName : 'Drop your bank statement CSV here'}
+            {parsing ? 'Parsing PDF statement...' : fileName ? fileName : 'Drop your bank statement here'}
           </p>
           <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-            or click to browse • CSV files only (max 5MB)
+            or click to browse • CSV or PDF files (max 5MB)
           </p>
         </div>
         <input
           ref={fileInputRef}
           type="file"
-          accept=".csv"
+          accept=".csv,.pdf"
           onChange={handleFileInput}
           className="hidden"
         />
@@ -496,8 +515,8 @@ function UploadStep({
       <div className="flex items-start gap-2 rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 p-4">
         <Info className="h-5 w-5 text-blue-500 mt-0.5 shrink-0" />
         <div className="text-xs text-blue-700 dark:text-blue-300 space-y-1">
-          <p className="font-medium">Supported banks: ICICI, HDFC, SBI, Axis, and generic CSV formats.</p>
-          <p>Download your statement as CSV from your bank&apos;s net banking portal. PDF statements are not yet supported.</p>
+          <p className="font-medium">Supported banks: ICICI, HDFC, SBI, Axis, and generic CSV/PDF formats.</p>
+          <p>Download your statement as CSV or PDF from your bank&apos;s net banking portal.</p>
         </div>
       </div>
     </div>

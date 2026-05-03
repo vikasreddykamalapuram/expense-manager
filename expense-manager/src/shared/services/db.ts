@@ -38,6 +38,18 @@ export interface DbRecurringRule extends RecurringRule {
   profileId: string;
 }
 
+export interface DbReceipt {
+  id: string;
+  profileId: string;
+  transactionId: string;
+  data: Blob;
+  mimeType: string;
+  fileName: string;
+  fileSize: number;
+  thumbnailData?: Blob;
+  createdAt: string;
+}
+
 export class ExpenseDatabase extends Dexie {
   transactions!: Table<DbTransaction, string>;
   categories!: Table<DbCategory, string>;
@@ -48,6 +60,7 @@ export class ExpenseDatabase extends Dexie {
   profiles!: Table<Profile, string>;
   migrations!: Table<DbMigration, string>;
   recurringRules!: Table<DbRecurringRule, string>;
+  receipts!: Table<DbReceipt, string>;
 
   constructor() {
     super('ExpenseIQDatabase');
@@ -73,6 +86,19 @@ export class ExpenseDatabase extends Dexie {
       profiles: 'id',
       migrations: 'key',
       recurringRules: 'id, profileId, [profileId+isActive], [profileId+nextDueDate]',
+    });
+
+    this.version(3).stores({
+      transactions: 'id, profileId, [profileId+date], [profileId+categoryId], [profileId+accountId], [profileId+type]',
+      categories: 'id, profileId, [profileId+type], [profileId+parentId]',
+      accounts: 'id, profileId, [profileId+type], [profileId+isActive]',
+      budgets: 'id, profileId, [profileId+categoryId+month]',
+      settings: 'profileId',
+      customInstitutions: 'profileId',
+      profiles: 'id',
+      migrations: 'key',
+      recurringRules: 'id, profileId, [profileId+isActive], [profileId+nextDueDate]',
+      receipts: 'id, profileId, transactionId',
     });
   }
 }

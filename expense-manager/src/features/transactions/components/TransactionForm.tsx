@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { v4 as uuidv4 } from 'uuid';
 import { ArrowDownCircle, ArrowUpCircle, ArrowLeftRight } from 'lucide-react';
@@ -8,6 +8,8 @@ import { Input, Select } from '../../../shared/components/ui/Input';
 import { Modal } from '../../../shared/components/ui/Modal';
 import { CategoryForm } from '../../categories/components/CategoryForm';
 import { AccountForm } from '../../accounts/components/AccountForm';
+import { ReceiptCapture } from '../../../shared/components/ReceiptCapture';
+import { receiptService } from '../../../shared/services/receiptService';
 import { PAYMENT_METHODS } from '../../../shared/constants/accounts';
 import { getToday, classNames } from '../../../shared/utils/helpers';
 import { Transaction, Account, PaymentMethod } from '../../../shared/types';
@@ -40,6 +42,9 @@ export function TransactionForm({ editTransaction, onClose }: TransactionFormPro
   const [newCategoryParentId, setNewCategoryParentId] = useState<string | undefined>();
   const [showAccountForm, setShowAccountForm] = useState(false);
   const [accountFormTarget, setAccountFormTarget] = useState<'source' | 'destination'>('source');
+  const [pendingReceiptFile, setPendingReceiptFile] = useState<File | null>(null);
+  const [receiptId, setReceiptId] = useState<string | undefined>(editTransaction?.receiptId);
+  const pendingReceiptRef = useRef<File | null>(null);
 
   // Two-level category picker: parent categories + subcategories
   const parentCategories = type === 'transfer'
@@ -72,11 +77,12 @@ export function TransactionForm({ editTransaction, onClose }: TransactionFormPro
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validate()) return;
 
     const now = new Date().toISOString();
+    const txId = isEditing && editTransaction ? editTransaction.id : uuidv4();
     const txData = {
       type,
       amount: parseFloat(amount),
@@ -88,12 +94,24 @@ export function TransactionForm({ editTransaction, onClose }: TransactionFormPro
       paymentMethod: paymentMethod || undefined,
       isRecurring,
       recurringFrequency: isRecurring ? recurringFrequency as Transaction['recurringFrequency'] : undefined,
+      receiptId,
     };
 
     if (isEditing && editTransaction) {
       actions.updateTransaction(editTransaction.id, txData);
     } else {
-      actions.addTransaction({ id: uuidv4(), ...txData, createdAt: now, updatedAt: now });
+      actions.addTransaction({ id: txId, ...txData, createdAt: now, updatedAt: now });
+    }
+
+    // Save pending receipt file after transaction is persisted
+    const fileToSave = pendingReceiptRef.current;
+    if (fileToSave) {
+      try {
+        const newReceiptId = await receiptService.saveReceipt(state.activeProfileId, txId, fileToSave);
+        actions.updateTransaction(txId, { receiptId: newReceiptId });
+      } catch {
+        // Receipt save failed but transaction was saved — acceptable
+      }
     }
 
     if (onClose) {
@@ -294,6 +312,56 @@ export function TransactionForm({ editTransaction, onClose }: TransactionFormPro
           value={notes}
           onChange={(e) => setNotes(e.target.value)}
         />
+      </div>
+
+      {/* Receipt */}
+      <div>
+        <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">
+          Receipt (optional)
+        </label>
+        {isEditing && editTransaction ? (
+          <ReceiptCapture
+            transactionId={editTransaction.id}
+            receiptId={receiptId}
+            onReceiptSaved={(newId) => {
+              setReceiptId(newId);
+              actions.updateTransaction(editTransaction.id, { receiptId: newId });
+            }}
+            onReceiptDeleted={() => {
+              setReceiptId(undefined);
+              actions.updateTransaction(editTransaction.id, { receiptId: undefined });
+            }}
+          />
+        ) : (
+          <ReceiptCapture
+            transactionId="pending"
+            receiptId={undefined}
+            onReceiptSaved={() => {
+              // For new transactions, we capture the file via the hidden input approach
+            }}
+            onReceiptDeleted={() => setReceiptId(undefined)}
+          />
+        )}
+        {/* For new transactions, use a simpler file input that stores file for post-save */}
+        {!isEditing && (
+          <div className="mt-2">
+            <input
+              type="file"
+              accept="image/jpeg,image/png,image/webp,image/heic,image/heif"
+              className="block w-full text-sm text-gray-500 dark:text-gray-400 file:mr-3 file:rounded-lg file:border-0 file:bg-primary-50 file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-primary-700 dark:file:bg-primary-900/30 dark:file:text-primary-400 hover:file:bg-primary-100"
+              onChange={(e) => {
+                const file = e.target.files?.[0] || null;
+                setPendingReceiptFile(file);
+                pendingReceiptRef.current = file;
+              }}
+            />
+            {pendingReceiptFile && (
+              <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                📎 {pendingReceiptFile.name} ({(pendingReceiptFile.size / 1024).toFixed(0)} KB)
+              </p>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Recurring */}
