@@ -1,4 +1,5 @@
 import { StockTransaction, PortfolioHolding, AssetClass } from '../types';
+import { StockPrice } from './stockPriceService';
 
 interface BuyLot {
   quantity: number;
@@ -94,9 +95,21 @@ export function calculateHoldings(transactions: StockTransaction[]): PortfolioHo
 
 export interface PortfolioStats {
   totalInvested: number;
+  totalCurrentValue: number;
+  totalUnrealizedPL: number;
+  totalUnrealizedPLPercent: number;
+  totalDayChange: number;
   totalCharges: number;
   holdingCount: number;
   topHoldings: PortfolioHolding[];
+  topGainers: PortfolioHolding[];
+  topLosers: PortfolioHolding[];
+  diversification: {
+    byAssetClass: { label: string; value: number; percent: number }[];
+    byBroker: { label: string; value: number; percent: number }[];
+    concentrationRisk: number;
+    herfindahlIndex: number;
+  };
 }
 
 export function calculatePortfolioStats(holdings: PortfolioHolding[]): PortfolioStats {
@@ -104,12 +117,112 @@ export function calculatePortfolioStats(holdings: PortfolioHolding[]): Portfolio
   const totalCharges = holdings.reduce((sum, h) => sum + h.totalCharges, 0);
   const topHoldings = [...holdings].sort((a, b) => b.totalInvested - a.totalInvested).slice(0, 5);
 
+  const hasLivePrices = holdings.some(h => h.currentValue != null);
+  const totalCurrentValue = hasLivePrices
+    ? holdings.reduce((sum, h) => sum + (h.currentValue ?? h.totalInvested), 0)
+    : 0;
+  const totalUnrealizedPL = hasLivePrices ? totalCurrentValue - totalInvested : 0;
+  const totalUnrealizedPLPercent = hasLivePrices && totalInvested > 0
+    ? (totalUnrealizedPL / totalInvested) * 100
+    : 0;
+  const totalDayChange = hasLivePrices
+    ? holdings.reduce((sum, h) => sum + (h.dayChange ?? 0) * (h.quantity ?? 0), 0)
+    : 0;
+
+  // Holdings with P&L for sorting
+  const holdingsWithPL = holdings.filter(h => h.unrealizedPLPercent != null);
+  const topGainers = [...holdingsWithPL]
+    .sort((a, b) => (b.unrealizedPLPercent ?? 0) - (a.unrealizedPLPercent ?? 0))
+    .slice(0, 5);
+  const topLosers = [...holdingsWithPL]
+    .sort((a, b) => (a.unrealizedPLPercent ?? 0) - (b.unrealizedPLPercent ?? 0))
+    .slice(0, 5);
+
+  // Diversification: use currentValue if available, else totalInvested
+  const valueKey = hasLivePrices ? 'currentValue' : 'totalInvested';
+  const totalValue = holdings.reduce((s, h) => s + (h[valueKey] ?? h.totalInvested), 0);
+
+  // By asset class
+  const acMap = new Map<string, number>();
+  for (const h of holdings) {
+    const label = h.assetClass.replace('_', ' ').replace(/\b\w/g, c => c.toUpperCase());
+    acMap.set(label, (acMap.get(label) || 0) + (h[valueKey] ?? h.totalInvested));
+  }
+  const byAssetClass = [...acMap.entries()]
+    .map(([label, value]) => ({ label, value: r2(value), percent: totalValue > 0 ? r2((value / totalValue) * 100) : 0 }))
+    .sort((a, b) => b.value - a.value);
+
+  // By broker
+  const brokerMap = new Map<string, number>();
+  for (const h of holdings) {
+    brokerMap.set(h.broker, (brokerMap.get(h.broker) || 0) + (h[valueKey] ?? h.totalInvested));
+  }
+  const byBroker = [...brokerMap.entries()]
+    .map(([label, value]) => ({ label, value: r2(value), percent: totalValue > 0 ? r2((value / totalValue) * 100) : 0 }))
+    .sort((a, b) => b.value - a.value);
+
+  // Concentration risk: largest single holding as % of portfolio
+  const maxHoldingValue = holdings.reduce((max, h) => Math.max(max, h[valueKey] ?? h.totalInvested), 0);
+  const concentrationRisk = totalValue > 0 ? r2((maxHoldingValue / totalValue) * 100) : 0;
+
+  // Herfindahl-Hirschman Index (sum of squared market shares, 0-10000)
+  const herfindahlIndex = totalValue > 0
+    ? r2(holdings.reduce((sum, h) => {
+        const share = ((h[valueKey] ?? h.totalInvested) / totalValue) * 100;
+        return sum + share * share;
+      }, 0))
+    : 0;
+
   return {
-    totalInvested: Math.round(totalInvested * 100) / 100,
-    totalCharges: Math.round(totalCharges * 100) / 100,
+    totalInvested: r2(totalInvested),
+    totalCurrentValue: r2(totalCurrentValue),
+    totalUnrealizedPL: r2(totalUnrealizedPL),
+    totalUnrealizedPLPercent: r2(totalUnrealizedPLPercent),
+    totalDayChange: r2(totalDayChange),
+    totalCharges: r2(totalCharges),
     holdingCount: holdings.length,
     topHoldings,
+    topGainers,
+    topLosers,
+    diversification: {
+      byAssetClass,
+      byBroker,
+      concentrationRisk,
+      herfindahlIndex,
+    },
   };
+}
+
+function r2(n: number): number {
+  return Math.round(n * 100) / 100;
+}
+
+/** Enrich holdings with live price data */
+export function enrichHoldingsWithPrices(
+  holdings: PortfolioHolding[],
+  prices: Map<string, StockPrice>
+): PortfolioHolding[] {
+  return holdings.map(h => {
+    const price = prices.get(h.symbol);
+    if (!price) return h;
+
+    const currentValue = h.quantity * price.currentPrice;
+    const unrealizedPL = currentValue - h.totalInvested;
+    const unrealizedPLPercent = h.totalInvested > 0
+      ? (unrealizedPL / h.totalInvested) * 100
+      : 0;
+
+    return {
+      ...h,
+      currentPrice: price.currentPrice,
+      currentValue: r2(currentValue),
+      unrealizedPL: r2(unrealizedPL),
+      unrealizedPLPercent: r2(unrealizedPLPercent),
+      dayChange: price.change,
+      dayChangePercent: price.changePercent,
+      priceLastUpdated: price.lastUpdated,
+    };
+  });
 }
 
 export interface MonthlyBreakdown {

@@ -173,6 +173,14 @@ export interface PortfolioHolding {
   totalInvested: number;
   totalCharges: number;
   broker: string;
+  // Live price fields (populated when prices available)
+  currentPrice?: number;
+  currentValue?: number;
+  unrealizedPL?: number;
+  unrealizedPLPercent?: number;
+  dayChange?: number;
+  dayChangePercent?: number;
+  priceLastUpdated?: string;
 }
 
 // ─── Bill Reminder Types ────────────────────────────────
