@@ -8,7 +8,10 @@ import { AccountsPage } from '../features/accounts/components/AccountsPage';
 import { CategoriesPage } from '../features/categories/components/CategoriesPage';
 import { SettingsPage } from '../features/settings/components/SettingsPage';
 import { BudgetsPage } from '../features/budgets/components/BudgetsPage';
+import { MonthlyReport } from '../features/reports/components/MonthlyReport';
+import { StatementImportPage } from '../features/import/components/StatementImportPage';
 import { LoginPage } from '../features/auth/components/LoginPage';
+import { RecurringPage } from '../features/recurring/components/RecurringPage';
 
 /** Redirect to /login if first-time visitor (no onboarding flag set) */
 function OnboardingGuard({ children }: { children: React.ReactNode }) {
@@ -30,11 +33,14 @@ export const router = createBrowserRouter([
     children: [
       { index: true, element: <Dashboard /> },
       { path: 'transactions', element: <TransactionsPage /> },
+      { path: 'recurring', element: <RecurringPage /> },
       { path: 'add', element: <AddTransactionPage /> },
       { path: 'analytics', element: <AnalyticsView /> },
       { path: 'budgets', element: <BudgetsPage /> },
+      { path: 'reports', element: <MonthlyReport /> },
       { path: 'accounts', element: <AccountsPage /> },
       { path: 'categories', element: <CategoriesPage /> },
+      { path: 'import', element: <StatementImportPage /> },
       { path: 'settings', element: <SettingsPage /> },
     ],
   },

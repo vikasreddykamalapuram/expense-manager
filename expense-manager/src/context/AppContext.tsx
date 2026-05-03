@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useReducer, useEffect, useCallback, useRef, ReactNode } from 'react';
-import { Transaction, TransactionFilters, Settings, Budget, Category, Account, Profile } from '../shared/types';
+import { Transaction, TransactionFilters, Settings, Budget, Category, Account, Profile, RecurringRule } from '../shared/types';
 import { repository } from '../shared/services/repository';
 import { migrateFromLocalStorage, getActiveProfileIdFromLS } from '../shared/services/migration';
 import { DEFAULT_SETTINGS } from '../shared/constants/categories';
@@ -15,11 +15,12 @@ interface AppState {
   profiles: Profile[];
   activeProfileId: string;
   isLoading: boolean;
+  recurringRules: RecurringRule[];
 }
 
 // Pure reducer actions — no side effects
 type AppAction =
-  | { type: 'LOAD_PROFILE_DATA'; payload: { profileId: string; transactions: Transaction[]; settings: Settings; budgets: Budget[]; categories: Category[]; accounts: Account[] } }
+  | { type: 'LOAD_PROFILE_DATA'; payload: { profileId: string; transactions: Transaction[]; settings: Settings; budgets: Budget[]; categories: Category[]; accounts: Account[]; recurringRules: RecurringRule[] } }
   | { type: 'SET_TRANSACTIONS'; payload: Transaction[] }
   | { type: 'ADD_TRANSACTION'; payload: Transaction }
   | { type: 'UPDATE_TRANSACTION'; payload: { id: string; updates: Partial<Transaction> } }
@@ -33,7 +34,11 @@ type AppAction =
   | { type: 'RESET_FILTERS' }
   | { type: 'SET_LOADING'; payload: boolean }
   | { type: 'SET_ACCOUNTS'; payload: Account[] }
-  | { type: 'SET_PROFILES'; payload: Profile[] };
+  | { type: 'SET_PROFILES'; payload: Profile[] }
+  | { type: 'SET_RECURRING_RULES'; payload: RecurringRule[] }
+  | { type: 'ADD_RECURRING_RULE'; payload: RecurringRule }
+  | { type: 'UPDATE_RECURRING_RULE'; payload: { id: string; updates: Partial<RecurringRule> } }
+  | { type: 'DELETE_RECURRING_RULE'; payload: string };
 
 const initialFilters: TransactionFilters = {
   sortBy: 'date',
@@ -50,6 +55,7 @@ const initialState: AppState = {
   activeProfileId: 'default',
   filters: initialFilters,
   isLoading: true,
+  recurringRules: [],
 };
 
 // Pure reducer — no persistence side effects
@@ -64,6 +70,7 @@ function appReducer(state: AppState, action: AppAction): AppState {
         budgets: action.payload.budgets,
         categories: action.payload.categories,
         accounts: action.payload.accounts,
+        recurringRules: action.payload.recurringRules,
         filters: initialFilters,
       };
     case 'SET_TRANSACTIONS':
@@ -107,6 +114,20 @@ function appReducer(state: AppState, action: AppAction): AppState {
       return { ...state, accounts: action.payload };
     case 'SET_PROFILES':
       return { ...state, profiles: action.payload };
+    case 'SET_RECURRING_RULES':
+      return { ...state, recurringRules: action.payload };
+    case 'ADD_RECURRING_RULE':
+      return { ...state, recurringRules: [...state.recurringRules, action.payload] };
+    case 'UPDATE_RECURRING_RULE': {
+      const updatedRules = state.recurringRules.map((r) =>
+        r.id === action.payload.id
+          ? { ...r, ...action.payload.updates, updatedAt: new Date().toISOString() }
+          : r
+      );
+      return { ...state, recurringRules: updatedRules };
+    }
+    case 'DELETE_RECURRING_RULE':
+      return { ...state, recurringRules: state.recurringRules.filter((r) => r.id !== action.payload) };
     default:
       return state;
   }
@@ -142,6 +163,10 @@ export interface AppActions {
   saveCustomCategories: (categories: Category[]) => Promise<void>;
   addCustomInstitution: (accountType: string, name: string) => Promise<Record<string, string[]>>;
   getCustomInstitutions: () => Promise<Record<string, string[]>>;
+  addRecurringRule: (rule: RecurringRule) => Promise<void>;
+  updateRecurringRule: (id: string, updates: Partial<RecurringRule>) => Promise<void>;
+  deleteRecurringRule: (id: string) => Promise<void>;
+  processRecurringRules: () => Promise<Transaction[]>;
 }
 
 // Context
@@ -190,6 +215,17 @@ export function AppProvider({ children }: { children: ReactNode }) {
           payload: { profileId: activeProfileId, ...profileData },
         });
         dispatch({ type: 'SET_LOADING', payload: false });
+
+        // Auto-generate pending recurring transactions
+        const newTxns = await repository.processRecurringRules(activeProfileId);
+        if (!cancelled && newTxns.length > 0) {
+          const [updatedTxns, updatedRules] = await Promise.all([
+            repository.getTransactions(activeProfileId),
+            repository.getRecurringRules(activeProfileId),
+          ]);
+          dispatch({ type: 'SET_TRANSACTIONS', payload: updatedTxns });
+          dispatch({ type: 'SET_RECURRING_RULES', payload: updatedRules });
+        }
       } catch (error) {
         console.error('Failed to initialize app:', error);
         if (!cancelled) dispatch({ type: 'SET_LOADING', payload: false });
@@ -357,6 +393,40 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
     getCustomInstitutions: useCallback(async () => {
       return repository.getCustomInstitutions(profileIdRef.current);
+    }, []),
+
+    addRecurringRule: useCallback(async (rule: RecurringRule) => {
+      await repository.saveRecurringRule(profileIdRef.current, rule);
+      dispatch({ type: 'ADD_RECURRING_RULE', payload: rule });
+    }, []),
+
+    updateRecurringRule: useCallback(async (id: string, updates: Partial<RecurringRule>) => {
+      const current = await repository.getRecurringRules(profileIdRef.current);
+      const existing = current.find((r) => r.id === id);
+      if (existing) {
+        const updated: RecurringRule = { ...existing, ...updates, updatedAt: new Date().toISOString() };
+        await repository.saveRecurringRule(profileIdRef.current, updated);
+        dispatch({ type: 'UPDATE_RECURRING_RULE', payload: { id, updates } });
+      }
+    }, []),
+
+    deleteRecurringRule: useCallback(async (id: string) => {
+      await repository.deleteRecurringRule(profileIdRef.current, id);
+      dispatch({ type: 'DELETE_RECURRING_RULE', payload: id });
+    }, []),
+
+    processRecurringRules: useCallback(async () => {
+      const newTxns = await repository.processRecurringRules(profileIdRef.current);
+      if (newTxns.length > 0) {
+        // Reload transactions and rules to stay in sync
+        const [transactions, recurringRules] = await Promise.all([
+          repository.getTransactions(profileIdRef.current),
+          repository.getRecurringRules(profileIdRef.current),
+        ]);
+        dispatch({ type: 'SET_TRANSACTIONS', payload: transactions });
+        dispatch({ type: 'SET_RECURRING_RULES', payload: recurringRules });
+      }
+      return newTxns;
     }, []),
   };
 

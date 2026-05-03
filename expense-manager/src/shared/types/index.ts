@@ -103,6 +103,25 @@ export interface Profile {
   createdAt: string;
 }
 
+export interface RecurringRule {
+  id: string;
+  name: string;
+  type: 'income' | 'expense';
+  amount: number;
+  categoryId: string;
+  accountId?: string;
+  paymentMethod?: PaymentMethod;
+  notes: string;
+  frequency: 'daily' | 'weekly' | 'monthly' | 'yearly';
+  startDate: string; // YYYY-MM-DD
+  endDate?: string; // optional end date
+  nextDueDate: string; // YYYY-MM-DD
+  lastGeneratedDate?: string; // last time a transaction was auto-created
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export type AuthProvider = 'google' | 'microsoft';
 
 export interface AuthUser {

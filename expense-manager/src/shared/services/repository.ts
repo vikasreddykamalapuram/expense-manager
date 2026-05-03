@@ -1,7 +1,8 @@
 import { db, DbTransaction, DbCategory, DbAccount, DbBudget } from './db';
-import { Transaction, Category, Account, Budget, Settings, Profile } from '../types';
+import { Transaction, Category, Account, Budget, Settings, Profile, RecurringRule } from '../types';
 import { DEFAULT_SETTINGS, ALL_CATEGORIES } from '../constants/categories';
 import { DEFAULT_ACCOUNTS } from '../constants/accounts';
+import { v4 as uuidv4 } from 'uuid';
 
 const DEFAULT_PROFILE_ID = 'default';
 
@@ -41,13 +42,14 @@ class ExpenseRepository {
 
   async deleteProfile(id: string): Promise<void> {
     if (id === DEFAULT_PROFILE_ID) return;
-    await db.transaction('rw', [db.transactions, db.categories, db.accounts, db.budgets, db.settings, db.customInstitutions, db.profiles], async () => {
+    await db.transaction('rw', [db.transactions, db.categories, db.accounts, db.budgets, db.settings, db.customInstitutions, db.profiles, db.recurringRules], async () => {
       await db.transactions.where('profileId').equals(id).delete();
       await db.categories.where('profileId').equals(id).delete();
       await db.accounts.where('profileId').equals(id).delete();
       await db.budgets.where('profileId').equals(id).delete();
       await db.settings.where('profileId').equals(id).delete();
       await db.customInstitutions.where('profileId').equals(id).delete();
+      await db.recurringRules.where('profileId').equals(id).delete();
       await db.profiles.delete(id);
     });
   }
@@ -271,14 +273,114 @@ class ExpenseRepository {
   }
 
   async clearAllData(profileId: string): Promise<void> {
-    await db.transaction('rw', [db.transactions, db.categories, db.accounts, db.budgets, db.settings, db.customInstitutions], async () => {
+    await db.transaction('rw', [db.transactions, db.categories, db.accounts, db.budgets, db.settings, db.customInstitutions, db.recurringRules], async () => {
       await db.transactions.where('profileId').equals(profileId).delete();
       await db.categories.where('profileId').equals(profileId).delete();
       await db.accounts.where('profileId').equals(profileId).delete();
       await db.budgets.where('profileId').equals(profileId).delete();
       await db.settings.where('profileId').equals(profileId).delete();
       await db.customInstitutions.where('profileId').equals(profileId).delete();
+      await db.recurringRules.where('profileId').equals(profileId).delete();
     });
+  }
+
+  // ─── Recurring Rules ──────────────────────────────────
+
+  async getRecurringRules(profileId: string): Promise<RecurringRule[]> {
+    const rows = await db.recurringRules.where('profileId').equals(profileId).toArray();
+    return rows.map(stripProfileId) as RecurringRule[];
+  }
+
+  async saveRecurringRule(profileId: string, rule: RecurringRule): Promise<void> {
+    await db.recurringRules.put({ ...rule, profileId });
+  }
+
+  async deleteRecurringRule(profileId: string, id: string): Promise<void> {
+    const rule = await db.recurringRules.get(id);
+    if (rule && rule.profileId === profileId) {
+      await db.recurringRules.delete(id);
+    }
+  }
+
+  private computeNextDueDate(currentDue: string, frequency: RecurringRule['frequency']): string {
+    const d = new Date(currentDue + 'T00:00:00');
+    switch (frequency) {
+      case 'daily':
+        d.setDate(d.getDate() + 1);
+        break;
+      case 'weekly':
+        d.setDate(d.getDate() + 7);
+        break;
+      case 'monthly': {
+        const origDay = d.getDate();
+        d.setMonth(d.getMonth() + 1);
+        // Handle month overflow (e.g., Jan 31 → Feb 28)
+        if (d.getDate() !== origDay) {
+          d.setDate(0); // last day of previous month
+        }
+        break;
+      }
+      case 'yearly': {
+        const origMonth = d.getMonth();
+        const origDayY = d.getDate();
+        d.setFullYear(d.getFullYear() + 1);
+        // Handle Feb 29 → Feb 28 in non-leap years
+        if (d.getMonth() !== origMonth || d.getDate() !== origDayY) {
+          d.setDate(0);
+        }
+        break;
+      }
+    }
+    return d.toISOString().split('T')[0];
+  }
+
+  async processRecurringRules(profileId: string): Promise<Transaction[]> {
+    const today = new Date().toISOString().split('T')[0];
+    const allRules = await db.recurringRules
+      .where('profileId')
+      .equals(profileId)
+      .toArray();
+
+    const rules = allRules.filter((r) => r.isActive && r.nextDueDate <= today);
+    const generatedTransactions: Transaction[] = [];
+
+    for (const rule of rules) {
+      // Generate transactions for all due dates up to today
+      while (rule.nextDueDate <= today && rule.isActive) {
+        const tx: Transaction = {
+          id: uuidv4(),
+          type: rule.type,
+          amount: rule.amount,
+          categoryId: rule.categoryId,
+          date: rule.nextDueDate,
+          notes: rule.notes ? `${rule.notes} (Auto: ${rule.name})` : `Auto: ${rule.name}`,
+          accountId: rule.accountId,
+          paymentMethod: rule.paymentMethod,
+          isRecurring: true,
+          recurringFrequency: rule.frequency,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        };
+
+        await db.transactions.add({ ...tx, profileId });
+        generatedTransactions.push(tx);
+
+        const nextDue = this.computeNextDueDate(rule.nextDueDate, rule.frequency);
+        rule.lastGeneratedDate = today;
+        rule.nextDueDate = nextDue;
+        rule.updatedAt = new Date().toISOString();
+
+        // If past end date, deactivate
+        if (rule.endDate && nextDue > rule.endDate) {
+          rule.isActive = false;
+        }
+      }
+
+      // Persist updated rule
+      await db.recurringRules.put(rule);
+    }
+
+    return generatedTransactions;
   }
 
   // ─── Load all data for a profile (used on init/switch) ──
@@ -289,23 +391,25 @@ class ExpenseRepository {
     accounts: Account[];
     budgets: Budget[];
     settings: Settings;
+    recurringRules: RecurringRule[];
   }> {
-    const [transactions, categories, accounts, budgets, settings] = await Promise.all([
+    const [transactions, categories, accounts, budgets, settings, recurringRules] = await Promise.all([
       this.getTransactions(profileId),
       this.getAllCategories(profileId),
       this.getAccounts(profileId),
       this.getBudgets(profileId),
       this.getSettings(profileId),
+      this.getRecurringRules(profileId),
     ]);
 
     // Seed default accounts for new profiles with no accounts
     if (accounts.length === 0) {
       const rows: DbAccount[] = DEFAULT_ACCOUNTS.map((a) => ({ ...a, profileId }));
       await db.accounts.bulkAdd(rows);
-      return { transactions, categories, accounts: [...DEFAULT_ACCOUNTS], budgets, settings };
+      return { transactions, categories, accounts: [...DEFAULT_ACCOUNTS], budgets, settings, recurringRules };
     }
 
-    return { transactions, categories, accounts, budgets, settings };
+    return { transactions, categories, accounts, budgets, settings, recurringRules };
   }
 }
 
