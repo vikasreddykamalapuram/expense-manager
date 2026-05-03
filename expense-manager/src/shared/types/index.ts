@@ -123,6 +123,53 @@ export interface RecurringRule {
   updatedAt: string;
 }
 
+// ─── Stock/Trading Types ────────────────────────────────
+
+export type StockExchange = 'NSE' | 'BSE' | 'MCX' | 'OTHER';
+export type TradeType = 'buy' | 'sell' | 'dividend' | 'bonus' | 'split' | 'ipo';
+export type AssetClass = 'equity' | 'mutual_fund' | 'etf' | 'bond' | 'gold' | 'other';
+
+export interface StockTransaction {
+  id: string;
+  date: string; // YYYY-MM-DD
+  symbol: string; // e.g., RELIANCE, INFY, TATAMOTORS
+  name: string; // full company/fund name
+  exchange: StockExchange;
+  assetClass: AssetClass;
+  type: TradeType;
+  quantity: number;
+  price: number; // per unit price
+  totalValue: number; // quantity × price
+  charges: TradeCharges;
+  broker: string; // broker name
+  notes: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface TradeCharges {
+  brokerage: number;
+  stt: number; // Securities Transaction Tax
+  gst: number;
+  stampDuty: number;
+  exchangeCharges: number;
+  sebiCharges: number;
+  otherCharges: number;
+  total: number; // sum of all
+}
+
+export interface PortfolioHolding {
+  symbol: string;
+  name: string;
+  exchange: StockExchange;
+  assetClass: AssetClass;
+  quantity: number;
+  avgBuyPrice: number;
+  totalInvested: number;
+  totalCharges: number;
+  broker: string;
+}
+
 export type AuthProvider = 'google' | 'microsoft';
 
 export interface AuthUser {

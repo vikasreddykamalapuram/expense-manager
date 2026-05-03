@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useReducer, useEffect, useCallback, useRef, ReactNode } from 'react';
-import { Transaction, TransactionFilters, Settings, Budget, Category, Account, Profile, RecurringRule } from '../shared/types';
+import { Transaction, TransactionFilters, Settings, Budget, Category, Account, Profile, RecurringRule, StockTransaction } from '../shared/types';
 import { repository } from '../shared/services/repository';
+import { db } from '../shared/services/db';
 import { migrateFromLocalStorage, getActiveProfileIdFromLS } from '../shared/services/migration';
 import { DEFAULT_SETTINGS } from '../shared/constants/categories';
 
@@ -16,6 +17,7 @@ interface AppState {
   activeProfileId: string;
   isLoading: boolean;
   recurringRules: RecurringRule[];
+  stockTransactions: StockTransaction[];
 }
 
 // Pure reducer actions — no side effects
@@ -38,7 +40,11 @@ type AppAction =
   | { type: 'SET_RECURRING_RULES'; payload: RecurringRule[] }
   | { type: 'ADD_RECURRING_RULE'; payload: RecurringRule }
   | { type: 'UPDATE_RECURRING_RULE'; payload: { id: string; updates: Partial<RecurringRule> } }
-  | { type: 'DELETE_RECURRING_RULE'; payload: string };
+  | { type: 'DELETE_RECURRING_RULE'; payload: string }
+  | { type: 'SET_STOCK_TRANSACTIONS'; payload: StockTransaction[] }
+  | { type: 'ADD_STOCK_TRANSACTION'; payload: StockTransaction }
+  | { type: 'ADD_STOCK_TRANSACTIONS'; payload: StockTransaction[] }
+  | { type: 'DELETE_STOCK_TRANSACTION'; payload: string };
 
 const initialFilters: TransactionFilters = {
   sortBy: 'date',
@@ -56,6 +62,7 @@ const initialState: AppState = {
   filters: initialFilters,
   isLoading: true,
   recurringRules: [],
+  stockTransactions: [],
 };
 
 // Pure reducer — no persistence side effects
@@ -128,6 +135,14 @@ function appReducer(state: AppState, action: AppAction): AppState {
     }
     case 'DELETE_RECURRING_RULE':
       return { ...state, recurringRules: state.recurringRules.filter((r) => r.id !== action.payload) };
+    case 'SET_STOCK_TRANSACTIONS':
+      return { ...state, stockTransactions: action.payload };
+    case 'ADD_STOCK_TRANSACTION':
+      return { ...state, stockTransactions: [...state.stockTransactions, action.payload] };
+    case 'ADD_STOCK_TRANSACTIONS':
+      return { ...state, stockTransactions: [...state.stockTransactions, ...action.payload] };
+    case 'DELETE_STOCK_TRANSACTION':
+      return { ...state, stockTransactions: state.stockTransactions.filter((t) => t.id !== action.payload) };
     default:
       return state;
   }
@@ -167,6 +182,9 @@ export interface AppActions {
   updateRecurringRule: (id: string, updates: Partial<RecurringRule>) => Promise<void>;
   deleteRecurringRule: (id: string) => Promise<void>;
   processRecurringRules: () => Promise<Transaction[]>;
+  addStockTransaction: (txn: StockTransaction) => Promise<void>;
+  addStockTransactions: (txns: StockTransaction[]) => Promise<void>;
+  deleteStockTransaction: (id: string) => Promise<void>;
 }
 
 // Context
@@ -214,6 +232,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
           type: 'LOAD_PROFILE_DATA',
           payload: { profileId: activeProfileId, ...profileData },
         });
+
+        // Load stock transactions
+        const stockTxns = await db.stockTransactions.where('profileId').equals(activeProfileId).toArray();
+        if (!cancelled) {
+          dispatch({ type: 'SET_STOCK_TRANSACTIONS', payload: stockTxns });
+        }
+
         dispatch({ type: 'SET_LOADING', payload: false });
 
         // Auto-generate pending recurring transactions
@@ -332,12 +357,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
     switchProfile: useCallback(async (profileId: string) => {
       profileIdRef.current = profileId;
       localStorage.setItem('em_active_profile', profileId);
-      const [data, profiles] = await Promise.all([
+      const [data, profiles, stockTxns] = await Promise.all([
         repository.loadProfileData(profileId),
         repository.getProfiles(),
+        db.stockTransactions.where('profileId').equals(profileId).toArray(),
       ]);
       dispatch({ type: 'SET_PROFILES', payload: profiles });
       dispatch({ type: 'LOAD_PROFILE_DATA', payload: { profileId, ...data } });
+      dispatch({ type: 'SET_STOCK_TRANSACTIONS', payload: stockTxns });
     }, []),
 
     importData: useCallback(async (jsonString: string) => {
@@ -427,6 +454,23 @@ export function AppProvider({ children }: { children: ReactNode }) {
         dispatch({ type: 'SET_RECURRING_RULES', payload: recurringRules });
       }
       return newTxns;
+    }, []),
+
+    addStockTransaction: useCallback(async (txn: StockTransaction) => {
+      await db.stockTransactions.add({ ...txn, profileId: profileIdRef.current });
+      dispatch({ type: 'ADD_STOCK_TRANSACTION', payload: txn });
+    }, []),
+
+    addStockTransactions: useCallback(async (txns: StockTransaction[]) => {
+      const profileId = profileIdRef.current;
+      const withProfile = txns.map(t => ({ ...t, profileId }));
+      await db.stockTransactions.bulkAdd(withProfile);
+      dispatch({ type: 'ADD_STOCK_TRANSACTIONS', payload: txns });
+    }, []),
+
+    deleteStockTransaction: useCallback(async (id: string) => {
+      await db.stockTransactions.delete(id);
+      dispatch({ type: 'DELETE_STOCK_TRANSACTION', payload: id });
     }, []),
   };
 

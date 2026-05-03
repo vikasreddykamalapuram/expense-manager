@@ -13,6 +13,9 @@ import { StatementImportPage } from '../features/import/components/StatementImpo
 import { LoginPage } from '../features/auth/components/LoginPage';
 import { RecurringPage } from '../features/recurring/components/RecurringPage';
 import { HealthScorePage } from '../features/health/components/HealthScorePage';
+import { PortfolioPage } from '../features/stocks/components/PortfolioPage';
+import { TradeHistoryPage } from '../features/stocks/components/TradeHistoryPage';
+import { TradeImportPage } from '../features/stocks/components/TradeImportPage';
 
 /** Redirect to /login if first-time visitor (no onboarding flag set) */
 function OnboardingGuard({ children }: { children: React.ReactNode }) {
@@ -40,6 +43,9 @@ export const router = createBrowserRouter([
       { path: 'budgets', element: <BudgetsPage /> },
       { path: 'reports', element: <MonthlyReport /> },
       { path: 'health', element: <HealthScorePage /> },
+      { path: 'portfolio', element: <PortfolioPage /> },
+      { path: 'trades', element: <TradeHistoryPage /> },
+      { path: 'trade-import', element: <TradeImportPage /> },
       { path: 'accounts', element: <AccountsPage /> },
       { path: 'categories', element: <CategoriesPage /> },
       { path: 'import', element: <StatementImportPage /> },

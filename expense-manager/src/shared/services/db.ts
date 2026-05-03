@@ -1,5 +1,5 @@
 import Dexie, { Table } from 'dexie';
-import { Transaction, Category, Account, Budget, Settings, Profile, RecurringRule } from '../types';
+import { Transaction, Category, Account, Budget, Settings, Profile, RecurringRule, StockTransaction } from '../types';
 
 // Extended types with profileId for scoping
 export interface DbTransaction extends Transaction {
@@ -50,6 +50,10 @@ export interface DbReceipt {
   createdAt: string;
 }
 
+export interface DbStockTransaction extends StockTransaction {
+  profileId: string;
+}
+
 export class ExpenseDatabase extends Dexie {
   transactions!: Table<DbTransaction, string>;
   categories!: Table<DbCategory, string>;
@@ -61,6 +65,7 @@ export class ExpenseDatabase extends Dexie {
   migrations!: Table<DbMigration, string>;
   recurringRules!: Table<DbRecurringRule, string>;
   receipts!: Table<DbReceipt, string>;
+  stockTransactions!: Table<DbStockTransaction, string>;
 
   constructor() {
     super('ExpenseIQDatabase');
@@ -99,6 +104,20 @@ export class ExpenseDatabase extends Dexie {
       migrations: 'key',
       recurringRules: 'id, profileId, [profileId+isActive], [profileId+nextDueDate]',
       receipts: 'id, profileId, transactionId',
+    });
+
+    this.version(4).stores({
+      transactions: 'id, profileId, [profileId+date], [profileId+categoryId], [profileId+accountId], [profileId+type]',
+      categories: 'id, profileId, [profileId+type], [profileId+parentId]',
+      accounts: 'id, profileId, [profileId+type], [profileId+isActive]',
+      budgets: 'id, profileId, [profileId+categoryId+month]',
+      settings: 'profileId',
+      customInstitutions: 'profileId',
+      profiles: 'id',
+      migrations: 'key',
+      recurringRules: 'id, profileId, [profileId+isActive], [profileId+nextDueDate]',
+      receipts: 'id, profileId, transactionId',
+      stockTransactions: 'id, profileId, [profileId+date], [profileId+symbol], [profileId+type], [profileId+broker]',
     });
   }
 }
