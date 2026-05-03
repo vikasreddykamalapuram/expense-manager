@@ -9,8 +9,15 @@ import { AuthUser } from '../../../shared/types';
 
 function decodeJwtPayload(token: string): Record<string, string> {
   try {
-    const base64 = token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/');
-    return JSON.parse(atob(base64));
+    const parts = token.split('.');
+    if (parts.length !== 3) throw new Error('Invalid JWT structure');
+    const base64 = parts[1].replace(/-/g, '+').replace(/_/g, '/');
+    const payload = JSON.parse(atob(base64));
+    // Validate required fields
+    if (!payload.sub || !payload.email) {
+      throw new Error('JWT missing required claims (sub, email)');
+    }
+    return payload;
   } catch {
     return {};
   }
@@ -21,17 +28,47 @@ export function LoginPage() {
   const { instance } = useMsal();
   const navigate = useNavigate();
   const [error, setError] = useState<string | null>(null);
+  const [attempts, setAttempts] = useState(0);
+  const [lockedUntil, setLockedUntil] = useState(0);
+
+  const isLocked = () => {
+    if (lockedUntil && Date.now() < lockedUntil) return true;
+    if (lockedUntil && Date.now() >= lockedUntil) {
+      setLockedUntil(0);
+      setAttempts(0);
+    }
+    return false;
+  };
+
+  const trackFailedAttempt = () => {
+    const next = attempts + 1;
+    setAttempts(next);
+    if (next >= 5) {
+      const lockDuration = 60_000; // 1 minute
+      setLockedUntil(Date.now() + lockDuration);
+      setError('Too many failed attempts. Please wait 1 minute before trying again.');
+    }
+  };
 
   const handleGoogleSuccess = (response: CredentialResponse) => {
+    if (isLocked()) return;
+
     if (!response.credential) {
+      trackFailedAttempt();
       setError('Google sign-in failed. Please try again.');
       return;
     }
 
     const payload = decodeJwtPayload(response.credential);
+    if (!payload.sub || !payload.email) {
+      trackFailedAttempt();
+      setError('Google sign-in returned invalid credentials.');
+      return;
+    }
+
     const user: AuthUser = {
-      id: payload.sub || '',
-      email: payload.email || '',
+      id: payload.sub,
+      email: payload.email,
       name: payload.name || payload.email || 'Google User',
       avatar: payload.picture || undefined,
       provider: 'google',
@@ -49,6 +86,8 @@ export function LoginPage() {
 
 
   const handleMicrosoftLogin = async () => {
+    if (isLocked()) return;
+
     try {
       const result = await instance.loginPopup({
         scopes: [...AUTH_CONFIG.microsoft.scopes],
@@ -69,6 +108,7 @@ export function LoginPage() {
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Unknown error';
       if (!message.includes('user_cancelled')) {
+        trackFailedAttempt();
         setError('Microsoft sign-in failed. Please try again.');
       }
     }
