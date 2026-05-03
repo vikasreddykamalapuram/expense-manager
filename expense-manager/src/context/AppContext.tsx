@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useReducer, useEffect, useCallback, useRef, ReactNode } from 'react';
-import { Transaction, TransactionFilters, Settings, Budget, Category, Account, Profile, RecurringRule, StockTransaction } from '../shared/types';
+import { Transaction, TransactionFilters, Settings, Budget, Category, Account, Profile, RecurringRule, StockTransaction, BillReminder } from '../shared/types';
 import { repository } from '../shared/services/repository';
 import { db } from '../shared/services/db';
 import { migrateFromLocalStorage, getActiveProfileIdFromLS } from '../shared/services/migration';
@@ -18,11 +18,12 @@ interface AppState {
   isLoading: boolean;
   recurringRules: RecurringRule[];
   stockTransactions: StockTransaction[];
+  billReminders: BillReminder[];
 }
 
 // Pure reducer actions — no side effects
 type AppAction =
-  | { type: 'LOAD_PROFILE_DATA'; payload: { profileId: string; transactions: Transaction[]; settings: Settings; budgets: Budget[]; categories: Category[]; accounts: Account[]; recurringRules: RecurringRule[] } }
+  | { type: 'LOAD_PROFILE_DATA'; payload: { profileId: string; transactions: Transaction[]; settings: Settings; budgets: Budget[]; categories: Category[]; accounts: Account[]; recurringRules: RecurringRule[]; billReminders: BillReminder[] } }
   | { type: 'SET_TRANSACTIONS'; payload: Transaction[] }
   | { type: 'ADD_TRANSACTION'; payload: Transaction }
   | { type: 'UPDATE_TRANSACTION'; payload: { id: string; updates: Partial<Transaction> } }
@@ -44,7 +45,11 @@ type AppAction =
   | { type: 'SET_STOCK_TRANSACTIONS'; payload: StockTransaction[] }
   | { type: 'ADD_STOCK_TRANSACTION'; payload: StockTransaction }
   | { type: 'ADD_STOCK_TRANSACTIONS'; payload: StockTransaction[] }
-  | { type: 'DELETE_STOCK_TRANSACTION'; payload: string };
+  | { type: 'DELETE_STOCK_TRANSACTION'; payload: string }
+  | { type: 'SET_BILL_REMINDERS'; payload: BillReminder[] }
+  | { type: 'ADD_BILL_REMINDER'; payload: BillReminder }
+  | { type: 'UPDATE_BILL_REMINDER'; payload: { id: string; updates: Partial<BillReminder> } }
+  | { type: 'DELETE_BILL_REMINDER'; payload: string };
 
 const initialFilters: TransactionFilters = {
   sortBy: 'date',
@@ -63,6 +68,7 @@ const initialState: AppState = {
   isLoading: true,
   recurringRules: [],
   stockTransactions: [],
+  billReminders: [],
 };
 
 // Pure reducer — no persistence side effects
@@ -78,6 +84,7 @@ function appReducer(state: AppState, action: AppAction): AppState {
         categories: action.payload.categories,
         accounts: action.payload.accounts,
         recurringRules: action.payload.recurringRules,
+        billReminders: action.payload.billReminders,
         filters: initialFilters,
       };
     case 'SET_TRANSACTIONS':
@@ -143,6 +150,20 @@ function appReducer(state: AppState, action: AppAction): AppState {
       return { ...state, stockTransactions: [...state.stockTransactions, ...action.payload] };
     case 'DELETE_STOCK_TRANSACTION':
       return { ...state, stockTransactions: state.stockTransactions.filter((t) => t.id !== action.payload) };
+    case 'SET_BILL_REMINDERS':
+      return { ...state, billReminders: action.payload };
+    case 'ADD_BILL_REMINDER':
+      return { ...state, billReminders: [...state.billReminders, action.payload] };
+    case 'UPDATE_BILL_REMINDER': {
+      const updatedReminders = state.billReminders.map((r) =>
+        r.id === action.payload.id
+          ? { ...r, ...action.payload.updates, updatedAt: new Date().toISOString() }
+          : r
+      );
+      return { ...state, billReminders: updatedReminders };
+    }
+    case 'DELETE_BILL_REMINDER':
+      return { ...state, billReminders: state.billReminders.filter((r) => r.id !== action.payload) };
     default:
       return state;
   }
@@ -186,6 +207,9 @@ export interface AppActions {
   addStockTransaction: (txn: StockTransaction) => Promise<void>;
   addStockTransactions: (txns: StockTransaction[]) => Promise<void>;
   deleteStockTransaction: (id: string) => Promise<void>;
+  addBillReminder: (reminder: BillReminder) => Promise<void>;
+  updateBillReminder: (id: string, updates: Partial<BillReminder>) => Promise<void>;
+  deleteBillReminder: (id: string) => Promise<void>;
 }
 
 // Context
@@ -477,6 +501,26 @@ export function AppProvider({ children }: { children: ReactNode }) {
     deleteStockTransaction: useCallback(async (id: string) => {
       await db.stockTransactions.delete(id);
       dispatch({ type: 'DELETE_STOCK_TRANSACTION', payload: id });
+    }, []),
+
+    addBillReminder: useCallback(async (reminder: BillReminder) => {
+      await repository.saveBillReminder(profileIdRef.current, reminder);
+      dispatch({ type: 'ADD_BILL_REMINDER', payload: reminder });
+    }, []),
+
+    updateBillReminder: useCallback(async (id: string, updates: Partial<BillReminder>) => {
+      const current = await repository.getBillReminders(profileIdRef.current);
+      const existing = current.find((r) => r.id === id);
+      if (existing) {
+        const updated: BillReminder = { ...existing, ...updates, updatedAt: new Date().toISOString() };
+        await repository.saveBillReminder(profileIdRef.current, updated);
+        dispatch({ type: 'UPDATE_BILL_REMINDER', payload: { id, updates } });
+      }
+    }, []),
+
+    deleteBillReminder: useCallback(async (id: string) => {
+      await repository.deleteBillReminder(profileIdRef.current, id);
+      dispatch({ type: 'DELETE_BILL_REMINDER', payload: id });
     }, []),
   };
 

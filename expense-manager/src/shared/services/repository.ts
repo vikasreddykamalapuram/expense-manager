@@ -1,5 +1,5 @@
 import { db, DbTransaction, DbCategory, DbAccount, DbBudget } from './db';
-import { Transaction, Category, Account, Budget, Settings, Profile, RecurringRule } from '../types';
+import { Transaction, Category, Account, Budget, Settings, Profile, RecurringRule, BillReminder } from '../types';
 import { DEFAULT_SETTINGS, ALL_CATEGORIES } from '../constants/categories';
 import { DEFAULT_ACCOUNTS } from '../constants/accounts';
 import { v4 as uuidv4 } from 'uuid';
@@ -42,7 +42,7 @@ class ExpenseRepository {
 
   async deleteProfile(id: string): Promise<void> {
     if (id === DEFAULT_PROFILE_ID) return;
-    await db.transaction('rw', [db.transactions, db.categories, db.accounts, db.budgets, db.settings, db.customInstitutions, db.profiles, db.recurringRules], async () => {
+    await db.transaction('rw', [db.transactions, db.categories, db.accounts, db.budgets, db.settings, db.customInstitutions, db.profiles, db.recurringRules, db.billReminders], async () => {
       await db.transactions.where('profileId').equals(id).delete();
       await db.categories.where('profileId').equals(id).delete();
       await db.accounts.where('profileId').equals(id).delete();
@@ -50,6 +50,7 @@ class ExpenseRepository {
       await db.settings.where('profileId').equals(id).delete();
       await db.customInstitutions.where('profileId').equals(id).delete();
       await db.recurringRules.where('profileId').equals(id).delete();
+      await db.billReminders.where('profileId').equals(id).delete();
       await db.profiles.delete(id);
     });
   }
@@ -273,7 +274,7 @@ class ExpenseRepository {
   }
 
   async clearAllData(profileId: string): Promise<void> {
-    await db.transaction('rw', [db.transactions, db.categories, db.accounts, db.budgets, db.settings, db.customInstitutions, db.recurringRules], async () => {
+    await db.transaction('rw', [db.transactions, db.categories, db.accounts, db.budgets, db.settings, db.customInstitutions, db.recurringRules, db.billReminders], async () => {
       await db.transactions.where('profileId').equals(profileId).delete();
       await db.categories.where('profileId').equals(profileId).delete();
       await db.accounts.where('profileId').equals(profileId).delete();
@@ -281,6 +282,7 @@ class ExpenseRepository {
       await db.settings.where('profileId').equals(profileId).delete();
       await db.customInstitutions.where('profileId').equals(profileId).delete();
       await db.recurringRules.where('profileId').equals(profileId).delete();
+      await db.billReminders.where('profileId').equals(profileId).delete();
     });
   }
 
@@ -387,6 +389,24 @@ class ExpenseRepository {
     return generatedTransactions;
   }
 
+  // ─── Bill Reminders ──────────────────────────────────
+
+  async getBillReminders(profileId: string): Promise<BillReminder[]> {
+    const rows = await db.billReminders.where('profileId').equals(profileId).toArray();
+    return rows.map(stripProfileId) as BillReminder[];
+  }
+
+  async saveBillReminder(profileId: string, reminder: BillReminder): Promise<void> {
+    await db.billReminders.put({ ...reminder, profileId });
+  }
+
+  async deleteBillReminder(profileId: string, id: string): Promise<void> {
+    const reminder = await db.billReminders.get(id);
+    if (reminder && reminder.profileId === profileId) {
+      await db.billReminders.delete(id);
+    }
+  }
+
   // ─── Load all data for a profile (used on init/switch) ──
 
   async loadProfileData(profileId: string): Promise<{
@@ -396,24 +416,26 @@ class ExpenseRepository {
     budgets: Budget[];
     settings: Settings;
     recurringRules: RecurringRule[];
+    billReminders: BillReminder[];
   }> {
-    const [transactions, categories, accounts, budgets, settings, recurringRules] = await Promise.all([
+    const [transactions, categories, accounts, budgets, settings, recurringRules, billReminders] = await Promise.all([
       this.getTransactions(profileId),
       this.getAllCategories(profileId),
       this.getAccounts(profileId),
       this.getBudgets(profileId),
       this.getSettings(profileId),
       this.getRecurringRules(profileId),
+      this.getBillReminders(profileId),
     ]);
 
     // Seed default accounts for new profiles with no accounts
     if (accounts.length === 0) {
       const rows: DbAccount[] = DEFAULT_ACCOUNTS.map((a) => ({ ...a, profileId }));
       await db.accounts.bulkAdd(rows);
-      return { transactions, categories, accounts: [...DEFAULT_ACCOUNTS], budgets, settings, recurringRules };
+      return { transactions, categories, accounts: [...DEFAULT_ACCOUNTS], budgets, settings, recurringRules, billReminders };
     }
 
-    return { transactions, categories, accounts, budgets, settings, recurringRules };
+    return { transactions, categories, accounts, budgets, settings, recurringRules, billReminders };
   }
 }
 

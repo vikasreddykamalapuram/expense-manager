@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { TrendingUp, TrendingDown, Wallet, ArrowRight, PlusCircle, Heart } from 'lucide-react';
+import { TrendingUp, TrendingDown, Wallet, ArrowRight, PlusCircle, Heart, Bell } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Cell, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 import { useAppContext } from '../../../context/AppContext';
@@ -10,10 +10,11 @@ import { EmptyState } from '../../../shared/components/ui/EmptyState';
 import { formatCurrency, formatDate, formatMonth, getLast6Months, classNames } from '../../../shared/utils/helpers';
 import { CHART_COLORS } from '../../../shared/constants/categories';
 import { calculateHealthScore } from '../../../shared/services/healthScore';
+import { getOverdueBills, getDueSoonBills, BILL_CATEGORY_ICONS } from '../../../shared/services/billReminderService';
 
 export function Dashboard() {
   const { state } = useAppContext();
-  const { settings, categories, transactions: allTxns, budgets, accounts } = state;
+  const { settings, categories, transactions: allTxns, budgets, accounts, billReminders } = state;
   const { currentMonthStats, totalBalance, recentTransactions, getMonthlyStats } = useTransactions();
   const navigate = useNavigate();
 
@@ -45,6 +46,11 @@ export function Dashboard() {
   const gaugeCircumference = 2 * Math.PI * gaugeRadius;
   const gaugeOffset = gaugeCircumference - (healthScore.totalScore / 100) * gaugeCircumference;
   const gaugeColor = healthScore.totalScore >= 80 ? '#22c55e' : healthScore.totalScore >= 60 ? '#f59e0b' : '#ef4444';
+
+  // Bills due soon for dashboard widget
+  const overdueBillsList = useMemo(() => getOverdueBills(billReminders), [billReminders]);
+  const dueSoonBillsList = useMemo(() => getDueSoonBills(billReminders, new Date(), 7), [billReminders]);
+  const billsToShow = useMemo(() => [...overdueBillsList, ...dueSoonBillsList].slice(0, 5), [overdueBillsList, dueSoonBillsList]);
 
   return (
     <div className="space-y-6">
@@ -131,6 +137,60 @@ export function Dashboard() {
                 </span>
               </div>
             </div>
+          </div>
+
+          {/* Bills Due Soon Widget */}
+          <div
+            onClick={() => navigate('/reminders')}
+            className="cursor-pointer rounded-xl border border-gray-200 bg-white p-6 shadow-sm transition-shadow hover:shadow-md dark:border-gray-700 dark:bg-gray-800 lg:col-span-2"
+          >
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <Bell size={18} className="text-primary-600 dark:text-primary-400" />
+                <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100">Bills Due Soon</h3>
+                {overdueBillsList.length > 0 && (
+                  <span className="inline-flex h-5 min-w-[20px] items-center justify-center rounded-full bg-red-500 px-1.5 text-xs font-bold text-white">
+                    {overdueBillsList.length}
+                  </span>
+                )}
+              </div>
+              <span className="flex items-center gap-1 text-xs font-medium text-primary-600 dark:text-primary-400">
+                View All <ArrowRight size={12} />
+              </span>
+            </div>
+            {billsToShow.length === 0 ? (
+              <p className="text-sm text-gray-400 dark:text-gray-500">No bills due soon. You're all caught up! 🎉</p>
+            ) : (
+              <div className="space-y-2">
+                {billsToShow.map((bill) => (
+                  <div key={bill.reminder.id} className="flex items-center gap-3 rounded-lg p-2 transition-colors hover:bg-gray-50 dark:hover:bg-gray-700">
+                    <span className="text-lg">{BILL_CATEGORY_ICONS[bill.reminder.category] || '📋'}</span>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">{bill.reminder.name}</p>
+                    </div>
+                    <span className="text-sm font-bold text-gray-900 dark:text-gray-100">
+                      {formatCurrency(bill.reminder.amount, settings)}
+                    </span>
+                    <span
+                      className={classNames(
+                        'rounded-full px-2 py-0.5 text-xs font-medium',
+                        bill.daysUntilDue < 0
+                          ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
+                          : bill.daysUntilDue <= 3
+                            ? 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400'
+                            : 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400',
+                      )}
+                    >
+                      {bill.daysUntilDue < 0
+                        ? `${Math.abs(bill.daysUntilDue)}d overdue`
+                        : bill.daysUntilDue === 0
+                          ? 'Today'
+                          : `${bill.daysUntilDue}d`}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Monthly Trend Chart */}

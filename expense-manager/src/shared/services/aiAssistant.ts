@@ -1,5 +1,6 @@
-import { Transaction, Category, Account, Settings } from '../types';
-import { formatCurrency } from '../utils/helpers';
+import { Transaction, Category, Account, Settings, Budget, RecurringRule, StockTransaction, PortfolioHolding } from '../types';
+import { formatCurrency, getCurrentMonth, getMonthRange } from '../utils/helpers';
+import { calculateHealthScore, HealthScoreResult } from './healthScore';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -23,18 +24,38 @@ type Intent =
   | 'time_analysis'
   | 'summary'
   | 'savings'
-  | 'search';
+  | 'search'
+  | 'greeting'
+  | 'help'
+  | 'thanks'
+  | 'advice'
+  | 'budget'
+  | 'recurring'
+  | 'health_score'
+  | 'portfolio'
+  | 'prediction'
+  | 'when';
 
-interface AssistantContext {
+export interface AssistantContext {
   transactions: Transaction[];
   categories: Category[];
   accounts: Account[];
   settings: Settings;
+  budgets?: Budget[];
+  recurringRules?: RecurringRule[];
+  stockTransactions?: StockTransaction[];
 }
 
 export interface AssistantResponse {
   text: string;
+  intent?: Intent;
 }
+
+// ─── Conversation context for follow-ups ─────────────────────────────────────
+
+let lastIntent: Intent | null = null;
+let lastPeriod: { start: Date; end: Date } | null = null;
+let lastCategoryMatch: string | null = null;
 
 // ─── Category Emoji Map ──────────────────────────────────────────────────────
 
@@ -241,6 +262,45 @@ function parseTimePeriod(query: string): { start: Date; end: Date } | null {
 function parseIntent(query: string): Intent {
   const lower = query.toLowerCase();
 
+  // ── Conversational intents (check first) ──
+  if (/^(hi|hello|hey|hola|namaste|good\s*(morning|afternoon|evening|night)|what'?s\s*up|howdy|sup)\b/i.test(lower.trim())) return 'greeting';
+  if (/\b(thank|thanks|thankyou|thank\s*you|thx|great\s*job|awesome|perfect|nice|wonderful|amazing|brilliant|well\s*done)\b/.test(lower) && lower.length < 50) return 'thanks';
+  if (/\b(help|what can you do|what do you do|features|commands|capabilities|how to use|guide me|show me what|your abilities)\b/.test(lower)) return 'help';
+
+  // ── Follow-up detection ──
+  if (/\b(tell me more|more details|elaborate|expand|what else|go on|continue|and\?|details)\b/.test(lower) && lastIntent) return lastIntent;
+  if (/\b(what about|how about|same for|and for)\s+(last month|previous|this week|last week|this year)/i.test(lower) && lastIntent) return lastIntent;
+
+  // ── Hindi-English mix ──
+  if (/\b(kitna|kharcha|kharche|kamai|bachat|paisa|paise|rupay|rupees|batao|dikhao|bata)\b/.test(lower)) {
+    if (/\b(kamai|income|salary)\b/.test(lower)) return 'income';
+    if (/\b(kharcha|kharche|spend)\b/.test(lower)) return 'expense';
+    if (/\b(bachat|saving|save)\b/.test(lower)) return 'savings';
+    return 'expense';
+  }
+
+  // ── "When" queries ──
+  if (/\b(when\s+(did|was|is)|last\s+time\s+i|when.*(last|next|pay|paid|bought))\b/.test(lower)) return 'when';
+
+  // ── Financial advice ──
+  if (/\b(advice|tips?|suggest|recommendation|how\s+to\s+save|budgeting\s+tips?|50.?30.?20|should\s+i\s+invest|financial\s+plan|money\s+management|emergency\s+fund)\b/.test(lower)) return 'advice';
+
+  // ── Budget queries ──
+  if (/\b(budget|within\s+budget|budget\s+(left|remaining|status|check)|over\s*spend|am\s+i\s+over|underspend)\b/.test(lower) && !/\b(tips?|advice|how\s+to)\b/.test(lower)) return 'budget';
+
+  // ── Recurring/subscription queries ──
+  if (/\b(recurring|subscription|subscriptions|fixed\s+(cost|expense)|monthly\s+(bill|commitment)|auto.?pay|emi|installment|standing\s+order)\b/.test(lower)) return 'recurring';
+
+  // ── Health score ──
+  if (/\b(health\s*score|financial\s*health|how\s*healthy|health\s*check|financial\s*status|finance\s*score|money\s*health)\b/.test(lower)) return 'health_score';
+
+  // ── Portfolio/stocks ──
+  if (/\b(portfolio|stock|stocks|holding|holdings|investment\s+summary|trading|shares|equity|mutual\s+fund|etf|nifty|sensex|demat)\b/.test(lower)) return 'portfolio';
+
+  // ── Prediction/forecast ──
+  if (/\b(predict|forecast|project|projected|end\s+of\s+month|month\s*end|estimate|estimated|will\s+i\s+spend|trending)\b/.test(lower)) return 'prediction';
+
+  // ── Original intents ──
   if (/\b(find|search|show all|show me|where did|list)\b/.test(lower) && !/\b(top|biggest|most|pattern|trend)\b/.test(lower)) return 'search';
   if (/\b(income|earn|salary|earned|earning|revenue)\b/.test(lower) && !/\b(vs|versus|compare|saving)\b/.test(lower)) return 'income';
   if (/\b(spend|spent|expense|expenses|cost|costs|expenditure)\b/.test(lower) && !/\b(vs|versus|compare|top|biggest|most|pattern|trend|saving)\b/.test(lower)) return 'expense';
@@ -249,11 +309,13 @@ function parseIntent(query: string): Intent {
   if (/\b(pattern|analyze|trend|overspend|habit|behaviour|behavior)\b/.test(lower)) return 'pattern';
   if (/\b(balance|account|bank|credit card|wallet|which account)\b/.test(lower)) return 'account';
   if (/\b(daily average|day.*(spend|most)|weekend|weekday|average.*day)\b/.test(lower)) return 'time_analysis';
-  if (/\b(summary|report|overview|how am i doing|financial|financially)\b/.test(lower)) return 'summary';
-  if (/\b(save|saving|savings rate|projected|can i save|budget)\b/.test(lower)) return 'savings';
+  if (/\b(summary|report|overview|how am i doing)\b/.test(lower)) return 'summary';
+  if (/\b(save|saving|savings rate|can i save)\b/.test(lower)) return 'savings';
 
-  // Fallback: if mentions a category or has spending context
+  // ── Smart fallback: fuzzy match against known entities ──
   if (/\bhow much\b/.test(lower)) return 'expense';
+
+  // Instead of falling through to summary, return null-ish — handled by processQuery
   return 'summary';
 }
 
@@ -503,19 +565,614 @@ function fc(amount: number, settings: Settings): string {
   return formatCurrency(amount, settings);
 }
 
+// ─── Proactive Insights Generator ────────────────────────────────────────────
+
+function generateInsight(ctx: AssistantContext, period: { start: Date; end: Date }): string {
+  const insights: string[] = [];
+
+  // Compare category spending vs 3-month average
+  const now = new Date();
+  const threeMonthStart = new Date(now.getFullYear(), now.getMonth() - 3, 1);
+  const threeMonthTxns = ctx.transactions.filter(t => {
+    const d = new Date(t.date + 'T00:00:00');
+    return t.type === 'expense' && d >= threeMonthStart && d <= now;
+  });
+  const currentTxns = filterByPeriod(ctx.transactions, period).filter(t => t.type === 'expense');
+
+  if (threeMonthTxns.length > 0 && currentTxns.length > 0) {
+    const byCat3m = new Map<string, number>();
+    threeMonthTxns.forEach(t => {
+      const cat = ctx.categories.find(c => c.id === t.categoryId);
+      const name = cat?.name || 'Other';
+      byCat3m.set(name, (byCat3m.get(name) || 0) + t.amount);
+    });
+    const byCatNow = new Map<string, number>();
+    currentTxns.forEach(t => {
+      const cat = ctx.categories.find(c => c.id === t.categoryId);
+      const name = cat?.name || 'Other';
+      byCatNow.set(name, (byCatNow.get(name) || 0) + t.amount);
+    });
+
+    for (const [catName, currentAmt] of byCatNow) {
+      const avg3m = (byCat3m.get(catName) || 0) / 3;
+      if (avg3m > 0 && currentAmt > avg3m * 1.25) {
+        const pctHigher = Math.round(((currentAmt - avg3m) / avg3m) * 100);
+        insights.push(`💡 Your **${catName}** spending is **${pctHigher}%** higher than your 3-month average`);
+        break;
+      }
+    }
+  }
+
+  // Find biggest spending day of week
+  if (currentTxns.length > 5) {
+    const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+    const dayTotals = new Array(7).fill(0);
+    currentTxns.forEach(t => {
+      const d = new Date(t.date + 'T00:00:00');
+      dayTotals[d.getDay()] += t.amount;
+    });
+    const maxDay = dayTotals.indexOf(Math.max(...dayTotals));
+    if (dayTotals[maxDay] > 0) {
+      insights.push(`📊 Fun fact: **${dayNames[maxDay]}** is your biggest spending day`);
+    }
+  }
+
+  if (insights.length === 0) return '';
+  return '\n\n---\n' + insights.slice(0, 2).join('\n');
+}
+
+// ─── New Intent Handlers ─────────────────────────────────────────────────────
+
+function handleGreeting(ctx: AssistantContext): string {
+  const period = getDefaultPeriod();
+  const comp = getComparison(ctx, period);
+  const greetings = ['Hey there! 👋', 'Hello! 😊', 'Hi! 👋', 'Hey! 🙌'];
+  const greeting = greetings[Math.floor(Math.random() * greetings.length)];
+
+  let text = `${greeting} Welcome back to ExpenseIQ!\n\n`;
+  text += `Here's a quick snapshot for this month:\n`;
+  text += `  💰 Income: **${fc(comp.income, ctx.settings)}**\n`;
+  text += `  💸 Expenses: **${fc(comp.expenses, ctx.settings)}**\n`;
+  text += `  ${comp.savings >= 0 ? '✅' : '⚠️'} Net: **${fc(comp.savings, ctx.settings)}**\n`;
+
+  if (comp.income > 0 && comp.savingsRate > 20) {
+    text += `\n🌟 You're saving **${comp.savingsRate}%** of your income — great job!`;
+  } else if (comp.income > 0 && comp.savings < 0) {
+    text += `\n⚠️ You're spending more than you earn this month. Want some tips?`;
+  }
+
+  text += `\n\nAsk me anything or try: "Am I within budget?" or "Financial health check"`;
+  return text;
+}
+
+function handleHelp(): string {
+  return `🤖 **Here's what I can help with:**\n
+📊 **Spending & Income**
+  • "What did I spend this month?"
+  • "Show my income this year"
+  • "How much on groceries?"
+
+📈 **Analysis & Trends**
+  • "Top expense categories"
+  • "Analyze my spending patterns"
+  • "Compare income vs expenses"
+  • "Daily spending average"
+
+💰 **Budgets & Savings**
+  • "Am I within budget?"
+  • "Budget status"
+  • "Savings analysis"
+  • "Tips to save more"
+
+🏥 **Financial Health**
+  • "Financial health check"
+  • "What's my health score?"
+
+🔁 **Recurring & Predictions**
+  • "My recurring expenses"
+  • "Monthly subscriptions"
+  • "Predict month-end spending"
+
+📈 **Portfolio**
+  • "Portfolio summary"
+  • "Stock holdings"
+
+🔎 **Search & Lookup**
+  • "Find transactions for food"
+  • "When did I last pay rent?"
+  • "Show Amazon purchases"
+
+⏰ **Time periods:** today, this week, last month, Q1, this year, FY 2025, past 3 months
+💡 **Pro tip:** I can also understand Hindi-English mix like "kitna kharcha hua?"`;
+}
+
+function handleThanks(): string {
+  const responses = [
+    "You're welcome! 😊 Let me know if you need anything else.",
+    "Happy to help! 🙌 Feel free to ask more questions.",
+    "Glad I could help! 💪 Your finances are in good hands.",
+    "Anytime! 😄 I'm here whenever you need me.",
+  ];
+  return responses[Math.floor(Math.random() * responses.length)];
+}
+
+function handleAdvice(ctx: AssistantContext): string {
+  const period = getDefaultPeriod();
+  const comp = getComparison(ctx, period);
+  const top = getTopCategories(ctx, 'expense', period, 5);
+
+  let text = `💡 **Financial Advice & Tips**\n\n`;
+
+  // 50/30/20 analysis
+  if (comp.income > 0) {
+    const needsTarget = comp.income * 0.5;
+    const wantsTarget = comp.income * 0.3;
+    const savingsTarget = comp.income * 0.2;
+
+    text += `📐 **50/30/20 Rule Analysis** (based on your income of ${fc(comp.income, ctx.settings)}):\n`;
+    text += `  🏠 Needs (50%): Target ${fc(needsTarget, ctx.settings)}\n`;
+    text += `  🎯 Wants (30%): Target ${fc(wantsTarget, ctx.settings)}\n`;
+    text += `  💰 Savings (20%): Target ${fc(savingsTarget, ctx.settings)} | Actual: ${fc(comp.savings, ctx.settings)} (${comp.savingsRate}%)\n\n`;
+
+    if (comp.savingsRate < 20) {
+      text += `⚠️ You're saving **${comp.savingsRate}%** — below the recommended 20%. `;
+      text += `You need to save **${fc(savingsTarget - comp.savings, ctx.settings)}** more.\n\n`;
+    } else {
+      text += `✅ You're exceeding the 20% savings target — excellent!\n\n`;
+    }
+  }
+
+  // Emergency fund
+  const threeMonthExpenses = comp.expenses * 6;
+  text += `🚨 **Emergency Fund Target:** ${fc(threeMonthExpenses, ctx.settings)} (6 months of expenses)\n\n`;
+
+  // Actionable tips based on data
+  text += `📝 **Personalized Tips:**\n`;
+  if (top.length > 0 && top[0].percentage > 35) {
+    text += `  1. ${getCategoryEmoji(top[0].name)} **${top[0].name}** is ${top[0].percentage}% of spending. Set a budget to cap it.\n`;
+  }
+  if (comp.savingsRate < 10) {
+    text += `  2. Try the "pay yourself first" method — auto-transfer 10% of income to savings on payday.\n`;
+  }
+  if (top.length >= 3) {
+    const discretionary = top.filter(t =>
+      /entertainment|shopping|dining|restaurant|travel|subscription/i.test(t.name)
+    );
+    if (discretionary.length > 0) {
+      const discretionaryTotal = discretionary.reduce((s, t) => s + t.amount, 0);
+      text += `  3. Discretionary spending (${discretionary.map(d => d.name).join(', ')}): ${fc(discretionaryTotal, ctx.settings)}. Consider a 10% cut.\n`;
+    }
+  }
+  text += `  ${top.length > 0 ? top.length >= 3 && /entertainment|shopping|dining|restaurant|travel|subscription/i.test(top.map(t => t.name).join(' ')) ? '4' : '3' : '2'}. Review subscriptions regularly — unused ones are silent budget killers.\n`;
+
+  return text;
+}
+
+function handleBudget(ctx: AssistantContext): string {
+  const budgets = ctx.budgets || [];
+  if (budgets.length === 0) {
+    return `📊 **Budget Status**\n\nYou haven't set up any budgets yet! Go to the Budgets section to create budget limits for your spending categories.\n\n💡 **Tip:** Start with your top 3 expense categories. Setting a budget helps you stay in control.`;
+  }
+
+  const currentMonth = getCurrentMonth();
+  const { start, end } = getMonthRange(currentMonth);
+  const monthBudgets = budgets.filter(b => b.month === currentMonth);
+
+  if (monthBudgets.length === 0) {
+    return `📊 **Budget Status**\n\nNo budgets set for this month (${currentMonth}). You have ${budgets.length} budget(s) for other months.\n\n💡 Set budgets for the current month to track your spending.`;
+  }
+
+  const now = new Date();
+  const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+  const daysPassed = now.getDate();
+  const daysLeft = daysInMonth - daysPassed;
+
+  let text = `📊 **Budget Status** for ${currentMonth} (${daysLeft} days left)\n\n`;
+  let totalBudget = 0;
+  let totalSpent = 0;
+  let overBudgetCount = 0;
+
+  for (const b of monthBudgets) {
+    const cat = ctx.categories.find(c => c.id === b.categoryId);
+    const catName = cat?.name || 'Unknown';
+    const spent = ctx.transactions
+      .filter(t => t.type === 'expense' && t.categoryId === b.categoryId && t.date >= start && t.date <= end)
+      .reduce((s, t) => s + t.amount, 0);
+    const remaining = b.amount - spent;
+    const pct = Math.round((spent / b.amount) * 100);
+    const status = pct >= 100 ? '🔴' : pct >= 80 ? '🟡' : '🟢';
+
+    totalBudget += b.amount;
+    totalSpent += spent;
+    if (pct >= 100) overBudgetCount++;
+
+    const bar = '█'.repeat(Math.min(10, Math.round(pct / 10))) + '░'.repeat(Math.max(0, 10 - Math.round(pct / 10)));
+    text += `${status} ${getCategoryEmoji(catName)} **${catName}**\n`;
+    text += `   ${bar} ${pct}%\n`;
+    text += `   Spent: ${fc(spent, ctx.settings)} / ${fc(b.amount, ctx.settings)}`;
+    text += remaining >= 0 ? ` (${fc(remaining, ctx.settings)} left)\n\n` : ` (**${fc(Math.abs(remaining), ctx.settings)} over!**)\n\n`;
+  }
+
+  const totalPct = totalBudget > 0 ? Math.round((totalSpent / totalBudget) * 100) : 0;
+  text += `**Overall:** ${fc(totalSpent, ctx.settings)} / ${fc(totalBudget, ctx.settings)} (${totalPct}%)`;
+
+  if (overBudgetCount > 0) {
+    text += `\n⚠️ ${overBudgetCount} budget${overBudgetCount > 1 ? 's' : ''} exceeded! Review spending in ${overBudgetCount > 1 ? 'these categories' : 'this category'}.`;
+  } else if (totalPct < 70) {
+    text += `\n✅ You're on track! Spending well within budget.`;
+  }
+
+  return text;
+}
+
+function handleRecurring(ctx: AssistantContext): string {
+  const rules = ctx.recurringRules || [];
+  if (rules.length === 0) {
+    return `🔁 **Recurring Expenses**\n\nYou haven't set up any recurring rules yet. Go to the Recurring section to add monthly bills, subscriptions, and EMIs.\n\n💡 Tracking recurring expenses helps you understand your fixed commitments.`;
+  }
+
+  const activeRules = rules.filter(r => r.isActive);
+  const expenseRules = activeRules.filter(r => r.type === 'expense');
+  const incomeRules = activeRules.filter(r => r.type === 'income');
+
+  let text = `🔁 **Recurring Transactions** (${activeRules.length} active)\n\n`;
+
+  if (expenseRules.length > 0) {
+    let monthlyTotal = 0;
+    text += `**💸 Recurring Expenses:**\n`;
+    expenseRules.forEach(r => {
+      const cat = ctx.categories.find(c => c.id === r.categoryId);
+      const catName = cat?.name || 'Other';
+      let monthlyAmount = r.amount;
+      if (r.frequency === 'weekly') monthlyAmount = r.amount * 4.33;
+      else if (r.frequency === 'daily') monthlyAmount = r.amount * 30;
+      else if (r.frequency === 'yearly') monthlyAmount = r.amount / 12;
+      monthlyTotal += monthlyAmount;
+
+      const nextDue = r.nextDueDate ? new Date(r.nextDueDate + 'T00:00:00') : null;
+      const dueStr = nextDue ? nextDue.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }) : 'N/A';
+      text += `  ${getCategoryEmoji(catName)} **${r.name}** — ${fc(r.amount, ctx.settings)} (${r.frequency})\n`;
+      text += `     Next due: ${dueStr}\n`;
+    });
+    text += `\n📊 **Total monthly commitment:** ${fc(monthlyTotal, ctx.settings)}\n`;
+  }
+
+  if (incomeRules.length > 0) {
+    text += `\n**💰 Recurring Income:**\n`;
+    incomeRules.forEach(r => {
+      text += `  ${getCategoryEmoji(r.name)} **${r.name}** — ${fc(r.amount, ctx.settings)} (${r.frequency})\n`;
+    });
+  }
+
+  return text;
+}
+
+function handleHealthScore(ctx: AssistantContext): string {
+  const budgets = ctx.budgets || [];
+  let result: HealthScoreResult;
+  try {
+    result = calculateHealthScore(ctx.transactions, budgets, ctx.accounts, ctx.categories, ctx.settings);
+  } catch {
+    // Fallback simple calculation
+    const period = getDefaultPeriod();
+    const comp = getComparison(ctx, period);
+    const savingsRate = comp.income > 0 ? Math.round((comp.savings / comp.income) * 100) : 0;
+    const score = Math.min(100, Math.max(0, savingsRate * 2 + 30));
+    return `🏥 **Financial Health Score: ${score}/100**\n\n` +
+      `Based on your savings rate of ${savingsRate}%.\n` +
+      `Set up budgets and track more data for a detailed health assessment.`;
+  }
+
+  const gradeEmoji: Record<string, string> = { 'A+': '🌟', 'A': '✅', 'B': '👍', 'C': '⚠️', 'D': '🔶', 'F': '🔴' };
+  let text = `🏥 **Financial Health Score: ${result.totalScore}/100** ${gradeEmoji[result.grade] || ''} Grade: **${result.grade}**\n\n`;
+
+  text += `**Score Breakdown:**\n`;
+  result.factors.forEach(f => {
+    const statusEmoji = f.status === 'excellent' ? '🟢' : f.status === 'good' ? '🔵' : f.status === 'fair' ? '🟡' : '🔴';
+    text += `  ${statusEmoji} ${f.icon} ${f.name}: **${Math.round(f.score)}/100** — ${f.description}\n`;
+  });
+
+  if (result.tips.length > 0) {
+    text += `\n💡 **Improvement Tips:**\n`;
+    result.tips.slice(0, 3).forEach((tip, i) => {
+      text += `  ${i + 1}. ${tip}\n`;
+    });
+  }
+
+  return text;
+}
+
+function handlePortfolio(ctx: AssistantContext): string {
+  const stockTxns = ctx.stockTransactions || [];
+  if (stockTxns.length === 0) {
+    return `📈 **Portfolio Summary**\n\nNo stock transactions found. Add trades in the Portfolio section to track your investments.\n\n💡 Track your buy/sell transactions to see portfolio performance.`;
+  }
+
+  // Calculate holdings
+  const holdingsMap = new Map<string, PortfolioHolding>();
+  for (const txn of stockTxns) {
+    const existing = holdingsMap.get(txn.symbol);
+    if (txn.type === 'buy' || txn.type === 'ipo') {
+      if (existing) {
+        const totalQty = existing.quantity + txn.quantity;
+        const totalInvested = existing.totalInvested + txn.totalValue;
+        existing.quantity = totalQty;
+        existing.totalInvested = totalInvested;
+        existing.avgBuyPrice = totalQty > 0 ? totalInvested / totalQty : 0;
+        existing.totalCharges += txn.charges.total;
+      } else {
+        holdingsMap.set(txn.symbol, {
+          symbol: txn.symbol,
+          name: txn.name,
+          exchange: txn.exchange,
+          assetClass: txn.assetClass,
+          quantity: txn.quantity,
+          avgBuyPrice: txn.price,
+          totalInvested: txn.totalValue,
+          totalCharges: txn.charges.total,
+          broker: txn.broker,
+        });
+      }
+    } else if (txn.type === 'sell' && existing) {
+      existing.quantity -= txn.quantity;
+      if (existing.quantity > 0) {
+        existing.totalInvested = existing.avgBuyPrice * existing.quantity;
+      }
+    }
+  }
+
+  const holdings = Array.from(holdingsMap.values()).filter(h => h.quantity > 0);
+  let text = `📈 **Portfolio Summary** (${holdings.length} holding${holdings.length !== 1 ? 's' : ''})\n\n`;
+
+  if (holdings.length === 0) {
+    text += `All positions closed. No active holdings.\n`;
+    text += `Total trades: ${stockTxns.length}`;
+    return text;
+  }
+
+  let totalInvested = 0;
+  let totalCharges = 0;
+
+  // Group by asset class
+  const byAssetClass = new Map<string, PortfolioHolding[]>();
+  holdings.forEach(h => {
+    totalInvested += h.totalInvested;
+    totalCharges += h.totalCharges;
+    const group = byAssetClass.get(h.assetClass) || [];
+    group.push(h);
+    byAssetClass.set(h.assetClass, group);
+  });
+
+  for (const [assetClass, group] of byAssetClass) {
+    const label = assetClass.replace('_', ' ').replace(/\b\w/g, c => c.toUpperCase());
+    text += `**${label}:**\n`;
+    group.sort((a, b) => b.totalInvested - a.totalInvested);
+    group.forEach(h => {
+      text += `  📊 **${h.symbol}** (${h.name})\n`;
+      text += `     ${h.quantity} units @ avg ${fc(h.avgBuyPrice, ctx.settings)} = ${fc(h.totalInvested, ctx.settings)}\n`;
+    });
+    text += '\n';
+  }
+
+  text += `**Total invested:** ${fc(totalInvested, ctx.settings)}\n`;
+  text += `**Total charges:** ${fc(totalCharges, ctx.settings)}\n`;
+  text += `**Trades:** ${stockTxns.length}`;
+
+  return text;
+}
+
+function handlePrediction(ctx: AssistantContext): string {
+  const now = new Date();
+  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+  const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+  const daysInMonth = monthEnd.getDate();
+  const daysPassed = now.getDate();
+  const daysLeft = daysInMonth - daysPassed;
+
+  const period = { start: monthStart, end: now };
+  const expenses = filterByPeriod(ctx.transactions, period).filter(t => t.type === 'expense');
+  const totalSpent = expenses.reduce((s, t) => s + t.amount, 0);
+  const dailyAvg = daysPassed > 0 ? totalSpent / daysPassed : 0;
+  const projected = dailyAvg * daysInMonth;
+  const remaining = projected - totalSpent;
+
+  let text = `🔮 **Month-End Spending Forecast**\n\n`;
+  text += `📅 Day ${daysPassed} of ${daysInMonth} (${daysLeft} days left)\n`;
+  text += `💸 Spent so far: **${fc(totalSpent, ctx.settings)}**\n`;
+  text += `📊 Daily average: **${fc(dailyAvg, ctx.settings)}**/day\n`;
+  text += `🔮 Projected total: **${fc(projected, ctx.settings)}**\n`;
+  text += `📈 Estimated remaining: **${fc(remaining, ctx.settings)}**\n\n`;
+
+  // Compare with budget
+  const budgets = ctx.budgets || [];
+  const currentMonth = getCurrentMonth();
+  const monthBudgets = budgets.filter(b => b.month === currentMonth);
+  if (monthBudgets.length > 0) {
+    const totalBudget = monthBudgets.reduce((s, b) => s + b.amount, 0);
+    if (projected > totalBudget) {
+      text += `⚠️ **Warning:** At this rate, you'll exceed your budget by **${fc(projected - totalBudget, ctx.settings)}**!\n`;
+      const safeDaily = (totalBudget - totalSpent) / Math.max(1, daysLeft);
+      text += `💡 To stay within budget, limit spending to **${fc(safeDaily, ctx.settings)}/day** for the rest of the month.`;
+    } else {
+      text += `✅ On track! You'll be **${fc(totalBudget - projected, ctx.settings)}** under budget.`;
+    }
+  }
+
+  // Compare with last month
+  const lastMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+  const lastMonthEnd = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59, 999);
+  const lastMonthExpenses = filterByPeriod(ctx.transactions, { start: lastMonthStart, end: lastMonthEnd })
+    .filter(t => t.type === 'expense')
+    .reduce((s, t) => s + t.amount, 0);
+
+  if (lastMonthExpenses > 0) {
+    const diff = projected - lastMonthExpenses;
+    const pct = Math.round(Math.abs(diff / lastMonthExpenses) * 100);
+    text += `\n\n📊 vs last month (${fc(lastMonthExpenses, ctx.settings)}): `;
+    text += diff > 0 ? `trending **${pct}% higher** 📈` : `trending **${pct}% lower** 📉`;
+  }
+
+  return text;
+}
+
+function handleWhen(query: string, ctx: AssistantContext): string {
+  const lower = query.toLowerCase();
+
+  // Extract what they're looking for
+  const patterns = [
+    /when\s+did\s+i\s+(?:last\s+)?(?:pay|paid|spend|spent|buy|bought|get|got)\s+(?:for\s+)?(.+?)[\?.]?$/,
+    /last\s+time\s+i\s+(?:paid|spent|bought)\s+(?:for\s+)?(.+?)[\?.]?$/,
+    /when\s+(?:was|is)\s+(?:my\s+)?(?:last|next)\s+(.+?)[\?.]?$/,
+    /when\s+did\s+i\s+(.+?)[\?.]?$/,
+  ];
+
+  let searchTerm = '';
+  for (const p of patterns) {
+    const m = lower.match(p);
+    if (m) { searchTerm = m[1].trim(); break; }
+  }
+
+  if (!searchTerm) {
+    searchTerm = lower.replace(/\b(when|did|i|last|pay|paid|time|the|my|next|is|was|have)\b/g, '').trim();
+  }
+
+  if (!searchTerm) {
+    return `🤔 I couldn't figure out what to look for. Try: "When did I last pay rent?" or "When did I last buy groceries?"`;
+  }
+
+  // Search transactions
+  const matching = ctx.transactions
+    .filter(t => {
+      const cat = ctx.categories.find(c => c.id === t.categoryId);
+      const acc = ctx.accounts.find(a => a.id === t.accountId);
+      const searchLower = searchTerm.toLowerCase();
+      return (
+        t.notes.toLowerCase().includes(searchLower) ||
+        (cat && cat.name.toLowerCase().includes(searchLower)) ||
+        (acc && acc.name.toLowerCase().includes(searchLower))
+      );
+    })
+    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+
+  if (matching.length === 0) {
+    return `🔍 I couldn't find any transactions matching "${searchTerm}". Try different keywords.`;
+  }
+
+  const latest = matching[0];
+  const cat = ctx.categories.find(c => c.id === latest.categoryId);
+  const d = new Date(latest.date + 'T00:00:00');
+  const dateStr = d.toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' });
+  const daysAgo = Math.floor((Date.now() - d.getTime()) / (1000 * 60 * 60 * 24));
+
+  let text = `📅 **Last "${searchTerm}" transaction:**\n\n`;
+  text += `  📆 Date: **${dateStr}** (${daysAgo === 0 ? 'today' : daysAgo === 1 ? 'yesterday' : `${daysAgo} days ago`})\n`;
+  text += `  💰 Amount: **${fc(latest.amount, ctx.settings)}**\n`;
+  text += `  ${getCategoryEmoji(cat?.name || '')} Category: ${cat?.name || 'Uncategorized'}\n`;
+  if (latest.notes) text += `  📝 Note: ${latest.notes}\n`;
+
+  if (matching.length > 1) {
+    text += `\n📊 You've had **${matching.length}** "${searchTerm}" transactions total.`;
+    const totalSpent = matching.reduce((s, t) => s + t.amount, 0);
+    text += ` Total: ${fc(totalSpent, ctx.settings)}`;
+  }
+
+  return text;
+}
+
+// ─── Fuzzy Entity Matching for Better Fallback ───────────────────────────────
+
+function tryFuzzyEntityMatch(query: string, ctx: AssistantContext): string | null {
+  const lower = query.toLowerCase();
+
+  // Check if query mentions any category name (even partially)
+  for (const cat of ctx.categories) {
+    const catLower = cat.name.toLowerCase();
+    const words = catLower.split(/[\s&/,]+/).filter(w => w.length > 2);
+    for (const w of words) {
+      if (lower.includes(w)) {
+        // Treat as a contextual expense query for that category
+        const period = getDefaultPeriod();
+        const periodLabel = formatPeriodLabel(period);
+        const txns = filterByPeriod(ctx.transactions, period).filter(t => t.type === 'expense' && t.categoryId === cat.id);
+        const total = txns.reduce((s, t) => s + t.amount, 0);
+        if (total > 0) {
+          return `${getCategoryEmoji(cat.name)} Your **${cat.name}** spending for ${periodLabel}: **${fc(total, ctx.settings)}** (${txns.length} transactions)`;
+        }
+        return `${getCategoryEmoji(cat.name)} No ${cat.name} expenses found for ${periodLabel}.`;
+      }
+    }
+  }
+
+  // Check if query mentions any account
+  for (const acc of ctx.accounts) {
+    if (lower.includes(acc.name.toLowerCase()) || (acc.institution && lower.includes(acc.institution.toLowerCase()))) {
+      const { accounts: accSummary } = getAccountSummary(ctx, acc.id);
+      if (accSummary.length > 0) {
+        const a = accSummary[0];
+        return `🏦 **${a.name}** balance: **${fc(a.balance, ctx.settings)}** | ${a.txnCount} transactions`;
+      }
+    }
+  }
+
+  return null;
+}
+
 // ─── Main Query Processor ────────────────────────────────────────────────────
 
 export function processQuery(query: string, ctx: AssistantContext): AssistantResponse {
   const { categories, accounts, settings } = ctx;
   const parsed = parseQuery(query, categories, accounts);
-  const period = parsed.period || getDefaultPeriod();
-  const periodLabel = formatPeriodLabel(parsed.period || getDefaultPeriod());
+
+  // Use previous period for follow-up queries
+  const isFollowUp = /\b(tell me more|more details|elaborate|what about|how about|same for|and for|continue)\b/i.test(query.toLowerCase());
+  const period = parsed.period || (isFollowUp && lastPeriod ? lastPeriod : getDefaultPeriod());
+  const periodLabel = formatPeriodLabel(parsed.period || (isFollowUp && lastPeriod ? lastPeriod : getDefaultPeriod()));
+
+  // Use previous category for follow-up
+  if (isFollowUp && !parsed.categoryMatch && lastCategoryMatch) {
+    parsed.categoryMatch = lastCategoryMatch;
+  }
+
+  // Store context for follow-ups
+  lastIntent = parsed.intent;
+  lastPeriod = period;
+  lastCategoryMatch = parsed.categoryMatch;
 
   try {
     switch (parsed.intent) {
+      // ── New conversational intents ──
+      case 'greeting':
+        return { text: handleGreeting(ctx), intent: 'greeting' };
+
+      case 'help':
+        return { text: handleHelp(), intent: 'help' };
+
+      case 'thanks':
+        return { text: handleThanks(), intent: 'thanks' };
+
+      case 'advice':
+        return { text: handleAdvice(ctx), intent: 'advice' };
+
+      case 'budget':
+        return { text: handleBudget(ctx), intent: 'budget' };
+
+      case 'recurring':
+        return { text: handleRecurring(ctx), intent: 'recurring' };
+
+      case 'health_score':
+        return { text: handleHealthScore(ctx), intent: 'health_score' };
+
+      case 'portfolio':
+        return { text: handlePortfolio(ctx), intent: 'portfolio' };
+
+      case 'prediction':
+        return { text: handlePrediction(ctx), intent: 'prediction' };
+
+      case 'when':
+        return { text: handleWhen(query, ctx), intent: 'when' };
       case 'income': {
         const { total, breakdown } = getIncomeForPeriod(ctx, period);
-        if (total === 0) return { text: `You don't have any income recorded for ${periodLabel}. Try adding income transactions or asking about a different time period.` };
+        if (total === 0) return { text: `You don't have any income recorded for ${periodLabel}. Try adding income transactions or asking about a different time period.`, intent: 'income' };
         let text = `💰 Your total income for ${periodLabel} is **${fc(total, settings)}**\n\n`;
         if (breakdown.length > 1) {
           text += `**Breakdown:**\n`;
@@ -523,12 +1180,13 @@ export function processQuery(query: string, ctx: AssistantContext): AssistantRes
             text += `  ${getCategoryEmoji(b.name)} ${b.name}: ${fc(b.amount, settings)}\n`;
           });
         }
-        return { text };
+        text += generateInsight(ctx, period);
+        return { text, intent: 'income' };
       }
 
       case 'expense': {
         const { total, breakdown, count } = getExpensesForPeriod(ctx, period, parsed.categoryMatch, parsed.accountMatch);
-        if (total === 0) return { text: `No expenses found for ${periodLabel}. Looks like you're saving well! 🎉` };
+        if (total === 0) return { text: `No expenses found for ${periodLabel}. Looks like you're saving well! 🎉`, intent: 'expense' };
         const catName = parsed.categoryMatch ? categories.find(c => c.id === parsed.categoryMatch)?.name : null;
         let text = catName
           ? `${getCategoryEmoji(catName)} You spent **${fc(total, settings)}** on **${catName}** during ${periodLabel} (${count} transactions)\n\n`
@@ -541,24 +1199,25 @@ export function processQuery(query: string, ctx: AssistantContext): AssistantRes
             text += `  ${getCategoryEmoji(b.name)} ${b.name}: ${fc(b.amount, settings)} (${pct}%)\n`;
           });
         }
-        // Add comparison with previous period
         const comp = getComparison(ctx, period);
         if (comp.prevExpenses > 0) {
           const dir = comp.changePercent > 0 ? '📈 up' : '📉 down';
           text += `\nThat's ${dir} **${Math.abs(comp.changePercent)}%** compared to the previous period (${fc(comp.prevExpenses, settings)}).`;
         }
-        return { text };
+        text += generateInsight(ctx, period);
+        return { text, intent: 'expense' };
       }
 
       case 'category_ranking': {
         const top = getTopCategories(ctx, 'expense', period, parsed.limit);
-        if (top.length === 0) return { text: `No expense data found for ${periodLabel}.` };
+        if (top.length === 0) return { text: `No expense data found for ${periodLabel}.`, intent: 'category_ranking' };
         let text = `📊 **Top spending categories** for ${periodLabel}:\n\n`;
         top.forEach((cat, i) => {
           const bar = '█'.repeat(Math.max(1, Math.round(cat.percentage / 5)));
           text += `  ${i + 1}. ${getCategoryEmoji(cat.name)} **${cat.name}** — ${fc(cat.amount, settings)} (${cat.percentage}%)\n     ${bar}\n`;
         });
-        return { text };
+        text += generateInsight(ctx, period);
+        return { text, intent: 'category_ranking' };
       }
 
       case 'comparison': {
@@ -574,7 +1233,8 @@ export function processQuery(query: string, ctx: AssistantContext): AssistantRes
         } else {
           text += `No income recorded for this period. Add income transactions for a complete picture.`;
         }
-        return { text };
+        text += generateInsight(ctx, period);
+        return { text, intent: 'comparison' };
       }
 
       case 'pattern': {
@@ -597,12 +1257,12 @@ export function processQuery(query: string, ctx: AssistantContext): AssistantRes
             text += `\n💡 **Insight:** ${top[0].name} accounts for ${top[0].percentage}% of spending. Consider setting a budget to manage this category.`;
           }
         }
-        return { text };
+        return { text, intent: 'pattern' };
       }
 
       case 'account': {
         const { accounts: accSummary } = getAccountSummary(ctx, parsed.accountMatch);
-        if (accSummary.length === 0) return { text: `No accounts found. Add accounts in the Accounts section to track balances.` };
+        if (accSummary.length === 0) return { text: `No accounts found. Add accounts in the Accounts section to track balances.`, intent: 'account' };
         let text = `🏦 **Account Summary:**\n\n`;
         accSummary.forEach(a => {
           const typeIcon = a.type === 'credit_card' ? '💳' : a.type === 'wallet' ? '👛' : a.type === 'cash' ? '💵' : '🏦';
@@ -612,7 +1272,7 @@ export function processQuery(query: string, ctx: AssistantContext): AssistantRes
           if (a.totalIncome > 0) text += ` | Total received: ${fc(a.totalIncome, settings)}`;
           text += `\n\n`;
         });
-        return { text };
+        return { text, intent: 'account' };
       }
 
       case 'time_analysis': {
@@ -627,7 +1287,7 @@ export function processQuery(query: string, ctx: AssistantContext): AssistantRes
         if (patterns.weekendAvg > patterns.weekdayAvg * 1.5) {
           text += `\n💡 **Insight:** You spend significantly more on weekends. Consider planning weekend activities with a budget in mind.`;
         }
-        return { text };
+        return { text, intent: 'time_analysis' };
       }
 
       case 'summary': {
@@ -656,7 +1316,8 @@ export function processQuery(query: string, ctx: AssistantContext): AssistantRes
         } else if (comp.savingsRate > 30) {
           text += `\n\n🌟 **Great job!** A ${comp.savingsRate}% savings rate is excellent!`;
         }
-        return { text };
+        text += generateInsight(ctx, period);
+        return { text, intent: 'summary' };
       }
 
       case 'savings': {
@@ -667,7 +1328,6 @@ export function processQuery(query: string, ctx: AssistantContext): AssistantRes
         text += `Savings: **${fc(comp.savings, settings)}**\n`;
         if (comp.income > 0) {
           text += `Savings rate: **${comp.savingsRate}%**\n\n`;
-          // Projected annual savings
           const daysInPeriod = period ? Math.max(1, Math.round((period.end.getTime() - period.start.getTime()) / (1000 * 60 * 60 * 24))) : 30;
           const dailySavings = comp.savings / daysInPeriod;
           const projectedAnnual = dailySavings * 365;
@@ -681,14 +1341,14 @@ export function processQuery(query: string, ctx: AssistantContext): AssistantRes
         } else {
           text += `\nNo income recorded. Add income transactions for savings analysis.`;
         }
-        return { text };
+        return { text, intent: 'savings' };
       }
 
       case 'search': {
         const term = parsed.searchTerm || query.replace(/\b(find|search|show|list|all|me|my|the|transactions?|purchases?|payments?|expenses?)\b/gi, '').trim();
-        if (!term) return { text: `What would you like to search for? Try "find transactions for groceries" or "show Amazon purchases".` };
+        if (!term) return { text: `What would you like to search for? Try "find transactions for groceries" or "show Amazon purchases".`, intent: 'search' };
         const results = searchTransactions(ctx, term, parsed.period, parsed.amountFilter);
-        if (results.length === 0) return { text: `No transactions found matching "${term}" for ${periodLabel}. Try different keywords or time period.` };
+        if (results.length === 0) return { text: `No transactions found matching "${term}" for ${periodLabel}. Try different keywords or time period.`, intent: 'search' };
         let text = `🔎 Found **${results.length}** transaction${results.length > 1 ? 's' : ''} matching "${term}":\n\n`;
         results.forEach(t => {
           const cat = categories.find(c => c.id === t.categoryId);
@@ -697,11 +1357,29 @@ export function processQuery(query: string, ctx: AssistantContext): AssistantRes
           const icon = t.type === 'income' ? '💚' : '🔴';
           text += `  ${icon} ${dateStr} — ${fc(t.amount, settings)} — ${cat?.name || 'Uncategorized'}${t.notes ? ` (${t.notes})` : ''}\n`;
         });
-        return { text };
+        return { text, intent: 'search' };
       }
 
-      default:
-        return { text: `I can help you with:\n• Income & expense queries\n• Category breakdowns\n• Spending patterns & trends\n• Account balances\n• Financial summaries\n• Transaction search\n\nTry asking "What did I spend this month?" or "Show my financial summary"` };
+      default: {
+        // Smart fallback: try fuzzy entity matching before showing generic help
+        const fuzzyResult = tryFuzzyEntityMatch(query, ctx);
+        if (fuzzyResult) {
+          return { text: fuzzyResult, intent: 'search' };
+        }
+        return {
+          text: `🤔 I'm not sure what you're asking about. Here are some things I can help with:\n\n` +
+            `💸 **Spending:** "What did I spend this month?"\n` +
+            `📊 **Analysis:** "Top expense categories"\n` +
+            `📈 **Trends:** "Analyze my spending patterns"\n` +
+            `💰 **Budget:** "Am I within budget?"\n` +
+            `🏥 **Health:** "Financial health check"\n` +
+            `🔁 **Recurring:** "My recurring expenses"\n` +
+            `🔮 **Forecast:** "Predict month-end spending"\n` +
+            `💡 **Advice:** "Tips to save more"\n\n` +
+            `Type "help" for the full list of capabilities!`,
+          intent: 'help',
+        };
+      }
     }
   } catch {
     return { text: `I had trouble processing that query. Try rephrasing, for example:\n• "What's my spending this month?"\n• "Top expense categories"\n• "Compare income vs expenses"` };

@@ -12,6 +12,7 @@ import { MonthlyReport } from '../features/reports/components/MonthlyReport';
 import { StatementImportPage } from '../features/import/components/StatementImportPage';
 import { LoginPage } from '../features/auth/components/LoginPage';
 import { RecurringPage } from '../features/recurring/components/RecurringPage';
+import { BillRemindersPage } from '../features/reminders/components/BillRemindersPage';
 import { HealthScorePage } from '../features/health/components/HealthScorePage';
 import { PortfolioPage } from '../features/stocks/components/PortfolioPage';
 import { TradeHistoryPage } from '../features/stocks/components/TradeHistoryPage';
@@ -38,6 +39,7 @@ export const router = createBrowserRouter([
       { index: true, element: <Dashboard /> },
       { path: 'transactions', element: <TransactionsPage /> },
       { path: 'recurring', element: <RecurringPage /> },
+      { path: 'reminders', element: <BillRemindersPage /> },
       { path: 'add', element: <AddTransactionPage /> },
       { path: 'analytics', element: <AnalyticsView /> },
       { path: 'budgets', element: <BudgetsPage /> },

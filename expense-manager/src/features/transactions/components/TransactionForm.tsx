@@ -1,7 +1,7 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { v4 as uuidv4 } from 'uuid';
-import { ArrowDownCircle, ArrowUpCircle, ArrowLeftRight } from 'lucide-react';
+import { ArrowDownCircle, ArrowUpCircle, ArrowLeftRight, Lightbulb } from 'lucide-react';
 import { useAppContext } from '../../../context/AppContext';
 import { Button } from '../../../shared/components/ui/Button';
 import { Input, Select } from '../../../shared/components/ui/Input';
@@ -13,6 +13,7 @@ import { receiptService } from '../../../shared/services/receiptService';
 import { PAYMENT_METHODS } from '../../../shared/constants/accounts';
 import { getToday, classNames } from '../../../shared/utils/helpers';
 import { Transaction, Account, PaymentMethod } from '../../../shared/types';
+import { suggestCategories, type CategorySuggestion } from '../../../shared/services/autoCategorize';
 
 interface TransactionFormProps {
   editTransaction?: Transaction;
@@ -45,6 +46,50 @@ export function TransactionForm({ editTransaction, onClose }: TransactionFormPro
   const [pendingReceiptFile, setPendingReceiptFile] = useState<File | null>(null);
   const [receiptId, setReceiptId] = useState<string | undefined>(editTransaction?.receiptId);
   const pendingReceiptRef = useRef<File | null>(null);
+
+  // Auto-categorization state
+  const [suggestions, setSuggestions] = useState<CategorySuggestion[]>([]);
+  const [userPickedCategory, setUserPickedCategory] = useState(!!editTransaction?.categoryId);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const triggerSuggestions = useCallback(
+    (currentNotes: string, currentAmount: string, currentType: 'income' | 'expense' | 'transfer', currentDate: string) => {
+      if (currentType === 'transfer') {
+        setSuggestions([]);
+        return;
+      }
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+      debounceRef.current = setTimeout(() => {
+        const amt = parseFloat(currentAmount) || 0;
+        const results = suggestCategories(
+          currentNotes, amt, currentType, currentDate,
+          state.transactions, categories,
+        );
+        setSuggestions(results);
+
+        // Auto-select high-confidence suggestion if user hasn't picked a category
+        if (!userPickedCategory && results.length > 0 && results[0].confidence > 85) {
+          setCategoryId(results[0].categoryId);
+        }
+      }, 300);
+    },
+    [state.transactions, categories, userPickedCategory],
+  );
+
+  // Trigger suggestions when notes or amount change
+  useEffect(() => {
+    if (!isEditing) {
+      triggerSuggestions(notes, amount, type, date);
+    }
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
+  }, [notes, amount, type, date, triggerSuggestions, isEditing]);
+
+  const handleSuggestionClick = useCallback((suggestion: CategorySuggestion) => {
+    setCategoryId(suggestion.categoryId);
+    setUserPickedCategory(true);
+  }, []);
 
   // Two-level category picker: parent categories + subcategories
   const parentCategories = type === 'transfer'
@@ -128,7 +173,7 @@ export function TransactionForm({ editTransaction, onClose }: TransactionFormPro
       <div className="flex gap-1 rounded-xl bg-gray-100 dark:bg-gray-700 p-1">
         <button
           type="button"
-          onClick={() => { setType('expense'); setCategoryId(''); }}
+          onClick={() => { setType('expense'); setCategoryId(''); setUserPickedCategory(false); }}
           className={classNames(
             'flex flex-1 items-center justify-center gap-1.5 rounded-lg py-2.5 text-sm font-medium transition-all',
             type === 'expense'
@@ -141,7 +186,7 @@ export function TransactionForm({ editTransaction, onClose }: TransactionFormPro
         </button>
         <button
           type="button"
-          onClick={() => { setType('income'); setCategoryId(''); }}
+          onClick={() => { setType('income'); setCategoryId(''); setUserPickedCategory(false); }}
           className={classNames(
             'flex flex-1 items-center justify-center gap-1.5 rounded-lg py-2.5 text-sm font-medium transition-all',
             type === 'income'
@@ -154,7 +199,7 @@ export function TransactionForm({ editTransaction, onClose }: TransactionFormPro
         </button>
         <button
           type="button"
-          onClick={() => { setType('transfer'); setCategoryId(''); }}
+          onClick={() => { setType('transfer'); setCategoryId(''); setUserPickedCategory(false); }}
           className={classNames(
             'flex flex-1 items-center justify-center gap-1.5 rounded-lg py-2.5 text-sm font-medium transition-all',
             type === 'transfer'
@@ -245,6 +290,7 @@ export function TransactionForm({ editTransaction, onClose }: TransactionFormPro
                   return;
                 }
                 setCategoryId(pid);
+                setUserPickedCategory(true);
               }}
               error={errors.categoryId}
               options={[
@@ -267,6 +313,7 @@ export function TransactionForm({ editTransaction, onClose }: TransactionFormPro
                     return;
                   }
                   setCategoryId(val || selectedParentId);
+                  setUserPickedCategory(true);
                 }}
                 options={[
                   { value: '', label: `General ${categories.find((c) => c.id === selectedParentId)?.name || ''}` },
@@ -312,6 +359,37 @@ export function TransactionForm({ editTransaction, onClose }: TransactionFormPro
           value={notes}
           onChange={(e) => setNotes(e.target.value)}
         />
+        {/* Auto-categorization suggestion chips */}
+        {suggestions.length > 0 && type !== 'transfer' && (
+          <div className="mt-2 flex flex-wrap items-center gap-2">
+            <span className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400">
+              <Lightbulb size={12} className="text-amber-500" />
+              Suggested:
+            </span>
+            {suggestions.map((s) => {
+              const cat = categories.find((c) => c.id === s.categoryId);
+              const isSelected = categoryId === s.categoryId;
+              return (
+                <button
+                  key={s.categoryId}
+                  type="button"
+                  onClick={() => handleSuggestionClick(s)}
+                  title={s.reason}
+                  className={classNames(
+                    'inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium transition-all cursor-pointer',
+                    isSelected
+                      ? 'bg-primary-100 dark:bg-primary-900/40 text-primary-700 dark:text-primary-300 ring-1 ring-primary-400'
+                      : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-primary-50 dark:hover:bg-primary-900/20',
+                  )}
+                >
+                  {cat?.icon && <span className="text-xs">{cat.icon.length <= 2 ? cat.icon : '📂'}</span>}
+                  {s.categoryName}
+                  <span className="text-[10px] opacity-70">({s.confidence}%)</span>
+                </button>
+              );
+            })}
+          </div>
+        )}
       </div>
 
       {/* Receipt */}

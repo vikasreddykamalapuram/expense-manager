@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { v4 as uuidv4 } from 'uuid';
 import {
   FileUp, Upload, CheckCircle2, AlertTriangle, ChevronRight,
-  ChevronLeft, Check, Info, FileSpreadsheet, Loader2,
+  ChevronLeft, Check, Info, FileSpreadsheet, Loader2, Lightbulb,
 } from 'lucide-react';
 import { Button } from '../../../shared/components/ui/Button';
 import { Select } from '../../../shared/components/ui/Input';
@@ -18,6 +18,7 @@ import {
 } from '../../../shared/services/statementParser';
 import { parsePdfStatement } from '../../../shared/services/pdfStatementParser';
 import type { Transaction, Settings } from '../../../shared/types';
+import { suggestCategoryForImport, type CategorySuggestion } from '../../../shared/services/autoCategorize';
 
 // ─── Wizard Steps ───────────────────────────────────────
 
@@ -239,6 +240,23 @@ export function StatementImportPage() {
     return { count, totalDebit, totalCredit };
   }, [parseResult, selectedRows]);
 
+  // Auto-categorize uncategorized statement transactions
+  const statementSuggestions = useMemo(() => {
+    if (!parseResult) return new Map<number, CategorySuggestion>();
+    const map = new Map<number, CategorySuggestion>();
+    for (let i = 0; i < parseResult.transactions.length; i++) {
+      const txn = parseResult.transactions[i];
+      if (txn.categoryId || categoryOverrides.has(i)) continue;
+      const txnType = txn.type === 'transfer' ? 'expense' : txn.type;
+      const suggestion = suggestCategoryForImport(
+        txn.description, txn.amount, txnType,
+        txn.date, state.transactions, state.categories,
+      );
+      if (suggestion) map.set(i, suggestion);
+    }
+    return map;
+  }, [parseResult, categoryOverrides, state.transactions, state.categories]);
+
   // ─── Row selection ──────────────────────────────────────
 
   const toggleRow = useCallback((idx: number) => {
@@ -288,6 +306,14 @@ export function StatementImportPage() {
         const overrideCatId = categoryOverrides.get(idx);
         let categoryId = overrideCatId || pt.categoryId || '';
 
+        // Try auto-categorization suggestion as fallback
+        if (!categoryId) {
+          const suggestion = statementSuggestions.get(idx);
+          if (suggestion && suggestion.confidence > 70) {
+            categoryId = suggestion.categoryId;
+          }
+        }
+
         // If still no category, pick first expense/income category as fallback
         if (!categoryId) {
           const fallback = pt.type === 'income' ? incomeCategories[0] : expenseCategories[0];
@@ -322,7 +348,7 @@ export function StatementImportPage() {
     } finally {
       setIsImporting(false);
     }
-  }, [parseResult, selectedRows, categoryOverrides, selectedAccountId, state.transactions, actions, incomeCategories, expenseCategories, isImporting]);
+  }, [parseResult, selectedRows, categoryOverrides, selectedAccountId, state.transactions, actions, incomeCategories, expenseCategories, isImporting, statementSuggestions]);
 
   // ─── Reset ──────────────────────────────────────────────
 
@@ -465,6 +491,7 @@ export function StatementImportPage() {
             duplicateIndices={duplicateIndices}
             stats={stats}
             settings={state.settings}
+            statementSuggestions={statementSuggestions}
             toggleRow={toggleRow}
             toggleAll={toggleAll}
             handleCategoryChange={handleCategoryChange}
@@ -624,6 +651,7 @@ interface PreviewStepProps {
   duplicateIndices: Set<number>;
   stats: { total: number; categorized: number; needsReview: number; selected: number };
   settings: Settings;
+  statementSuggestions: Map<number, CategorySuggestion>;
   toggleRow: (idx: number) => void;
   toggleAll: () => void;
   handleCategoryChange: (idx: number, catId: string) => void;
@@ -634,7 +662,7 @@ interface PreviewStepProps {
 function PreviewStep({
   parseResult, selectedRows, categoryOverrides,
   expenseCategories, incomeCategories, duplicateIndices,
-  stats, settings, toggleRow, toggleAll, handleCategoryChange,
+  stats, settings, statementSuggestions, toggleRow, toggleAll, handleCategoryChange,
   onBack, onNext,
 }: PreviewStepProps) {
   return (
@@ -712,6 +740,7 @@ function PreviewStep({
               const overrideCatId = categoryOverrides.get(idx);
               const currentCatId = overrideCatId || txn.categoryId || '';
               const hasCat = !!currentCatId;
+              const suggestion = !hasCat ? statementSuggestions.get(idx) : undefined;
               const cats = txn.type === 'income' ? incomeCategories : expenseCategories;
               const catOptions = [
                 { value: '', label: hasCat ? 'Remove' : 'Select category...' },
@@ -764,6 +793,17 @@ function PreviewStep({
                         <option key={o.value} value={o.value}>{o.label}</option>
                       ))}
                     </select>
+                    {suggestion && !hasCat && (
+                      <button
+                        type="button"
+                        onClick={() => handleCategoryChange(idx, suggestion.categoryId)}
+                        className="mt-1 inline-flex items-center gap-1 rounded-full bg-amber-100 dark:bg-amber-900/30 px-1.5 py-0.5 text-[10px] font-medium text-amber-700 dark:text-amber-300 hover:bg-amber-200 dark:hover:bg-amber-900/50 transition-colors cursor-pointer"
+                        title={suggestion.reason}
+                      >
+                        <Lightbulb size={10} />
+                        {suggestion.categoryName} ({suggestion.confidence}%)
+                      </button>
+                    )}
                   </td>
                 </tr>
               );

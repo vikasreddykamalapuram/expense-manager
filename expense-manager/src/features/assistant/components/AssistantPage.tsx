@@ -14,16 +14,18 @@ interface ChatMessage {
 
 const QUICK_QUESTIONS = [
   "What's my spending this month?",
+  "Am I within budget?",
+  "Financial health check",
   "Top expense categories",
   "Income vs expenses",
-  "Analyze my spending patterns",
-  "Financial summary",
-  "Where am I overspending?",
+  "Tips to save more",
+  "My recurring expenses",
+  "Portfolio summary",
 ];
 
 export function AssistantPage() {
   const { state } = useAppContext();
-  const { transactions, categories, accounts, settings } = state;
+  const { transactions, categories, accounts, settings, budgets, recurringRules, stockTransactions } = state;
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
@@ -59,6 +61,9 @@ export function AssistantPage() {
         categories,
         accounts,
         settings,
+        budgets,
+        recurringRules,
+        stockTransactions,
       });
 
       const assistantMessage: ChatMessage = {
@@ -71,7 +76,7 @@ export function AssistantPage() {
       setMessages(prev => [...prev, assistantMessage]);
       setIsTyping(false);
     }, 400 + Math.random() * 400);
-  }, [transactions, categories, accounts, settings]);
+  }, [transactions, categories, accounts, settings, budgets, recurringRules, stockTransactions]);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {

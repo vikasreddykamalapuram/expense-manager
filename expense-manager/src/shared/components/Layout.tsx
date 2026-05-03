@@ -2,7 +2,7 @@ import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard, ArrowLeftRight, PlusCircle, CalendarDays,
   Settings, Wallet, Menu, X, Landmark, Tag, ChevronDown,
-  Plus, LogIn, LogOut, Target, RefreshCw,FileUp,FileBarChart, Heart, TrendingUp,
+  Plus, LogIn, LogOut, Target, RefreshCw,FileUp,FileBarChart, Heart, TrendingUp, Bell,
 } from 'lucide-react';
 import { useState, useRef, useEffect } from 'react';
 import { v4 as uuidv4 } from 'uuid';
@@ -18,6 +18,7 @@ const navItems = [
   { path: '/', icon: LayoutDashboard, label: 'Dashboard' },
   { path: '/transactions', icon: ArrowLeftRight, label: 'Transactions' },
   { path: '/recurring', icon: RefreshCw, label: 'Recurring' },
+  { path: '/reminders', icon: Bell, label: 'Reminders' },
   { path: '/add', icon: PlusCircle, label: 'Add New' },
   { path: '/analytics', icon: CalendarDays, label: 'Analytics' },
   { path: '/budgets', icon: Target, label: 'Budgets' },

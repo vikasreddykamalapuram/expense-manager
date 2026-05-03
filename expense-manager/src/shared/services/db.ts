@@ -1,5 +1,5 @@
 import Dexie, { Table } from 'dexie';
-import { Transaction, Category, Account, Budget, Settings, Profile, RecurringRule, StockTransaction } from '../types';
+import { Transaction, Category, Account, Budget, Settings, Profile, RecurringRule, StockTransaction, BillReminder } from '../types';
 
 // Extended types with profileId for scoping
 export interface DbTransaction extends Transaction {
@@ -54,6 +54,10 @@ export interface DbStockTransaction extends StockTransaction {
   profileId: string;
 }
 
+export interface DbBillReminder extends BillReminder {
+  profileId: string;
+}
+
 export class ExpenseDatabase extends Dexie {
   transactions!: Table<DbTransaction, string>;
   categories!: Table<DbCategory, string>;
@@ -66,6 +70,7 @@ export class ExpenseDatabase extends Dexie {
   recurringRules!: Table<DbRecurringRule, string>;
   receipts!: Table<DbReceipt, string>;
   stockTransactions!: Table<DbStockTransaction, string>;
+  billReminders!: Table<DbBillReminder, string>;
 
   constructor() {
     super('ExpenseIQDatabase');
@@ -118,6 +123,21 @@ export class ExpenseDatabase extends Dexie {
       recurringRules: 'id, profileId, [profileId+isActive], [profileId+nextDueDate]',
       receipts: 'id, profileId, transactionId',
       stockTransactions: 'id, profileId, [profileId+date], [profileId+symbol], [profileId+type], [profileId+broker]',
+    });
+
+    this.version(5).stores({
+      transactions: 'id, profileId, [profileId+date], [profileId+categoryId], [profileId+accountId], [profileId+type]',
+      categories: 'id, profileId, [profileId+type], [profileId+parentId]',
+      accounts: 'id, profileId, [profileId+type], [profileId+isActive]',
+      budgets: 'id, profileId, [profileId+categoryId+month]',
+      settings: 'profileId',
+      customInstitutions: 'profileId',
+      profiles: 'id',
+      migrations: 'key',
+      recurringRules: 'id, profileId, [profileId+isActive], [profileId+nextDueDate]',
+      receipts: 'id, profileId, transactionId',
+      stockTransactions: 'id, profileId, [profileId+date], [profileId+symbol], [profileId+type], [profileId+broker]',
+      billReminders: 'id, profileId, [profileId+dueDate], [profileId+category]',
     });
   }
 }

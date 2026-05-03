@@ -170,6 +170,27 @@ export interface PortfolioHolding {
   broker: string;
 }
 
+// ─── Bill Reminder Types ────────────────────────────────
+export type BillCategory = 'utility' | 'credit_card' | 'loan_emi' | 'insurance' | 'subscription' | 'rent' | 'other';
+export type BillFrequency = 'monthly' | 'quarterly' | 'yearly' | 'one_time';
+
+export interface BillReminder {
+  id: string;
+  name: string;
+  amount: number;
+  category: BillCategory;
+  dueDate: number; // day of month (1-31)
+  frequency: BillFrequency;
+  accountId?: string;
+  isAutoPay: boolean;
+  reminderDays: number[];
+  isActive: boolean;
+  lastPaidDate?: string;
+  notes?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export type AuthProvider = 'google' | 'microsoft';
 
 export interface AuthUser {

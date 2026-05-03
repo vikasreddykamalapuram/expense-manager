@@ -1,8 +1,8 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useMemo } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import {
   Upload, FileSpreadsheet, ArrowRight, ArrowLeft, Check,
-  AlertTriangle, ChevronDown, ChevronRight, RefreshCw,
+  AlertTriangle, ChevronDown, ChevronRight, RefreshCw, Lightbulb,
 } from 'lucide-react';
 import { useAppContext } from '../../../context/AppContext';
 import { Button } from '../../../shared/components/ui/Button';
@@ -15,6 +15,7 @@ import {
   detectDateFormat, processCSVImport, matchCategory,
   ImportResult, ParsedTransaction,
 } from '../../../shared/utils/csvParser';
+import { suggestCategoryForImport, type CategorySuggestion } from '../../../shared/services/autoCategorize';
 
 interface CSVImportModalProps {
   isOpen: boolean;
@@ -343,6 +344,23 @@ export function CSVImportModal({ isOpen, onClose }: CSVImportModalProps) {
     ? [{ value: '', label: '— Skip —' }, ...csv.headers.map((h) => ({ value: h, label: h }))]
     : [];
 
+  // Auto-categorize uncategorized import rows
+  const csvSuggestions = useMemo(() => {
+    if (!importResult) return new Map<number, CategorySuggestion>();
+    const map = new Map<number, CategorySuggestion>();
+    for (let i = 0; i < importResult.parsed.length; i++) {
+      const p = importResult.parsed[i];
+      // Only suggest for rows without a category already
+      if (p.category && p.category.trim()) continue;
+      const suggestion = suggestCategoryForImport(
+        p.notes || '', p.amount, p.type as 'income' | 'expense',
+        p.date, state.transactions, state.categories,
+      );
+      if (suggestion) map.set(i, suggestion);
+    }
+    return map;
+  }, [importResult, state.transactions, state.categories]);
+
   const stepNumber = step === 'upload' ? 1 : step === 'mapping' ? 2 : step === 'preview' ? 3 : 4;
 
   return (
@@ -617,7 +635,9 @@ export function CSVImportModal({ isOpen, onClose }: CSVImportModalProps) {
                   </tr>
                 </thead>
                 <tbody>
-                  {importResult.parsed.slice(0, 10).map((p, i) => (
+                  {importResult.parsed.slice(0, 10).map((p, i) => {
+                    const suggestion = csvSuggestions.get(i);
+                    return (
                     <tr key={i} className="border-t border-gray-100 dark:border-gray-700">
                       <td className="px-2 py-1.5 text-gray-700 dark:text-gray-300 whitespace-nowrap">{p.date}</td>
                       <td className="px-2 py-1.5">
@@ -630,12 +650,20 @@ export function CSVImportModal({ isOpen, onClose }: CSVImportModalProps) {
                         </span>
                       </td>
                       <td className="px-2 py-1.5 text-right font-medium text-gray-900 dark:text-gray-100">{p.amount.toFixed(2)}</td>
-                      <td className="px-2 py-1.5 text-gray-700 dark:text-gray-300 max-w-[120px] truncate">{p.category}</td>
+                      <td className="px-2 py-1.5 text-gray-700 dark:text-gray-300 max-w-[120px] truncate">
+                        {p.category || (suggestion ? (
+                          <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 dark:bg-amber-900/30 px-1.5 py-0.5 text-[10px] font-medium text-amber-700 dark:text-amber-300" title={suggestion.reason}>
+                            <Lightbulb size={10} />
+                            {suggestion.categoryName} ({suggestion.confidence}%)
+                          </span>
+                        ) : '—')}
+                      </td>
                       <td className="px-2 py-1.5 text-gray-500 dark:text-gray-400 max-w-[120px] truncate">{p.subcategory || '—'}</td>
                       <td className="px-2 py-1.5 text-gray-500 dark:text-gray-400 max-w-[100px] truncate">{p.account || '—'}</td>
                       <td className="px-2 py-1.5 text-gray-500 dark:text-gray-400 max-w-[180px] truncate">{p.notes}</td>
                     </tr>
-                  ))}
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
