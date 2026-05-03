@@ -101,9 +101,7 @@ export function StatementImportPage() {
       result.transactions.forEach((_: ParsedTransaction, idx: number) => initialSelected.add(idx));
       setSelectedRows(initialSelected);
       setCategoryOverrides(new Map());
-      if (result.transactions.length > 0) {
-        setStep('preview');
-      }
+      setStep('preview');
     };
 
     if (ext === 'pdf') {
@@ -153,17 +151,6 @@ export function StatementImportPage() {
     setParsing(true);
     setShowPasswordPrompt(false);
 
-    const applyResult = (result: ParseResult) => {
-      setParseResult(result);
-      const initialSelected = new Set<number>();
-      result.transactions.forEach((_: ParsedTransaction, idx: number) => initialSelected.add(idx));
-      setSelectedRows(initialSelected);
-      setCategoryOverrides(new Map());
-      if (result.transactions.length > 0) {
-        setStep('preview');
-      }
-    };
-
     parsePdfStatement(pendingPdfFile, allCategories, bank, pdfPassword.trim())
       .then((result) => {
         if (result.errors.length === 1 && result.errors[0] === 'PASSWORD_REQUIRED') {
@@ -178,10 +165,16 @@ export function StatementImportPage() {
         }
         setPendingPdfFile(null);
         setPdfPassword('');
-        applyResult(result);
+        setParseResult(result);
+        const initialSelected = new Set<number>();
+        result.transactions.forEach((_: ParsedTransaction, idx: number) => initialSelected.add(idx));
+        setSelectedRows(initialSelected);
+        setCategoryOverrides(new Map());
+        setStep('preview');
       })
       .catch(() => {
         setParseResult({ transactions: [], errors: ['Failed to parse PDF file.'] });
+        setStep('preview');
       })
       .finally(() => setParsing(false));
   }, [pendingPdfFile, pdfPassword, selectedBank, allCategories]);
