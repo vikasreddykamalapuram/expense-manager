@@ -8,8 +8,12 @@ import { AppProvider } from './context/AppContext';
 import { AuthProvider } from './context/AuthContext';
 import { SyncProviderWrapper } from './context/SyncProviderWrapper';
 import { AUTH_CONFIG } from './shared/config/auth';
+import { preloadSymbolMap } from './shared/services/symbolResolver';
 import { router } from './app/router';
 import './index.css';
+
+// Pre-load NSE symbol map for ISIN→ticker resolution (non-blocking)
+preloadSymbolMap().catch(() => {});
 
 // MSAL instance (singleton)
 const msalInstance = new PublicClientApplication({

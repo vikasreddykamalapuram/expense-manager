@@ -1,4 +1,5 @@
 import { StockTransaction, StockExchange, TradeType, AssetClass, TradeCharges } from '../types';
+import { resolveSymbolSync } from './symbolResolver';
 
 export type BrokerFormat =
   | 'zerodha' | 'groww' | 'angelone' | 'paytmmoney' | 'geojit'
@@ -373,14 +374,19 @@ function geojitParser(row: string[], headers: string[]): Omit<StockTransaction, 
     const rawName = getVal(row, iName);
     if (!rawName) return null;
 
-    // Extract symbol from company name: "BHARAT ELECTRONICS LIMITED EQ NEW FV Re 1/-" → "BEL" not available
-    // Use cleaned company name as both symbol and name
+    const isin = getVal(row, iIsin).trim().toUpperCase();
+
+    // Clean the display name
     const cleanName = rawName
-      .replace(/\s*(EQ|EQUITY|NEW|FV|RE\.?|RS\.?|F\.V\.?)\s*[\d/\-]*\s*/gi, '')
+      .replace(/\s+(EQ|EQUITY|NEW|FV|F\.V\.?)\s*[\d/\-]*\s*/gi, ' ')
+      .replace(/\s+\bRE\.?\b\s*[\d/\-]*\s*/gi, ' ')
+      .replace(/\s+\bRS\.?\b\s*[\d/\-]*\s*/gi, ' ')
       .replace(/\s+LIMITED$/i, '')
       .replace(/\s+LTD\.?$/i, '')
       .trim();
-    const symbol = cleanName.replace(/\s+/g, '').substring(0, 20).toUpperCase();
+
+    // Resolve symbol: ISIN first (most reliable), then company name
+    const symbol = resolveSymbolSync(cleanName, isin);
 
     const qty = parseIndianNumber(getVal(row, iQty));
     const price = parseIndianNumber(getVal(row, iRate));
@@ -391,7 +397,6 @@ function geojitParser(row: string[], headers: string[]): Omit<StockTransaction, 
     let date = new Date().toISOString().split('T')[0];
     const priceDateStr = getVal(row, iPriceDate);
     if (priceDateStr) {
-      // Format: "29 Apr 2026 23:02:00"
       const parsed = new Date(priceDateStr);
       if (!isNaN(parsed.getTime())) {
         date = parsed.toISOString().split('T')[0];
@@ -404,13 +409,13 @@ function geojitParser(row: string[], headers: string[]): Omit<StockTransaction, 
       name: cleanName,
       exchange: 'NSE',
       assetClass: detectAssetClass(symbol, rawName),
-      type: 'buy' as TradeType, // holdings are existing positions
+      type: 'buy' as TradeType,
       quantity: qty,
       price,
       totalValue: totalVal || Math.round(qty * price * 100) / 100,
       charges: emptyCharges(),
       broker: 'Geojit',
-      notes: `ISIN: ${getVal(row, iIsin).trim()}. Imported from DP Holdings.`,
+      notes: isin ? `ISIN: ${isin}. Imported from DP Holdings.` : 'Imported from DP Holdings.',
     };
   }
 
@@ -428,12 +433,18 @@ function geojitParser(row: string[], headers: string[]): Omit<StockTransaction, 
     const rawName = getVal(row, iName);
     if (!rawName) return null;
 
+    const isin = getVal(row, iIsin).trim().toUpperCase();
+
     const cleanName = rawName
-      .replace(/\s*(EQ|EQUITY|NEW|FV|RE\.?|RS\.?|F\.V\.?)\s*[\d/\-]*\s*/gi, '')
+      .replace(/\s+(EQ|EQUITY|NEW|FV|F\.V\.?)\s*[\d/\-]*\s*/gi, ' ')
+      .replace(/\s+\bRE\.?\b\s*[\d/\-]*\s*/gi, ' ')
+      .replace(/\s+\bRS\.?\b\s*[\d/\-]*\s*/gi, ' ')
       .replace(/\s+LIMITED$/i, '')
       .replace(/\s+LTD\.?$/i, '')
       .trim();
-    const symbol = cleanName.replace(/\s+/g, '').substring(0, 20).toUpperCase();
+
+    // Resolve symbol: ISIN first (most reliable), then company name
+    const symbol = resolveSymbolSync(cleanName, isin);
 
     const creditQty = parseIndianNumber(getVal(row, iCredit));
     const debitQty = parseIndianNumber(getVal(row, iDebit));
@@ -509,10 +520,12 @@ function sbiParser(row: string[], headers: string[]): Omit<StockTransaction, 'id
   const iQty = findCol(headers, 'Quantity');
   const iRate = findCol(headers, 'Rate');
 
-  const symbol = normalizeSymbol(getVal(row, iSymbol));
-  if (!symbol) return null;
+  const rawSymbol = normalizeSymbol(getVal(row, iSymbol));
+  if (!rawSymbol) return null;
 
-  const name = getVal(row, iName) || symbol;
+  const name = getVal(row, iName) || rawSymbol;
+  // SBI uses BSE ScripCode — try to resolve via name, fallback to code
+  const symbol = resolveSymbolSync(name) || rawSymbol;
   const qty = parseIndianNumber(getVal(row, iQty));
   const price = parseIndianNumber(getVal(row, iRate));
 
@@ -528,7 +541,7 @@ function sbiParser(row: string[], headers: string[]): Omit<StockTransaction, 'id
     totalValue: Math.round(qty * price * 100) / 100,
     charges: emptyCharges(),
     broker: 'SBI Securities',
-    notes: '',
+    notes: rawSymbol !== symbol ? `BSE Code: ${rawSymbol}` : '',
   };
 }
 
@@ -640,10 +653,12 @@ function hdfcParser(row: string[], headers: string[]): Omit<StockTransaction, 'i
   const iQty = findCol(headers, 'Quantity');
   const iRate = findCol(headers, 'Rate');
 
-  const symbol = normalizeSymbol(getVal(row, iSymbol));
-  if (!symbol) return null;
+  const rawSymbol = normalizeSymbol(getVal(row, iSymbol));
+  if (!rawSymbol) return null;
 
-  const name = getVal(row, iName) || symbol;
+  const name = getVal(row, iName) || rawSymbol;
+  // HDFC uses BSE ScriptCode — try to resolve via name, fallback to code
+  const symbol = resolveSymbolSync(name) || rawSymbol;
   const qty = parseIndianNumber(getVal(row, iQty));
   const price = parseIndianNumber(getVal(row, iRate));
 
@@ -659,7 +674,7 @@ function hdfcParser(row: string[], headers: string[]): Omit<StockTransaction, 'i
     totalValue: Math.round(qty * price * 100) / 100,
     charges: emptyCharges(),
     broker: 'HDFC Securities',
-    notes: '',
+    notes: rawSymbol !== symbol ? `BSE Code: ${rawSymbol}` : '',
   };
 }
 

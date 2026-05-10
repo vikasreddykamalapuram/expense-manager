@@ -2,9 +2,13 @@ name: Update Stock Prices
 
 on:
   schedule:
-    # Every 15 min during Indian market hours (9:15 AM - 3:45 PM IST = 3:45 - 10:15 UTC)
-    # Weekdays only
-    - cron: '*/15 3-10 * * 1-5'
+    # Every 90 min during Indian market hours (9:15 AM - 3:45 PM IST = 3:45 - 10:15 UTC)
+    # Weekdays only. Runs at market open, then every 90 min, plus near close.
+    - cron: '45 3 * * 1-5'   # 9:15 AM IST - market open
+    - cron: '15 5 * * 1-5'   # 10:45 AM IST
+    - cron: '45 6 * * 1-5'   # 12:15 PM IST
+    - cron: '15 8 * * 1-5'   # 1:45 PM IST
+    - cron: '45 9 * * 1-5'   # 3:15 PM IST - near close
   workflow_dispatch:
     inputs:
       symbols:

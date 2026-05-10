@@ -1,0 +1,1379 @@
+{
+  "version": 1,
+  "generatedAt": "2026-05-10T13:58:25.021Z",
+  "stockCount": 158,
+  "isinToTicker": {
+    "INE002A01018": "RELIANCE",
+    "INE467B01029": "TCS",
+    "INE009A01021": "INFY",
+    "INE040A01034": "HDFCBANK",
+    "INE090A01021": "ICICIBANK",
+    "INE030A01027": "HINDUNILVR",
+    "INE154A01025": "ITC",
+    "INE062A01020": "SBIN",
+    "INE397D01024": "BHARTIARTL",
+    "INE237A01028": "KOTAKBANK",
+    "INE018A01030": "LT",
+    "INE238A01034": "AXISBANK",
+    "INE296A01024": "BAJFINANCE",
+    "INE918I01018": "BAJFINSERV",
+    "INE585B01010": "MARUTI",
+    "INE860A01027": "HCLTECH",
+    "INE021A01026": "ASIANPAINT",
+    "INE280A01028": "TITAN",
+    "INE044A01036": "SUNPHARMA",
+    "INE047A01021": "NESTLEIND",
+    "INE481G01011": "DMART",
+    "INE481A01020": "ULTRACEMCO",
+    "INE075A01022": "WIPRO",
+    "INE669C01036": "TECHM",
+    "INE752E01010": "POWERGRID",
+    "INE733E01010": "NTPC",
+    "INE213A01029": "ONGC",
+    "INE019A01038": "JSWSTEEL",
+    "INE081A01020": "TATASTEEL",
+    "INE423A01024": "ADANIENT",
+    "INE742F01042": "ADANIPORTS",
+    "INE364U01010": "ADANIGREEN",
+    "INE522F01014": "COALINDIA",
+    "INE047A01013": "GRASIM",
+    "INE361B01024": "DIVISLAB",
+    "INE029A01011": "BPCL",
+    "INE089A01023": "DRREDDY",
+    "INE059A01026": "CIPLA",
+    "INE158A01026": "HEROMOTOCO",
+    "INE066A01021": "EICHERMOT",
+    "INE917I01010": "BAJAJ-AUTO",
+    "INE216A01030": "BRITANNIA",
+    "INE437A01024": "APOLLOHOSP",
+    "INE095A01012": "INDUSINDBK",
+    "INE849A01020": "TRENT",
+    "INE721A01013": "SHRIRAMFIN",
+    "INE758T01015": "ETERNAL",
+    "INE205A01025": "M&M",
+    "INE038A01020": "HINDALCO",
+    "INE628A01036": "VEDL",
+    "INE557A01011": "HBLPOWER",
+    "INE883A01011": "TMPV",
+    "INE883A01029": "TMCV",
+    "INE115A01026": "PIDILITIND",
+    "INE761H01022": "PAGEIND",
+    "INE079A01024": "AMBUJACEM",
+    "INE012A01025": "ACC",
+    "INE018E01016": "SBICARD",
+    "INE123W01016": "SBILIFE",
+    "INE134E01011": "PFC",
+    "INE020B01018": "RECLTD",
+    "INE202E01016": "IREDA",
+    "INE848E01016": "NHPC",
+    "INE084A01016": "BANKINDIA",
+    "INE476A01014": "CANBK",
+    "INE160A01022": "PNB",
+    "INE028A01039": "BANKBARODA",
+    "INE562A01011": "INDIANB",
+    "INE245A01021": "TATAPOWER",
+    "INE670A01012": "TATAELXSI",
+    "INE092A01019": "TATACHEM",
+    "INE151A01013": "TATACOMM",
+    "INE214T01019": "LTIM",
+    "INE522D01027": "MANAPPURAM",
+    "INE414G01012": "MUTHOOTFIN",
+    "INE040H01021": "SUZLON",
+    "INE814H01011": "ADANIPOWER",
+    "INE399L01023": "ATGL",
+    "INE220G01021": "JINDALSTEL",
+    "INE271C01023": "DLF",
+    "INE484J01027": "GODREJPROP",
+    "INE093I01010": "OBEROIRLTY",
+    "INE811K01011": "PRESTIGE",
+    "INE257A01026": "BHEL",
+    "INE176B01034": "HAVELLS",
+    "INE335Y01012": "IRCTC",
+    "INE121J01017": "INDUSTOWER",
+    "INE066F01020": "HAL",
+    "INE171Z01018": "BDL",
+    "INE704A01027": "COCHINSHIP",
+    "INE924B01011": "MAZAGON",
+    "INE382Z01011": "GRSE",
+    "INE555B01013": "POLYCAB",
+    "INE226A01021": "VOLTAS",
+    "INE233A01035": "CROMPTON",
+    "INE716A01013": "CHOLAFIN",
+    "INE118H01025": "MAXHEALTH",
+    "INE061F01013": "FORTIS",
+    "INE112L01020": "METROPOLIS",
+    "INE551A01024": "UJJIVANSFB",
+    "INE139A01034": "NATIONALUM",
+    "INE171A01029": "FEDERALBNK",
+    "INE263A01024": "BEL",
+    "INE465A01025": "BHARATFORG",
+    "INE092T01019": "IDFCFIRSTB",
+    "INE573A01042": "JKTYRE",
+    "INE694A01020": "UNITECH",
+    "INE115A01034": "LICHSGFIN",
+    "INE987B01026": "NATCOPHARM",
+    "INE255A01020": "GRAUWEIL",
+    "INE671H01015": "SAMMAANCAP",
+    "INE235A01022": "FINCABLES",
+    "INE371A01025": "GRAPHITE",
+    "INE917M01012": "DBL",
+    "INE736A01011": "CDSL",
+    "INE348R01012": "CAPACITE",
+    "INE783A01021": "GLOBALVECT",
+    "INE040A01026": "LUPIN",
+    "INE406A01037": "AUROPHARMA",
+    "INE376G01013": "BIOCON",
+    "INE540L01014": "ALKEM",
+    "INE356A01018": "MPHASIS",
+    "INE262H01013": "PERSISTENT",
+    "INE909H01019": "COFORGE",
+    "INE136B01020": "CYIENT",
+    "INE524B01027": "KPITTECH",
+    "INE310A01015": "ZYDUSLIFE",
+    "INE070A01015": "WHIRLPOOL",
+    "INE397C01024": "BLUESTARLT",
+    "INE306N01017": "BAJAJHLDNG",
+    "INE148I01020": "TATAMOTORS",
+    "INE274J01014": "IDEA",
+    "INE101A01026": "ICICIPRULI",
+    "INE726G01019": "LICI",
+    "INE646L01027": "NYKAA",
+    "INE669F01024": "PAYTM",
+    "INE397S01024": "JSWENERGY",
+    "INE043A01012": "GAIL",
+    "INE129A01019": "IOC",
+    "INE242A01010": "SAIL",
+    "INE325A01013": "NMDC",
+    "INE557A01029": "HBLENGINE",
+    "INE749A01030": "DALBHARAT",
+    "INE101M01018": "CENTURYTEX",
+    "INE148A01019": "MCX",
+    "INE226H01026": "CONCOR",
+    "INE691I01018": "SIEMENS",
+    "INE397A01024": "ABB",
+    "INE121A01016": "CUMMINSIND",
+    "INE239A01016": "ESCORTS",
+    "INE002S01010": "JUBLFOOD",
+    "INE148A01027": "COLPAL",
+    "INE259A01022": "GODREJCP",
+    "INE364A01016": "MARICO",
+    "INE042A01014": "DABUR",
+    "INE491A01021": "PGHH",
+    "INE077A01010": "BERGEPAINT",
+    "INE417T01048": "TVSMOTOR"
+  },
+  "nameToTicker": {
+    "RELIANCE INDUSTRIES": "RELIANCE",
+    "RELIANCEINDUSTRIES": "RELIANCE",
+    "RELIANCE": "RELIANCE",
+    "LIANCEINDUSTRIES": "RELIANCE",
+    "TATA CONSULTANCY SERVICES": "TCS",
+    "TATACONSULTANCYSERVICES": "TCS",
+    "TATACONSULTANCYSERVI": "TCS",
+    "TCS": "TCS",
+    "INFOSYS": "INFY",
+    "INFY": "INFY",
+    "HDFC BANK": "HDFCBANK",
+    "HDFCBANK": "HDFCBANK",
+    "ICICI BANK": "ICICIBANK",
+    "ICICIBANK": "ICICIBANK",
+    "HINDUSTAN UNILEVER": "HINDUNILVR",
+    "HINDUSTANUNILEVER": "HINDUNILVR",
+    "HINDUNILVR": "HINDUNILVR",
+    "ITC": "ITC",
+    "STATE BANK OF INDIA": "SBIN",
+    "STATEBANKOFINDIA": "SBIN",
+    "STATE BANK": "SBIN",
+    "STATEBANK": "SBIN",
+    "SBIN": "SBIN",
+    "BHARTI AIRTEL": "BHARTIARTL",
+    "BHARTIAIRTEL": "BHARTIARTL",
+    "BHARTIARTL": "BHARTIARTL",
+    "KOTAK MAHINDRA BANK": "KOTAKBANK",
+    "KOTAKMAHINDRABANK": "KOTAKBANK",
+    "KOTAKBANK": "KOTAKBANK",
+    "LARSEN & TOUBRO": "LT",
+    "LARSEN&TOUBRO": "LT",
+    "LAEN&TOUBRO": "LT",
+    "LARSENANDTOUBRO": "LT",
+    "LARSENTOUBRO": "LT",
+    "LT": "LT",
+    "AXIS BANK": "AXISBANK",
+    "AXISBANK": "AXISBANK",
+    "BAJAJ FINANCE": "BAJFINANCE",
+    "BAJAJFINANCE": "BAJFINANCE",
+    "BAJFINANCE": "BAJFINANCE",
+    "BAJAJ FINSERV": "BAJFINSERV",
+    "BAJAJFINSERV": "BAJFINSERV",
+    "BAJFINSERV": "BAJFINSERV",
+    "MARUTI SUZUKI INDIA": "MARUTI",
+    "MARUTISUZUKIINDIA": "MARUTI",
+    "MARUTI SUZUKI": "MARUTI",
+    "MARUTISUZUKI": "MARUTI",
+    "MARUTI": "MARUTI",
+    "HCL TECHNOLOGIES": "HCLTECH",
+    "HCLTECHNOLOGIES": "HCLTECH",
+    "HCLTECH": "HCLTECH",
+    "ASIAN PAINTS": "ASIANPAINT",
+    "ASIANPAINTS": "ASIANPAINT",
+    "ASIANPAINT": "ASIANPAINT",
+    "TITAN COMPANY": "TITAN",
+    "TITANCOMPANY": "TITAN",
+    "TITAN": "TITAN",
+    "SUN PHARMACEUTICAL INDUSTRIES": "SUNPHARMA",
+    "SUNPHARMACEUTICALINDUSTRIES": "SUNPHARMA",
+    "SUN PHARMACEUTICAL": "SUNPHARMA",
+    "SUNPHARMACEUTICAL": "SUNPHARMA",
+    "SUNPHARMACEUTICALIND": "SUNPHARMA",
+    "SUNPHARMA": "SUNPHARMA",
+    "NESTLE INDIA": "NESTLEIND",
+    "NESTLEINDIA": "NESTLEIND",
+    "NESTLE": "NESTLEIND",
+    "NESTLEIND": "NESTLEIND",
+    "AVENUE SUPERMARTS": "DMART",
+    "AVENUESUPERMARTS": "DMART",
+    "DMART": "DMART",
+    "ULTRATECH CEMENT": "ULTRACEMCO",
+    "ULTRATECHCEMENT": "ULTRACEMCO",
+    "ULTRACEMCO": "ULTRACEMCO",
+    "WIPRO": "WIPRO",
+    "TECH MAHINDRA": "TECHM",
+    "TECHMAHINDRA": "TECHM",
+    "TECHM": "TECHM",
+    "POWER GRID CORPORATION OF INDIA": "POWERGRID",
+    "POWERGRIDCORPORATIONOFINDIA": "POWERGRID",
+    "POWER GRID": "POWERGRID",
+    "POWERGRID": "POWERGRID",
+    "POWERGRIDCORPORATION": "POWERGRID",
+    "NTPC": "NTPC",
+    "OIL AND NATURAL GAS CORPORATION": "ONGC",
+    "OILANDNATURALGASCORPORATION": "ONGC",
+    "OIL AND NATURAL GAS": "ONGC",
+    "OILANDNATURALGAS": "ONGC",
+    "OILANDNATURALGASCORP": "ONGC",
+    "OIL&NATURALGASCORPORATION": "ONGC",
+    "ONGC": "ONGC",
+    "JSW STEEL": "JSWSTEEL",
+    "JSWSTEEL": "JSWSTEEL",
+    "TATA STEEL": "TATASTEEL",
+    "TATASTEEL": "TATASTEEL",
+    "ADANI ENTERPRISES": "ADANIENT",
+    "ADANIENTERPRISES": "ADANIENT",
+    "ADANI": "ADANIENT",
+    "ADANIENT": "ADANIENT",
+    "ADANI PORTS AND SPECIAL ECONOMIC ZONE": "ADANIPORTS",
+    "ADANIPORTSANDSPECIALECONOMICZONE": "ADANIPORTS",
+    "ADANIPORTSANDSPECIAL": "ADANIPORTS",
+    "ADANIPORTS&SPECIALECONOMICZONE": "ADANIPORTS",
+    "ADANIPORTS": "ADANIPORTS",
+    "ADANI GREEN ENERGY": "ADANIGREEN",
+    "ADANIGREENENERGY": "ADANIGREEN",
+    "ADANIGENENERGY": "ADANIGREEN",
+    "ADANIGREEN": "ADANIGREEN",
+    "COAL INDIA": "COALINDIA",
+    "COALINDIA": "COALINDIA",
+    "COAL": "COALINDIA",
+    "GRASIM INDUSTRIES": "GRASIM",
+    "GRASIMINDUSTRIES": "GRASIM",
+    "GRASIM": "GRASIM",
+    "DIVI'S LABORATORIES": "DIVISLAB",
+    "DIVI'SLABORATORIES": "DIVISLAB",
+    "DIVISLABORATORIES": "DIVISLAB",
+    "DIVISLAB": "DIVISLAB",
+    "BHARAT PETROLEUM CORPORATION": "BPCL",
+    "BHARATPETROLEUMCORPORATION": "BPCL",
+    "BHARAT PETROLEUM": "BPCL",
+    "BHARATPETROLEUM": "BPCL",
+    "BHARATPETROLEUMCORPO": "BPCL",
+    "BPCL": "BPCL",
+    "DR. REDDY'S LABORATORIES": "DRREDDY",
+    "DR.REDDY'SLABORATORIES": "DRREDDY",
+    "DR.REDDY'SLABORATORI": "DRREDDY",
+    "DR.DDY'SLABORATORIES": "DRREDDY",
+    "DRREDDYSLABORATORIES": "DRREDDY",
+    "DRREDDY": "DRREDDY",
+    "CIPLA": "CIPLA",
+    "HERO MOTOCORP": "HEROMOTOCO",
+    "HEROMOTOCORP": "HEROMOTOCO",
+    "HEROMOTOCO": "HEROMOTOCO",
+    "EICHER MOTORS": "EICHERMOT",
+    "EICHERMOTORS": "EICHERMOT",
+    "EICHERMOTO": "EICHERMOT",
+    "EICHERMOT": "EICHERMOT",
+    "BAJAJ AUTO": "BAJAJ-AUTO",
+    "BAJAJAUTO": "BAJAJ-AUTO",
+    "BAJAJ-AUTO": "BAJAJ-AUTO",
+    "BRITANNIA INDUSTRIES": "BRITANNIA",
+    "BRITANNIAINDUSTRIES": "BRITANNIA",
+    "BRITANNIA": "BRITANNIA",
+    "APOLLO HOSPITALS ENTERPRISE": "APOLLOHOSP",
+    "APOLLOHOSPITALSENTERPRISE": "APOLLOHOSP",
+    "APOLLO HOSPITALS": "APOLLOHOSP",
+    "APOLLOHOSPITALS": "APOLLOHOSP",
+    "APOLLOHOSPITALSENTER": "APOLLOHOSP",
+    "APOLLOHOSP": "APOLLOHOSP",
+    "INDUSIND BANK": "INDUSINDBK",
+    "INDUSINDBANK": "INDUSINDBK",
+    "INDUSINDBK": "INDUSINDBK",
+    "TRENT": "TRENT",
+    "TNT": "TRENT",
+    "SHRIRAM FINANCE": "SHRIRAMFIN",
+    "SHRIRAMFINANCE": "SHRIRAMFIN",
+    "SHRIRAMFIN": "SHRIRAMFIN",
+    "ETERNAL (ZOMATO)": "ETERNAL",
+    "ETERNAL(ZOMATO)": "ETERNAL",
+    "ETERNALZOMATO": "ETERNAL",
+    "ETERNAL": "ETERNAL",
+    "MAHINDRA & MAHINDRA": "M&M",
+    "MAHINDRA&MAHINDRA": "M&M",
+    "MAHINDRAANDMAHINDRA": "M&M",
+    "MAHINDRAMAHINDRA": "M&M",
+    "M&M": "M&M",
+    "HINDALCO INDUSTRIES": "HINDALCO",
+    "HINDALCOINDUSTRIES": "HINDALCO",
+    "HINDALCO": "HINDALCO",
+    "VEDANTA": "VEDL",
+    "VEDL": "VEDL",
+    "HBL POWER SYSTEMS": "HBLPOWER",
+    "HBLPOWERSYSTEMS": "HBLPOWER",
+    "HBLPOWEYSTEMS": "HBLPOWER",
+    "HBLPOWER": "HBLPOWER",
+    "TATA MOTORS PASSENGER VEHICLES": "TMPV",
+    "TATAMOTORSPASSENGERVEHICLES": "TMPV",
+    "TATAMOTORSPASSENGERV": "TMPV",
+    "TATAMOTOPASSENGERVEHICLES": "TMPV",
+    "TMPV": "TMPV",
+    "TATA MOTORS COMMERCIAL VEHICLES": "TMCV",
+    "TATAMOTORSCOMMERCIALVEHICLES": "TMCV",
+    "TATAMOTORSCOMMERCIAL": "TMCV",
+    "TATAMOTOCOMMERCIALVEHICLES": "TMCV",
+    "TMCV": "TMCV",
+    "PIDILITE INDUSTRIES": "PIDILITIND",
+    "PIDILITEINDUSTRIES": "PIDILITIND",
+    "PIDILITE": "PIDILITIND",
+    "PIDILITIND": "PIDILITIND",
+    "PAGE INDUSTRIES": "PAGEIND",
+    "PAGEINDUSTRIES": "PAGEIND",
+    "PAGE": "PAGEIND",
+    "PAGEIND": "PAGEIND",
+    "AMBUJA CEMENTS": "AMBUJACEM",
+    "AMBUJACEMENTS": "AMBUJACEM",
+    "AMBUJACEM": "AMBUJACEM",
+    "ACC": "ACC",
+    "SBI CARDS AND PAYMENT SERVICES": "SBICARD",
+    "SBICARDSANDPAYMENTSERVICES": "SBICARD",
+    "SBICARDSANDPAYMENTSE": "SBICARD",
+    "SBICARDS&PAYMENTSERVICES": "SBICARD",
+    "SBICARD": "SBICARD",
+    "SBI LIFE INSURANCE COMPANY": "SBILIFE",
+    "SBILIFEINSURANCECOMPANY": "SBILIFE",
+    "SBI LIFE INSURANCE": "SBILIFE",
+    "SBILIFEINSURANCE": "SBILIFE",
+    "SBILIFEINSURANCECOMP": "SBILIFE",
+    "SBILIFE": "SBILIFE",
+    "POWER FINANCE CORPORATION": "PFC",
+    "POWERFINANCECORPORATION": "PFC",
+    "POWER FINANCE": "PFC",
+    "POWERFINANCE": "PFC",
+    "POWERFINANCECORPORAT": "PFC",
+    "PFC": "PFC",
+    "REC": "RECLTD",
+    "RECLTD": "RECLTD",
+    "INDIAN RENEWABLE ENERGY DEVELOPMENT AGENCY": "IREDA",
+    "INDIANRENEWABLEENERGYDEVELOPMENTAGENCY": "IREDA",
+    "INDIANRENEWABLEENERG": "IREDA",
+    "INDIANNEWABLEENERGYDEVELOPMENTAGENCY": "IREDA",
+    "IREDA": "IREDA",
+    "NHPC": "NHPC",
+    "BANK OF INDIA": "BANKINDIA",
+    "BANKOFINDIA": "BANKINDIA",
+    "BANK": "BANKINDIA",
+    "BANKINDIA": "BANKINDIA",
+    "CANARA BANK": "CANBK",
+    "CANARABANK": "CANBK",
+    "CANBK": "CANBK",
+    "PUNJAB NATIONAL BANK": "PNB",
+    "PUNJABNATIONALBANK": "PNB",
+    "PNB": "PNB",
+    "BANK OF BARODA": "BANKBARODA",
+    "BANKOFBARODA": "BANKBARODA",
+    "BANKBARODA": "BANKBARODA",
+    "INDIAN BANK": "INDIANB",
+    "INDIANBANK": "INDIANB",
+    "INDIANB": "INDIANB",
+    "TATA POWER COMPANY": "TATAPOWER",
+    "TATAPOWERCOMPANY": "TATAPOWER",
+    "TATA POWER": "TATAPOWER",
+    "TATAPOWER": "TATAPOWER",
+    "TATA ELXSI": "TATAELXSI",
+    "TATAELXSI": "TATAELXSI",
+    "TATA CHEMICALS": "TATACHEM",
+    "TATACHEMICALS": "TATACHEM",
+    "TATACHEM": "TATACHEM",
+    "TATA COMMUNICATIONS": "TATACOMM",
+    "TATACOMMUNICATIONS": "TATACOMM",
+    "TATACOMM": "TATACOMM",
+    "LTIMINDTREE": "LTIM",
+    "LTIMINDTE": "LTIM",
+    "LTIM": "LTIM",
+    "MANAPPURAM FINANCE": "MANAPPURAM",
+    "MANAPPURAMFINANCE": "MANAPPURAM",
+    "MANAPPURAM": "MANAPPURAM",
+    "MUTHOOT FINANCE": "MUTHOOTFIN",
+    "MUTHOOTFINANCE": "MUTHOOTFIN",
+    "MUTHOOTFIN": "MUTHOOTFIN",
+    "SUZLON ENERGY": "SUZLON",
+    "SUZLONENERGY": "SUZLON",
+    "SUZLON": "SUZLON",
+    "ADANI POWER": "ADANIPOWER",
+    "ADANIPOWER": "ADANIPOWER",
+    "ADANI TOTAL GAS": "ATGL",
+    "ADANITOTALGAS": "ATGL",
+    "ATGL": "ATGL",
+    "JINDAL STEEL & POWER": "JINDALSTEL",
+    "JINDALSTEEL&POWER": "JINDALSTEL",
+    "JINDALSTEELANDPOWER": "JINDALSTEL",
+    "JINDALSTEELPOWER": "JINDALSTEL",
+    "JINDALSTEL": "JINDALSTEL",
+    "DLF": "DLF",
+    "GODREJ PROPERTIES": "GODREJPROP",
+    "GODREJPROPERTIES": "GODREJPROP",
+    "GODJPROPERTIES": "GODREJPROP",
+    "GODREJPROP": "GODREJPROP",
+    "OBEROI REALTY": "OBEROIRLTY",
+    "OBEROIREALTY": "OBEROIRLTY",
+    "OBEROIALTY": "OBEROIRLTY",
+    "OBEROIRLTY": "OBEROIRLTY",
+    "PRESTIGE ESTATES PROJECTS": "PRESTIGE",
+    "PRESTIGEESTATESPROJECTS": "PRESTIGE",
+    "PRESTIGEESTATESPROJE": "PRESTIGE",
+    "PSTIGEESTATESPROJECTS": "PRESTIGE",
+    "PRESTIGE": "PRESTIGE",
+    "BHARAT HEAVY ELECTRICALS": "BHEL",
+    "BHARATHEAVYELECTRICALS": "BHEL",
+    "BHARATHEAVYELECTRICA": "BHEL",
+    "BHEL": "BHEL",
+    "HAVELLS INDIA": "HAVELLS",
+    "HAVELLSINDIA": "HAVELLS",
+    "HAVELLS": "HAVELLS",
+    "INDIAN RAILWAY CATERING AND TOURISM CORPORATION": "IRCTC",
+    "INDIANRAILWAYCATERINGANDTOURISMCORPORATION": "IRCTC",
+    "INDIAN RAILWAY CATERING AND TOURISM": "IRCTC",
+    "INDIANRAILWAYCATERINGANDTOURISM": "IRCTC",
+    "INDIANRAILWAYCATERIN": "IRCTC",
+    "INDIANRAILWAYCATERING&TOURISMCORPORATION": "IRCTC",
+    "IRCTC": "IRCTC",
+    "INDUS TOWERS": "INDUSTOWER",
+    "INDUSTOWERS": "INDUSTOWER",
+    "INDUSTOWE": "INDUSTOWER",
+    "INDUSTOWER": "INDUSTOWER",
+    "HINDUSTAN AERONAUTICS": "HAL",
+    "HINDUSTANAERONAUTICS": "HAL",
+    "HAL": "HAL",
+    "BHARAT DYNAMICS": "BDL",
+    "BHARATDYNAMICS": "BDL",
+    "BDL": "BDL",
+    "COCHIN SHIPYARD": "COCHINSHIP",
+    "COCHINSHIPYARD": "COCHINSHIP",
+    "COCHINSHIP": "COCHINSHIP",
+    "MAZAGON DOCK SHIPBUILDERS": "MAZAGON",
+    "MAZAGONDOCKSHIPBUILDERS": "MAZAGON",
+    "MAZAGONDOCKSHIPBUILD": "MAZAGON",
+    "MAZAGONDOCKSHIPBUILDE": "MAZAGON",
+    "MAZAGON": "MAZAGON",
+    "GARDEN REACH SHIPBUILDERS & ENGINEERS": "GRSE",
+    "GARDENREACHSHIPBUILDERS&ENGINEERS": "GRSE",
+    "GARDENREACHSHIPBUILD": "GRSE",
+    "GARDENACHSHIPBUILDERS&ENGINEERS": "GRSE",
+    "GARDENREACHSHIPBUILDE&ENGINEE": "GRSE",
+    "GARDENREACHSHIPBUILDERSANDENGINEERS": "GRSE",
+    "GARDENREACHSHIPBUILDERSENGINEERS": "GRSE",
+    "GRSE": "GRSE",
+    "POLYCAB INDIA": "POLYCAB",
+    "POLYCABINDIA": "POLYCAB",
+    "POLYCAB": "POLYCAB",
+    "VOLTAS": "VOLTAS",
+    "CROMPTON GREAVES CONSUMER ELECTRICALS": "CROMPTON",
+    "CROMPTONGREAVESCONSUMERELECTRICALS": "CROMPTON",
+    "CROMPTONGREAVESCONSU": "CROMPTON",
+    "CROMPTONGAVESCONSUMELECTRICALS": "CROMPTON",
+    "CROMPTON": "CROMPTON",
+    "CHOLAMANDALAM INVESTMENT AND FINANCE COMPANY": "CHOLAFIN",
+    "CHOLAMANDALAMINVESTMENTANDFINANCECOMPANY": "CHOLAFIN",
+    "CHOLAMANDALAM INVESTMENT AND FINANCE": "CHOLAFIN",
+    "CHOLAMANDALAMINVESTMENTANDFINANCE": "CHOLAFIN",
+    "CHOLAMANDALAMINVESTM": "CHOLAFIN",
+    "CHOLAM&ALAMINVESTMENT&FINANCECOMPANY": "CHOLAFIN",
+    "CHOLAFIN": "CHOLAFIN",
+    "MAX HEALTHCARE INSTITUTE": "MAXHEALTH",
+    "MAXHEALTHCAREINSTITUTE": "MAXHEALTH",
+    "MAXHEALTHCAREINSTITU": "MAXHEALTH",
+    "MAXHEALTHCAINSTITUTE": "MAXHEALTH",
+    "MAXHEALTH": "MAXHEALTH",
+    "FORTIS HEALTHCARE": "FORTIS",
+    "FORTISHEALTHCARE": "FORTIS",
+    "FORTISHEALTHCA": "FORTIS",
+    "FORTIS": "FORTIS",
+    "METROPOLIS HEALTHCARE": "METROPOLIS",
+    "METROPOLISHEALTHCARE": "METROPOLIS",
+    "METROPOLISHEALTHCA": "METROPOLIS",
+    "METROPOLIS": "METROPOLIS",
+    "UJJIVAN SMALL FINANCE BANK": "UJJIVANSFB",
+    "UJJIVANSMALLFINANCEBANK": "UJJIVANSFB",
+    "UJJIVANSMALLFINANCEB": "UJJIVANSFB",
+    "UJJIVANSFB": "UJJIVANSFB",
+    "NATIONAL ALUMINIUM COMPANY": "NATIONALUM",
+    "NATIONALALUMINIUMCOMPANY": "NATIONALUM",
+    "NATIONAL ALUMINIUM": "NATIONALUM",
+    "NATIONALALUMINIUM": "NATIONALUM",
+    "NATIONALALUMINIUMCOM": "NATIONALUM",
+    "NATIONALUM": "NATIONALUM",
+    "THE FEDERAL BANK": "FEDERALBNK",
+    "THEFEDERALBANK": "FEDERALBNK",
+    "FEDERALBNK": "FEDERALBNK",
+    "BHARAT ELECTRONICS": "BEL",
+    "BHARATELECTRONICS": "BEL",
+    "BEL": "BEL",
+    "BHARAT FORGE": "BHARATFORG",
+    "BHARATFORGE": "BHARATFORG",
+    "BHARATFORG": "BHARATFORG",
+    "IDFC FIRST BANK": "IDFCFIRSTB",
+    "IDFCFIRSTBANK": "IDFCFIRSTB",
+    "IDFCFITBANK": "IDFCFIRSTB",
+    "IDFCFIRSTB": "IDFCFIRSTB",
+    "JK TYRE & INDUSTRIES": "JKTYRE",
+    "JKTYRE&INDUSTRIES": "JKTYRE",
+    "JK TYRE &": "JKTYRE",
+    "JKTYRE&": "JKTYRE",
+    "JKTY&INDUSTRIES": "JKTYRE",
+    "JKTYREANDINDUSTRIES": "JKTYRE",
+    "JKTYREINDUSTRIES": "JKTYRE",
+    "JKTYRE": "JKTYRE",
+    "UNITECH": "UNITECH",
+    "LIC HOUSING FINANCE": "LICHSGFIN",
+    "LICHOUSINGFINANCE": "LICHSGFIN",
+    "LICHSGFIN": "LICHSGFIN",
+    "NATCO PHARMA": "NATCOPHARM",
+    "NATCOPHARMA": "NATCOPHARM",
+    "NATCOPHARM": "NATCOPHARM",
+    "GRAUER & WEIL (INDIA)": "GRAUWEIL",
+    "GRAUER&WEIL(INDIA)": "GRAUWEIL",
+    "GRAUER & WEIL": "GRAUWEIL",
+    "GRAUER&WEIL": "GRAUWEIL",
+    "GRAUERANDWEIL(INDIA)": "GRAUWEIL",
+    "GRAUERWEILINDIA": "GRAUWEIL",
+    "GRAUWEIL": "GRAUWEIL",
+    "SAMMAAN CAPITAL": "SAMMAANCAP",
+    "SAMMAANCAPITAL": "SAMMAANCAP",
+    "SAMMAANCAP": "SAMMAANCAP",
+    "FINOLEX CABLES": "FINCABLES",
+    "FINOLEXCABLES": "FINCABLES",
+    "FINCABLES": "FINCABLES",
+    "GRAPHITE INDIA": "GRAPHITE",
+    "GRAPHITEINDIA": "GRAPHITE",
+    "GRAPHITE": "GRAPHITE",
+    "DILIP BUILDCON": "DBL",
+    "DILIPBUILDCON": "DBL",
+    "DBL": "DBL",
+    "CENTRAL DEPOSITORY SERVICES (INDIA)": "CDSL",
+    "CENTRALDEPOSITORYSERVICES(INDIA)": "CDSL",
+    "CENTRAL DEPOSITORY SERVICES": "CDSL",
+    "CENTRALDEPOSITORYSERVICES": "CDSL",
+    "CENTRALDEPOSITORYSER": "CDSL",
+    "CENTRALDEPOSITORYSERVICESINDIA": "CDSL",
+    "CDSL": "CDSL",
+    "CAPACIT'E INFRAPROJECTS": "CAPACITE",
+    "CAPACIT'EINFRAPROJECTS": "CAPACITE",
+    "CAPACIT'EINFRAPROJEC": "CAPACITE",
+    "CAPACITEINFRAPROJECTS": "CAPACITE",
+    "CAPACITE": "CAPACITE",
+    "GLOBAL VECTRA HELICORP": "GLOBALVECT",
+    "GLOBALVECTRAHELICORP": "GLOBALVECT",
+    "GLOBALVECT": "GLOBALVECT",
+    "LUPIN": "LUPIN",
+    "AUROBINDO PHARMA": "AUROPHARMA",
+    "AUROBINDOPHARMA": "AUROPHARMA",
+    "AUROPHARMA": "AUROPHARMA",
+    "BIOCON": "BIOCON",
+    "ALKEM LABORATORIES": "ALKEM",
+    "ALKEMLABORATORIES": "ALKEM",
+    "ALKEM": "ALKEM",
+    "MPHASIS": "MPHASIS",
+    "PERSISTENT SYSTEMS": "PERSISTENT",
+    "PERSISTENTSYSTEMS": "PERSISTENT",
+    "PEISTENTSYSTEMS": "PERSISTENT",
+    "PERSISTENT": "PERSISTENT",
+    "COFORGE": "COFORGE",
+    "CYIENT": "CYIENT",
+    "KPIT TECHNOLOGIES": "KPITTECH",
+    "KPITTECHNOLOGIES": "KPITTECH",
+    "KPITTECH": "KPITTECH",
+    "ZYDUS LIFESCIENCES": "ZYDUSLIFE",
+    "ZYDUSLIFESCIENCES": "ZYDUSLIFE",
+    "ZYDUSLIFE": "ZYDUSLIFE",
+    "WHIRLPOOL OF INDIA": "WHIRLPOOL",
+    "WHIRLPOOLOFINDIA": "WHIRLPOOL",
+    "WHIRLPOOL": "WHIRLPOOL",
+    "BLUE STAR": "BLUESTARLT",
+    "BLUESTAR": "BLUESTARLT",
+    "BLUESTARLT": "BLUESTARLT",
+    "BAJAJ HOLDINGS & INVESTMENT": "BAJAJHLDNG",
+    "BAJAJHOLDINGS&INVESTMENT": "BAJAJHLDNG",
+    "BAJAJHOLDINGS&INVEST": "BAJAJHLDNG",
+    "BAJAJHOLDINGSANDINVESTMENT": "BAJAJHLDNG",
+    "BAJAJHOLDINGSINVESTMENT": "BAJAJHLDNG",
+    "BAJAJHLDNG": "BAJAJHLDNG",
+    "TATA MOTORS": "TATAMOTORS",
+    "TATAMOTORS": "TATAMOTORS",
+    "TATAMOTO": "TATAMOTORS",
+    "VODAFONE IDEA": "IDEA",
+    "VODAFONEIDEA": "IDEA",
+    "IDEA": "IDEA",
+    "ICICI PRUDENTIAL LIFE INSURANCE": "ICICIPRULI",
+    "ICICIPRUDENTIALLIFEINSURANCE": "ICICIPRULI",
+    "ICICIPRUDENTIALLIFEI": "ICICIPRULI",
+    "ICICIPRULI": "ICICIPRULI",
+    "LIFE INSURANCE CORPORATION OF INDIA": "LICI",
+    "LIFEINSURANCECORPORATIONOFINDIA": "LICI",
+    "LIFE INSURANCE": "LICI",
+    "LIFEINSURANCE": "LICI",
+    "LIFEINSURANCECORPORA": "LICI",
+    "LICI": "LICI",
+    "FSN E-COMMERCE VENTURES (NYKAA)": "NYKAA",
+    "FSNE-COMMERCEVENTURES(NYKAA)": "NYKAA",
+    "FSNE-COMMERCEVENTURE": "NYKAA",
+    "FSNE-COMMERCEVENTUS(NYKAA)": "NYKAA",
+    "FSNECOMMERCEVENTURESNYKAA": "NYKAA",
+    "NYKAA": "NYKAA",
+    "ONE97 COMMUNICATIONS (PAYTM)": "PAYTM",
+    "ONE97COMMUNICATIONS(PAYTM)": "PAYTM",
+    "ONE97COMMUNICATIONS(": "PAYTM",
+    "ONE97COMMUNICATIONSPAYTM": "PAYTM",
+    "PAYTM": "PAYTM",
+    "JSW ENERGY": "JSWENERGY",
+    "JSWENERGY": "JSWENERGY",
+    "GAIL (INDIA)": "GAIL",
+    "GAIL(INDIA)": "GAIL",
+    "GAIL": "GAIL",
+    "GAILINDIA": "GAIL",
+    "INDIAN OIL CORPORATION": "IOC",
+    "INDIANOILCORPORATION": "IOC",
+    "INDIAN OIL": "IOC",
+    "INDIANOIL": "IOC",
+    "IOC": "IOC",
+    "STEEL AUTHORITY OF INDIA": "SAIL",
+    "STEELAUTHORITYOFINDIA": "SAIL",
+    "STEEL AUTHORITY": "SAIL",
+    "STEELAUTHORITY": "SAIL",
+    "STEELAUTHORITYOFINDI": "SAIL",
+    "SAIL": "SAIL",
+    "NMDC": "NMDC",
+    "HBL ENGINEERING (FORMERLY HBL POWER)": "HBLENGINE",
+    "HBLENGINEERING(FORMERLYHBLPOWER)": "HBLENGINE",
+    "HBLENGINEERING(FORME": "HBLENGINE",
+    "HBLENGINEERINGFORMERLYHBLPOWER": "HBLENGINE",
+    "HBLENGINE": "HBLENGINE",
+    "DALMIA BHARAT": "DALBHARAT",
+    "DALMIABHARAT": "DALBHARAT",
+    "DALBHARAT": "DALBHARAT",
+    "CENTURY TEXTILES & INDUSTRIES": "CENTURYTEX",
+    "CENTURYTEXTILES&INDUSTRIES": "CENTURYTEX",
+    "CENTURY TEXTILES &": "CENTURYTEX",
+    "CENTURYTEXTILES&": "CENTURYTEX",
+    "CENTURYTEXTILES&INDU": "CENTURYTEX",
+    "CENTURYTEXTILESANDINDUSTRIES": "CENTURYTEX",
+    "CENTURYTEXTILESINDUSTRIES": "CENTURYTEX",
+    "CENTURYTEX": "CENTURYTEX",
+    "MULTI COMMODITY EXCHANGE OF INDIA": "MCX",
+    "MULTICOMMODITYEXCHANGEOFINDIA": "MCX",
+    "MULTI COMMODITY EXCHANGE": "MCX",
+    "MULTICOMMODITYEXCHANGE": "MCX",
+    "MULTICOMMODITYEXCHAN": "MCX",
+    "MCX": "MCX",
+    "CONTAINER CORPORATION OF INDIA": "CONCOR",
+    "CONTAINERCORPORATIONOFINDIA": "CONCOR",
+    "CONTAINER": "CONCOR",
+    "CONTAINERCORPORATION": "CONCOR",
+    "CONCOR": "CONCOR",
+    "SIEMENS": "SIEMENS",
+    "ABB INDIA": "ABB",
+    "ABBINDIA": "ABB",
+    "ABB": "ABB",
+    "CUMMINS INDIA": "CUMMINSIND",
+    "CUMMINSINDIA": "CUMMINSIND",
+    "CUMMINS": "CUMMINSIND",
+    "CUMMINSIND": "CUMMINSIND",
+    "ESCORTS KUBOTA": "ESCORTS",
+    "ESCORTSKUBOTA": "ESCORTS",
+    "ESCORTS": "ESCORTS",
+    "JUBILANT FOODWORKS": "JUBLFOOD",
+    "JUBILANTFOODWORKS": "JUBLFOOD",
+    "JUBLFOOD": "JUBLFOOD",
+    "COLGATE-PALMOLIVE (INDIA)": "COLPAL",
+    "COLGATE-PALMOLIVE(INDIA)": "COLPAL",
+    "COLGATE-PALMOLIVE": "COLPAL",
+    "COLGATE-PALMOLIVE(IN": "COLPAL",
+    "COLGATEPALMOLIVEINDIA": "COLPAL",
+    "COLPAL": "COLPAL",
+    "GODREJ CONSUMER PRODUCTS": "GODREJCP",
+    "GODREJCONSUMERPRODUCTS": "GODREJCP",
+    "GODREJCONSUMERPRODUC": "GODREJCP",
+    "GODJCONSUMERPRODUCTS": "GODREJCP",
+    "GODREJCP": "GODREJCP",
+    "MARICO": "MARICO",
+    "DABUR INDIA": "DABUR",
+    "DABURINDIA": "DABUR",
+    "DABUR": "DABUR",
+    "PROCTER & GAMBLE HYGIENE AND HEALTH CARE": "PGHH",
+    "PROCTER&GAMBLEHYGIENEANDHEALTHCARE": "PGHH",
+    "PROCTER&GAMBLEHYGIEN": "PGHH",
+    "PROCTER&GAMBLEHYGIENEANDHEALTHCA": "PGHH",
+    "PROCTERANDGAMBLEHYGIENEANDHEALTHCARE": "PGHH",
+    "PROCTER&GAMBLEHYGIENE&HEALTHCARE": "PGHH",
+    "PROCTERGAMBLEHYGIENEANDHEALTHCARE": "PGHH",
+    "PGHH": "PGHH",
+    "BERGER PAINTS INDIA": "BERGEPAINT",
+    "BERGERPAINTSINDIA": "BERGEPAINT",
+    "BERGER PAINTS": "BERGEPAINT",
+    "BERGERPAINTS": "BERGEPAINT",
+    "BERGEPAINT": "BERGEPAINT",
+    "TVS MOTOR COMPANY": "TVSMOTOR",
+    "TVSMOTORCOMPANY": "TVSMOTOR",
+    "TVS MOTOR": "TVSMOTOR",
+    "TVSMOTOR": "TVSMOTOR"
+  },
+  "tickerInfo": {
+    "RELIANCE": {
+      "isin": "INE002A01018",
+      "name": "Reliance Industries"
+    },
+    "TCS": {
+      "isin": "INE467B01029",
+      "name": "Tata Consultancy Services"
+    },
+    "INFY": {
+      "isin": "INE009A01021",
+      "name": "Infosys"
+    },
+    "HDFCBANK": {
+      "isin": "INE040A01034",
+      "name": "HDFC Bank"
+    },
+    "ICICIBANK": {
+      "isin": "INE090A01021",
+      "name": "ICICI Bank"
+    },
+    "HINDUNILVR": {
+      "isin": "INE030A01027",
+      "name": "Hindustan Unilever"
+    },
+    "ITC": {
+      "isin": "INE154A01025",
+      "name": "ITC"
+    },
+    "SBIN": {
+      "isin": "INE062A01020",
+      "name": "State Bank of India"
+    },
+    "BHARTIARTL": {
+      "isin": "INE397D01024",
+      "name": "Bharti Airtel"
+    },
+    "KOTAKBANK": {
+      "isin": "INE237A01028",
+      "name": "Kotak Mahindra Bank"
+    },
+    "LT": {
+      "isin": "INE018A01030",
+      "name": "Larsen & Toubro"
+    },
+    "AXISBANK": {
+      "isin": "INE238A01034",
+      "name": "Axis Bank"
+    },
+    "BAJFINANCE": {
+      "isin": "INE296A01024",
+      "name": "Bajaj Finance"
+    },
+    "BAJFINSERV": {
+      "isin": "INE918I01018",
+      "name": "Bajaj Finserv"
+    },
+    "MARUTI": {
+      "isin": "INE585B01010",
+      "name": "Maruti Suzuki India"
+    },
+    "HCLTECH": {
+      "isin": "INE860A01027",
+      "name": "HCL Technologies"
+    },
+    "ASIANPAINT": {
+      "isin": "INE021A01026",
+      "name": "Asian Paints"
+    },
+    "TITAN": {
+      "isin": "INE280A01028",
+      "name": "Titan Company"
+    },
+    "SUNPHARMA": {
+      "isin": "INE044A01036",
+      "name": "Sun Pharmaceutical Industries"
+    },
+    "NESTLEIND": {
+      "isin": "INE047A01021",
+      "name": "Nestle India"
+    },
+    "DMART": {
+      "isin": "INE481G01011",
+      "name": "Avenue Supermarts"
+    },
+    "ULTRACEMCO": {
+      "isin": "INE481A01020",
+      "name": "UltraTech Cement"
+    },
+    "WIPRO": {
+      "isin": "INE075A01022",
+      "name": "Wipro"
+    },
+    "TECHM": {
+      "isin": "INE669C01036",
+      "name": "Tech Mahindra"
+    },
+    "POWERGRID": {
+      "isin": "INE752E01010",
+      "name": "Power Grid Corporation of India"
+    },
+    "NTPC": {
+      "isin": "INE733E01010",
+      "name": "NTPC"
+    },
+    "ONGC": {
+      "isin": "INE213A01029",
+      "name": "Oil and Natural Gas Corporation"
+    },
+    "JSWSTEEL": {
+      "isin": "INE019A01038",
+      "name": "JSW Steel"
+    },
+    "TATASTEEL": {
+      "isin": "INE081A01020",
+      "name": "Tata Steel"
+    },
+    "ADANIENT": {
+      "isin": "INE423A01024",
+      "name": "Adani Enterprises"
+    },
+    "ADANIPORTS": {
+      "isin": "INE742F01042",
+      "name": "Adani Ports and Special Economic Zone"
+    },
+    "ADANIGREEN": {
+      "isin": "INE364U01010",
+      "name": "Adani Green Energy"
+    },
+    "COALINDIA": {
+      "isin": "INE522F01014",
+      "name": "Coal India"
+    },
+    "GRASIM": {
+      "isin": "INE047A01013",
+      "name": "Grasim Industries"
+    },
+    "DIVISLAB": {
+      "isin": "INE361B01024",
+      "name": "Divi's Laboratories"
+    },
+    "BPCL": {
+      "isin": "INE029A01011",
+      "name": "Bharat Petroleum Corporation"
+    },
+    "DRREDDY": {
+      "isin": "INE089A01023",
+      "name": "Dr. Reddy's Laboratories"
+    },
+    "CIPLA": {
+      "isin": "INE059A01026",
+      "name": "Cipla"
+    },
+    "HEROMOTOCO": {
+      "isin": "INE158A01026",
+      "name": "Hero MotoCorp"
+    },
+    "EICHERMOT": {
+      "isin": "INE066A01021",
+      "name": "Eicher Motors"
+    },
+    "BAJAJ-AUTO": {
+      "isin": "INE917I01010",
+      "name": "Bajaj Auto"
+    },
+    "BRITANNIA": {
+      "isin": "INE216A01030",
+      "name": "Britannia Industries"
+    },
+    "APOLLOHOSP": {
+      "isin": "INE437A01024",
+      "name": "Apollo Hospitals Enterprise"
+    },
+    "INDUSINDBK": {
+      "isin": "INE095A01012",
+      "name": "IndusInd Bank"
+    },
+    "TRENT": {
+      "isin": "INE849A01020",
+      "name": "Trent"
+    },
+    "SHRIRAMFIN": {
+      "isin": "INE721A01013",
+      "name": "Shriram Finance"
+    },
+    "ETERNAL": {
+      "isin": "INE758T01015",
+      "name": "Eternal (Zomato)"
+    },
+    "M&M": {
+      "isin": "INE205A01025",
+      "name": "Mahindra & Mahindra"
+    },
+    "HINDALCO": {
+      "isin": "INE038A01020",
+      "name": "Hindalco Industries"
+    },
+    "VEDL": {
+      "isin": "INE628A01036",
+      "name": "Vedanta"
+    },
+    "HBLPOWER": {
+      "isin": "INE557A01011",
+      "name": "HBL Power Systems"
+    },
+    "TMPV": {
+      "isin": "INE883A01011",
+      "name": "Tata Motors Passenger Vehicles"
+    },
+    "TMCV": {
+      "isin": "INE883A01029",
+      "name": "Tata Motors Commercial Vehicles"
+    },
+    "PIDILITIND": {
+      "isin": "INE115A01026",
+      "name": "Pidilite Industries"
+    },
+    "PAGEIND": {
+      "isin": "INE761H01022",
+      "name": "Page Industries"
+    },
+    "AMBUJACEM": {
+      "isin": "INE079A01024",
+      "name": "Ambuja Cements"
+    },
+    "ACC": {
+      "isin": "INE012A01025",
+      "name": "ACC"
+    },
+    "SBICARD": {
+      "isin": "INE018E01016",
+      "name": "SBI Cards and Payment Services"
+    },
+    "SBILIFE": {
+      "isin": "INE123W01016",
+      "name": "SBI Life Insurance Company"
+    },
+    "PFC": {
+      "isin": "INE134E01011",
+      "name": "Power Finance Corporation"
+    },
+    "RECLTD": {
+      "isin": "INE020B01018",
+      "name": "REC"
+    },
+    "IREDA": {
+      "isin": "INE202E01016",
+      "name": "Indian Renewable Energy Development Agency"
+    },
+    "NHPC": {
+      "isin": "INE848E01016",
+      "name": "NHPC"
+    },
+    "BANKINDIA": {
+      "isin": "INE084A01016",
+      "name": "Bank of India"
+    },
+    "CANBK": {
+      "isin": "INE476A01014",
+      "name": "Canara Bank"
+    },
+    "PNB": {
+      "isin": "INE160A01022",
+      "name": "Punjab National Bank"
+    },
+    "BANKBARODA": {
+      "isin": "INE028A01039",
+      "name": "Bank of Baroda"
+    },
+    "INDIANB": {
+      "isin": "INE562A01011",
+      "name": "Indian Bank"
+    },
+    "TATAPOWER": {
+      "isin": "INE245A01021",
+      "name": "Tata Power Company"
+    },
+    "TATAELXSI": {
+      "isin": "INE670A01012",
+      "name": "Tata Elxsi"
+    },
+    "TATACHEM": {
+      "isin": "INE092A01019",
+      "name": "Tata Chemicals"
+    },
+    "TATACOMM": {
+      "isin": "INE151A01013",
+      "name": "Tata Communications"
+    },
+    "LTIM": {
+      "isin": "INE214T01019",
+      "name": "LTIMindtree"
+    },
+    "MANAPPURAM": {
+      "isin": "INE522D01027",
+      "name": "Manappuram Finance"
+    },
+    "MUTHOOTFIN": {
+      "isin": "INE414G01012",
+      "name": "Muthoot Finance"
+    },
+    "SUZLON": {
+      "isin": "INE040H01021",
+      "name": "Suzlon Energy"
+    },
+    "ADANIPOWER": {
+      "isin": "INE814H01011",
+      "name": "Adani Power"
+    },
+    "ATGL": {
+      "isin": "INE399L01023",
+      "name": "Adani Total Gas"
+    },
+    "JINDALSTEL": {
+      "isin": "INE220G01021",
+      "name": "Jindal Steel & Power"
+    },
+    "DLF": {
+      "isin": "INE271C01023",
+      "name": "DLF"
+    },
+    "GODREJPROP": {
+      "isin": "INE484J01027",
+      "name": "Godrej Properties"
+    },
+    "OBEROIRLTY": {
+      "isin": "INE093I01010",
+      "name": "Oberoi Realty"
+    },
+    "PRESTIGE": {
+      "isin": "INE811K01011",
+      "name": "Prestige Estates Projects"
+    },
+    "BHEL": {
+      "isin": "INE257A01026",
+      "name": "Bharat Heavy Electricals"
+    },
+    "HAVELLS": {
+      "isin": "INE176B01034",
+      "name": "Havells India"
+    },
+    "IRCTC": {
+      "isin": "INE335Y01012",
+      "name": "Indian Railway Catering and Tourism Corporation"
+    },
+    "INDUSTOWER": {
+      "isin": "INE121J01017",
+      "name": "Indus Towers"
+    },
+    "HAL": {
+      "isin": "INE066F01020",
+      "name": "Hindustan Aeronautics"
+    },
+    "BDL": {
+      "isin": "INE171Z01018",
+      "name": "Bharat Dynamics"
+    },
+    "COCHINSHIP": {
+      "isin": "INE704A01027",
+      "name": "Cochin Shipyard"
+    },
+    "MAZAGON": {
+      "isin": "INE924B01011",
+      "name": "Mazagon Dock Shipbuilders"
+    },
+    "GRSE": {
+      "isin": "INE382Z01011",
+      "name": "Garden Reach Shipbuilders & Engineers"
+    },
+    "POLYCAB": {
+      "isin": "INE555B01013",
+      "name": "Polycab India"
+    },
+    "VOLTAS": {
+      "isin": "INE226A01021",
+      "name": "Voltas"
+    },
+    "CROMPTON": {
+      "isin": "INE233A01035",
+      "name": "Crompton Greaves Consumer Electricals"
+    },
+    "CHOLAFIN": {
+      "isin": "INE716A01013",
+      "name": "Cholamandalam Investment and Finance Company"
+    },
+    "MAXHEALTH": {
+      "isin": "INE118H01025",
+      "name": "Max Healthcare Institute"
+    },
+    "FORTIS": {
+      "isin": "INE061F01013",
+      "name": "Fortis Healthcare"
+    },
+    "METROPOLIS": {
+      "isin": "INE112L01020",
+      "name": "Metropolis Healthcare"
+    },
+    "UJJIVANSFB": {
+      "isin": "INE551A01024",
+      "name": "Ujjivan Small Finance Bank"
+    },
+    "NATIONALUM": {
+      "isin": "INE139A01034",
+      "name": "National Aluminium Company"
+    },
+    "FEDERALBNK": {
+      "isin": "INE171A01029",
+      "name": "The Federal Bank"
+    },
+    "BEL": {
+      "isin": "INE263A01024",
+      "name": "Bharat Electronics"
+    },
+    "BHARATFORG": {
+      "isin": "INE465A01025",
+      "name": "Bharat Forge"
+    },
+    "IDFCFIRSTB": {
+      "isin": "INE092T01019",
+      "name": "IDFC First Bank"
+    },
+    "JKTYRE": {
+      "isin": "INE573A01042",
+      "name": "JK Tyre & Industries"
+    },
+    "UNITECH": {
+      "isin": "INE694A01020",
+      "name": "Unitech"
+    },
+    "LICHSGFIN": {
+      "isin": "INE115A01034",
+      "name": "LIC Housing Finance"
+    },
+    "NATCOPHARM": {
+      "isin": "INE987B01026",
+      "name": "Natco Pharma"
+    },
+    "GRAUWEIL": {
+      "isin": "INE255A01020",
+      "name": "Grauer & Weil (India)"
+    },
+    "SAMMAANCAP": {
+      "isin": "INE671H01015",
+      "name": "Sammaan Capital"
+    },
+    "FINCABLES": {
+      "isin": "INE235A01022",
+      "name": "Finolex Cables"
+    },
+    "GRAPHITE": {
+      "isin": "INE371A01025",
+      "name": "Graphite India"
+    },
+    "DBL": {
+      "isin": "INE917M01012",
+      "name": "Dilip Buildcon"
+    },
+    "CDSL": {
+      "isin": "INE736A01011",
+      "name": "Central Depository Services (India)"
+    },
+    "CAPACITE": {
+      "isin": "INE348R01012",
+      "name": "Capacit'e Infraprojects"
+    },
+    "GLOBALVECT": {
+      "isin": "INE783A01021",
+      "name": "Global Vectra Helicorp"
+    },
+    "LUPIN": {
+      "isin": "INE040A01026",
+      "name": "Lupin"
+    },
+    "AUROPHARMA": {
+      "isin": "INE406A01037",
+      "name": "Aurobindo Pharma"
+    },
+    "BIOCON": {
+      "isin": "INE376G01013",
+      "name": "Biocon"
+    },
+    "ALKEM": {
+      "isin": "INE540L01014",
+      "name": "Alkem Laboratories"
+    },
+    "MPHASIS": {
+      "isin": "INE356A01018",
+      "name": "Mphasis"
+    },
+    "PERSISTENT": {
+      "isin": "INE262H01013",
+      "name": "Persistent Systems"
+    },
+    "COFORGE": {
+      "isin": "INE909H01019",
+      "name": "Coforge"
+    },
+    "CYIENT": {
+      "isin": "INE136B01020",
+      "name": "Cyient"
+    },
+    "KPITTECH": {
+      "isin": "INE524B01027",
+      "name": "KPIT Technologies"
+    },
+    "ZYDUSLIFE": {
+      "isin": "INE310A01015",
+      "name": "Zydus Lifesciences"
+    },
+    "WHIRLPOOL": {
+      "isin": "INE070A01015",
+      "name": "Whirlpool of India"
+    },
+    "BLUESTARLT": {
+      "isin": "INE397C01024",
+      "name": "Blue Star"
+    },
+    "BAJAJHLDNG": {
+      "isin": "INE306N01017",
+      "name": "Bajaj Holdings & Investment"
+    },
+    "TATAMOTORS": {
+      "isin": "INE148I01020",
+      "name": "Tata Motors"
+    },
+    "IDEA": {
+      "isin": "INE274J01014",
+      "name": "Vodafone Idea"
+    },
+    "ICICIPRULI": {
+      "isin": "INE101A01026",
+      "name": "ICICI Prudential Life Insurance"
+    },
+    "LICI": {
+      "isin": "INE726G01019",
+      "name": "Life Insurance Corporation of India"
+    },
+    "NYKAA": {
+      "isin": "INE646L01027",
+      "name": "FSN E-Commerce Ventures (Nykaa)"
+    },
+    "PAYTM": {
+      "isin": "INE669F01024",
+      "name": "One97 Communications (Paytm)"
+    },
+    "JSWENERGY": {
+      "isin": "INE397S01024",
+      "name": "JSW Energy"
+    },
+    "GAIL": {
+      "isin": "INE043A01012",
+      "name": "GAIL (India)"
+    },
+    "IOC": {
+      "isin": "INE129A01019",
+      "name": "Indian Oil Corporation"
+    },
+    "SAIL": {
+      "isin": "INE242A01010",
+      "name": "Steel Authority of India"
+    },
+    "NMDC": {
+      "isin": "INE325A01013",
+      "name": "NMDC"
+    },
+    "HBLENGINE": {
+      "isin": "INE557A01029",
+      "name": "HBL Engineering (formerly HBL Power)"
+    },
+    "DALBHARAT": {
+      "isin": "INE749A01030",
+      "name": "Dalmia Bharat"
+    },
+    "CENTURYTEX": {
+      "isin": "INE101M01018",
+      "name": "Century Textiles & Industries"
+    },
+    "MCX": {
+      "isin": "INE148A01019",
+      "name": "Multi Commodity Exchange of India"
+    },
+    "CONCOR": {
+      "isin": "INE226H01026",
+      "name": "Container Corporation of India"
+    },
+    "SIEMENS": {
+      "isin": "INE691I01018",
+      "name": "Siemens"
+    },
+    "ABB": {
+      "isin": "INE397A01024",
+      "name": "ABB India"
+    },
+    "CUMMINSIND": {
+      "isin": "INE121A01016",
+      "name": "Cummins India"
+    },
+    "ESCORTS": {
+      "isin": "INE239A01016",
+      "name": "Escorts Kubota"
+    },
+    "JUBLFOOD": {
+      "isin": "INE002S01010",
+      "name": "Jubilant FoodWorks"
+    },
+    "COLPAL": {
+      "isin": "INE148A01027",
+      "name": "Colgate-Palmolive (India)"
+    },
+    "GODREJCP": {
+      "isin": "INE259A01022",
+      "name": "Godrej Consumer Products"
+    },
+    "MARICO": {
+      "isin": "INE364A01016",
+      "name": "Marico"
+    },
+    "DABUR": {
+      "isin": "INE042A01014",
+      "name": "Dabur India"
+    },
+    "PGHH": {
+      "isin": "INE491A01021",
+      "name": "Procter & Gamble Hygiene and Health Care"
+    },
+    "BERGEPAINT": {
+      "isin": "INE077A01010",
+      "name": "Berger Paints India"
+    },
+    "TVSMOTOR": {
+      "isin": "INE417T01048",
+      "name": "TVS Motor Company"
+    }
+  }
+}

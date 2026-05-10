@@ -1,5 +1,5 @@
 {
-  "description": "Stock symbols to track. GitHub Action fetches prices for all symbols listed here + any already in prices.json. Broker aliases are resolved automatically.",
+  "description": "Stock symbols to track. GitHub Action fetches prices for all symbols listed here. Broker aliases are resolved automatically.",
   "symbols": [
     "RELIANCE", "TCS", "INFY", "HDFCBANK", "ICICIBANK", "HINDUNILVR",
     "ITC", "SBIN", "BHARTIARTL", "KOTAKBANK", "LT", "AXISBANK",
@@ -12,7 +12,21 @@
     "TRENT", "SHRIRAMFIN", "ZOMATO", "VEDL", "HBLPOWER",
     "TMPV", "TMCV",
     "UJJIVANSFB", "NATIONALUM", "FEDERALBNK", "BEL", "BHARATFORG",
-    "IDFCFIRSTB", "JKTYRE", "UNITECH"
+    "IDFCFIRSTB", "JKTYRE", "UNITECH",
+    "LICHSGFIN", "NATCOPHARM", "GRAUWEIL", "SAMMAANCAP", "FINCABLES",
+    "GRAPHITE", "DBL", "CDSL", "CAPACITE", "GLOBALVECT",
+    "M&M", "HINDALCO", "PIDILITIND", "PAGEIND", "AMBUJACEM",
+    "ACC", "SBICARD", "SBILIFE", "PFC", "RECLTD", "IREDA", "NHPC",
+    "BANKINDIA", "CANBK", "PNB", "BANKBARODA", "INDIANB",
+    "TATAPOWER", "TATAELXSI", "TATACHEM", "TATACOMM", "LTIM",
+    "MANAPPURAM", "MUTHOOTFIN", "SUZLON", "ADANIPOWER", "ATGL",
+    "JINDALSTEL", "DLF", "GODREJPROP", "OBEROIRLTY", "PRESTIGE",
+    "BHEL", "HAVELLS", "IRCTC", "INDUSTOWER",
+    "HAL", "BDL", "COCHINSHIP", "MAZAGON", "GRSE",
+    "ZYDUSLIFE", "LUPIN", "AUROPHARMA", "BIOCON", "ALKEM",
+    "MPHASIS", "PERSISTENT", "COFORGE", "CYIENT", "KPITTECH",
+    "POLYCAB", "VOLTAS", "BLUESTARLT", "CROMPTON", "WHIRLPOOL",
+    "CHOLAFIN", "BAJAJHLDNG", "MAXHEALTH", "FORTIS", "METROPOLIS"
   ],
-  "lastUpdated": "2026-05-10T18:45:00.000+05:30"
+  "lastUpdated": "2026-05-10T19:15:00.000+05:30"
 }

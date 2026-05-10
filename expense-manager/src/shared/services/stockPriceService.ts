@@ -2,17 +2,19 @@
  * Stock Price Service — reads prices from static prices.json (same-origin).
  *
  * Architecture:
- *   GitHub Action (every 15 min during market hours)
+ *   GitHub Action (every 90 min during market hours)
  *     → fetches Yahoo Finance server-side (no CORS issues)
  *     → writes public/prices.json
  *     → commits to repo → GitHub Pages serves it
  *
  *   This service reads prices.json from same origin — zero CORS problems.
  *   Falls back to localStorage cache when prices.json is unavailable.
+ *
+ *   Symbol resolution is handled at the parser/import level — by the time
+ *   data reaches this service, symbols are already correct NSE tickers.
  */
 
 import { PortfolioHolding } from '../types';
-import { resolveSymbolForPriceLookup } from './symbolAliases';
 
 // ─── Types ──────────────────────────────────────────────
 
@@ -159,18 +161,8 @@ function parsePriceEntry(
 // ─── Public API ─────────────────────────────────────────
 
 export async function fetchStockPrice(symbol: string): Promise<StockPrice | null> {
-  const resolved = resolveSymbolForPriceLookup(symbol);
-
-  // Try prices.json first (using resolved NSE ticker)
   const pricesJson = await fetchPricesJson();
-  if (pricesJson?.data[resolved]) {
-    const price = parsePriceEntry(symbol, pricesJson.data[resolved], pricesJson.fetchedAt);
-    cachePrice(symbol, price);
-    return price;
-  }
-
-  // Also try original symbol in case it matches directly
-  if (resolved !== symbol && pricesJson?.data[symbol]) {
+  if (pricesJson?.data[symbol]) {
     const price = parsePriceEntry(symbol, pricesJson.data[symbol], pricesJson.fetchedAt);
     cachePrice(symbol, price);
     return price;
@@ -190,10 +182,7 @@ export async function fetchBatchPrices(
   const pricesJson = await fetchPricesJson();
 
   for (const h of holdings) {
-    const resolved = resolveSymbolForPriceLookup(h.symbol);
-
-    // Try resolved alias first, then original symbol
-    const entry = pricesJson?.data[resolved] || pricesJson?.data[h.symbol];
+    const entry = pricesJson?.data[h.symbol];
 
     if (entry) {
       const price = parsePriceEntry(h.symbol, entry, pricesJson!.fetchedAt);
@@ -265,13 +254,10 @@ export async function getTrackedSymbols(): Promise<Set<string>> {
   return new Set(Object.keys(pricesJson.data));
 }
 
-/** Find symbols from holdings that are NOT in prices.json (checking aliases too) */
+/** Find symbols from holdings that are NOT in prices.json */
 export async function getUntrackedSymbols(holdingSymbols: string[]): Promise<string[]> {
   const tracked = await getTrackedSymbols();
-  return holdingSymbols.filter(s => {
-    const resolved = resolveSymbolForPriceLookup(s);
-    return !tracked.has(s) && !tracked.has(resolved);
-  });
+  return holdingSymbols.filter(s => !tracked.has(s));
 }
 
 /** Build the GitHub workflow dispatch URL for adding new symbols */

@@ -181,3 +181,62 @@ export class ExpenseDatabase extends Dexie {
 }
 
 export const db = new ExpenseDatabase();
+
+/**
+ * Runtime migration: fix stock symbols using ISIN-based resolution.
+ * Runs once after the symbol map is loaded. Uses the migrations table to track.
+ */
+export async function migrateStockSymbols(): Promise<void> {
+  const MIGRATION_KEY = 'fix-stock-symbols-v1';
+  const existing = await db.migrations.get(MIGRATION_KEY);
+  if (existing) return; // Already migrated
+
+  try {
+    const { loadMapSync, resolveSymbolSync } = await import('./symbolResolver');
+
+    // Load the symbol map
+    const baseUrl = import.meta.env.BASE_URL || '/';
+    const resp = await fetch(`${baseUrl}nse-symbol-map.json`, { signal: AbortSignal.timeout(5000) });
+    if (!resp.ok) return; // Can't migrate without the map
+
+    const mapData = await resp.json();
+    loadMapSync(mapData);
+
+    // Process all stock transactions
+    const allStocks = await db.stockTransactions.toArray();
+    let fixedCount = 0;
+
+    await db.transaction('rw', db.stockTransactions, async () => {
+      for (const stock of allStocks) {
+        // Extract ISIN from notes field (Geojit stores "ISIN: INExxxxxxxx...")
+        let isin: string | undefined;
+        if (stock.notes) {
+          const isinMatch = stock.notes.match(/ISIN:\s*(INE\w+)/i);
+          if (isinMatch) isin = isinMatch[1];
+        }
+
+        const resolved = resolveSymbolSync(stock.symbol, isin);
+        if (resolved !== stock.symbol) {
+          await db.stockTransactions.update(stock.id, {
+            symbol: resolved,
+            updatedAt: new Date().toISOString(),
+          });
+          fixedCount++;
+        }
+      }
+    });
+
+    // Mark migration as complete
+    await db.migrations.put({
+      key: MIGRATION_KEY,
+      completedAt: new Date().toISOString(),
+      version: 7,
+    });
+
+    if (fixedCount > 0) {
+      console.log(`[DB Migration] Fixed ${fixedCount} stock symbols using ISIN/name resolution`);
+    }
+  } catch (err) {
+    console.warn('[DB Migration] Stock symbol migration failed (will retry next load):', err);
+  }
+}

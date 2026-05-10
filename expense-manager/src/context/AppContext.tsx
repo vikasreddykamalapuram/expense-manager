@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useReducer, useEffect, useCallback, useRef, ReactNode } from 'react';
 import { Transaction, TransactionFilters, Settings, Budget, Category, Account, Profile, RecurringRule, StockTransaction, BillReminder } from '../shared/types';
 import { repository } from '../shared/services/repository';
-import { db } from '../shared/services/db';
+import { db, migrateStockSymbols } from '../shared/services/db';
 import { migrateFromLocalStorage, getActiveProfileIdFromLS } from '../shared/services/migration';
 import { DEFAULT_SETTINGS } from '../shared/constants/categories';
 import { schedulePush, registerVisibilitySync, pullDeltas, isSyncEnabled } from '../shared/services/syncService';
@@ -238,6 +238,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
       try {
         // Run migration (idempotent — safe if called twice in StrictMode)
         await migrateFromLocalStorage();
+
+        // Fix stock symbols using ISIN-based resolution (runs once)
+        migrateStockSymbols().catch(() => {}); // non-blocking
 
         if (cancelled) return;
 
