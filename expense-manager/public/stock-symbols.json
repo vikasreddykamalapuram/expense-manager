@@ -1,0 +1,16 @@
+{
+  "description": "Stock symbols to track. GitHub Action fetches prices for all symbols listed here + any already in prices.json.",
+  "symbols": [
+    "RELIANCE", "TCS", "INFY", "HDFCBANK", "ICICIBANK", "HINDUNILVR",
+    "ITC", "SBIN", "BHARTIARTL", "KOTAKBANK", "LT", "AXISBANK",
+    "BAJFINANCE", "BAJFINSERV", "MARUTI", "HCLTECH", "ASIANPAINT",
+    "TITAN", "SUNPHARMA", "DMART", "NESTLEIND", "ULTRACEMCO",
+    "WIPRO", "TECHM", "POWERGRID", "NTPC", "ONGC", "JSWSTEEL",
+    "TATASTEEL", "ADANIENT", "ADANIPORTS", "ADANIGREEN", "COALINDIA",
+    "GRASIM", "DIVISLAB", "BPCL", "DRREDDY", "CIPLA", "HEROMOTOCO",
+    "EICHERMOT", "BAJAJ-AUTO", "BRITANNIA", "APOLLOHOSP", "INDUSINDBK",
+    "TRENT", "SHRIRAMFIN", "ZOMATO", "VEDL", "HBLPOWER",
+    "TMPV", "TMCV"
+  ],
+  "lastUpdated": "2026-05-10T17:50:00.000+05:30"
+}

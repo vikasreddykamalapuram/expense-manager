@@ -1,4 +1,17 @@
-import { PortfolioHolding, StockExchange } from '../types';
+/**
+ * Stock Price Service — reads prices from static prices.json (same-origin).
+ *
+ * Architecture:
+ *   GitHub Action (every 15 min during market hours)
+ *     → fetches Yahoo Finance server-side (no CORS issues)
+ *     → writes public/prices.json
+ *     → commits to repo → GitHub Pages serves it
+ *
+ *   This service reads prices.json from same origin — zero CORS problems.
+ *   Falls back to localStorage cache when prices.json is unavailable.
+ */
+
+import { PortfolioHolding } from '../types';
 
 // ─── Types ──────────────────────────────────────────────
 
@@ -11,7 +24,23 @@ export interface StockPrice {
   dayHigh: number;
   dayLow: number;
   lastUpdated: string;
-  source: 'yahoo' | 'cache';
+  source: 'live' | 'cache';
+}
+
+interface PricesJson {
+  data: Record<string, {
+    symbol: string;
+    price: number;
+    previousClose: number;
+    open: number;
+    dayHigh: number;
+    dayLow: number;
+    change: number;
+    changePercent: number;
+  }>;
+  fetchedAt: string;
+  marketStatus: 'open' | 'closed';
+  stats: { total: number; success: number; failed: number };
 }
 
 interface PriceCache {
@@ -22,16 +51,13 @@ interface PriceCache {
 // ─── Constants ──────────────────────────────────────────
 
 const CACHE_KEY = 'em_stock_prices';
-const RATE_LIMIT_WINDOW = 10_000; // 10 seconds
-const MAX_CALLS_PER_WINDOW = 5;
-const BATCH_DELAY_MS = 2_000;
+const PRICES_JSON_URL = `${import.meta.env.BASE_URL}prices.json`;
 const MARKET_CACHE_TTL = 15 * 60 * 1000; // 15 min
 const OFF_MARKET_CACHE_TTL = 24 * 60 * 60 * 1000; // 24 hours
-const CORS_PROXY = 'https://api.allorigins.win/raw?url=';
-const YAHOO_BASE = 'https://query1.finance.yahoo.com/v8/finance/chart/';
 
-// Rate limiter state
-const callTimestamps: number[] = [];
+// In-memory cache for prices.json (avoid re-fetching within same session)
+let pricesJsonCache: PricesJson | null = null;
+let pricesJsonFetchedAt = 0;
 
 // ─── Cache Helpers ──────────────────────────────────────
 
@@ -51,21 +77,18 @@ function saveCache(cache: Record<string, PriceCache>): void {
   try {
     localStorage.setItem(CACHE_KEY, JSON.stringify(cache));
   } catch {
-    // localStorage full or unavailable — ignore
+    // localStorage full or unavailable
   }
 }
 
 function isIndianMarketOpen(): boolean {
   const now = new Date();
-  // Convert to IST (UTC+5:30)
   const utcMs = now.getTime() + now.getTimezoneOffset() * 60_000;
   const ist = new Date(utcMs + 5.5 * 60 * 60_000);
   const day = ist.getDay();
-  if (day === 0 || day === 6) return false; // weekend
-  const hours = ist.getHours();
-  const minutes = ist.getMinutes();
-  const timeInMinutes = hours * 60 + minutes;
-  return timeInMinutes >= 9 * 60 + 15 && timeInMinutes <= 15 * 60 + 30;
+  if (day === 0 || day === 6) return false;
+  const mins = ist.getHours() * 60 + ist.getMinutes();
+  return mins >= 9 * 60 + 15 && mins <= 15 * 60 + 30;
 }
 
 function isCacheValid(entry: PriceCache): boolean {
@@ -78,148 +101,73 @@ export function getCachedPrice(symbol: string): StockPrice | null {
   const entry = cache[symbol];
   if (!entry) return null;
   if (isCacheValid(entry)) return entry.price;
-  // Return stale cache with source marker
   return { ...entry.price, source: 'cache' };
 }
 
-export function cachePrice(symbol: string, price: StockPrice): void {
+function cachePrice(symbol: string, price: StockPrice): void {
   const cache = loadCache();
   cache[symbol] = { price, cachedAt: Date.now() };
   saveCache(cache);
 }
 
-// ─── Rate Limiting ──────────────────────────────────────
+// ─── Prices.json Fetcher ────────────────────────────────
 
-async function waitForRateLimit(): Promise<void> {
-  const now = Date.now();
-  // Remove old timestamps
-  while (callTimestamps.length > 0 && now - callTimestamps[0] > RATE_LIMIT_WINDOW) {
-    callTimestamps.shift();
+async function fetchPricesJson(): Promise<PricesJson | null> {
+  // Use in-memory cache if fresh (re-fetch at most every 5 min)
+  if (pricesJsonCache && Date.now() - pricesJsonFetchedAt < 5 * 60 * 1000) {
+    return pricesJsonCache;
   }
-  if (callTimestamps.length >= MAX_CALLS_PER_WINDOW) {
-    const waitMs = RATE_LIMIT_WINDOW - (now - callTimestamps[0]) + 100;
-    await new Promise(resolve => setTimeout(resolve, waitMs));
-  }
-  callTimestamps.push(Date.now());
-}
 
-// ─── Symbol Mapping ─────────────────────────────────────
-
-function toYahooSymbol(symbol: string, exchange: StockExchange): string {
-  // Clean symbol: remove spaces, special chars
-  const clean = symbol.replace(/\s+/g, '').replace(/[^A-Za-z0-9&-]/g, '');
-  const suffix = exchange === 'BSE' ? '.BO' : '.NS';
-  return `${clean}${suffix}`;
-}
-
-// ─── Response Validation ────────────────────────────────
-
-function validatePriceResponse(data: unknown, symbol: string): StockPrice | null {
   try {
-    if (typeof data !== 'object' || data === null) return null;
-    const chart = (data as Record<string, unknown>).chart;
-    if (typeof chart !== 'object' || chart === null) return null;
+    const resp = await fetch(PRICES_JSON_URL, {
+      signal: AbortSignal.timeout(10_000),
+      cache: 'no-cache', // bypass browser cache to get latest
+    });
 
-    const result = (chart as Record<string, unknown>).result;
-    if (!Array.isArray(result) || result.length === 0) return null;
+    if (!resp.ok) return null;
 
-    const entry = result[0] as Record<string, unknown>;
-    const meta = entry.meta as Record<string, unknown> | undefined;
-    if (!meta) return null;
+    const data: PricesJson = await resp.json();
+    if (!data?.data || typeof data.data !== 'object') return null;
 
-    const currentPrice = Number(meta.regularMarketPrice);
-    const previousClose = Number(meta.chartPreviousClose ?? meta.previousClose);
-    const dayHigh = Number(meta.regularMarketDayHigh ?? meta.dayHigh ?? currentPrice);
-    const dayLow = Number(meta.regularMarketDayLow ?? meta.dayLow ?? currentPrice);
-
-    // Validate reasonable ranges
-    if (!isFinite(currentPrice) || currentPrice <= 0) return null;
-    if (!isFinite(previousClose) || previousClose <= 0) return null;
-
-    const change = currentPrice - previousClose;
-    const changePercent = (change / previousClose) * 100;
-
-    // Sanity check: change percent should be within -100 to +500
-    if (changePercent < -100 || changePercent > 500) return null;
-
-    return {
-      symbol,
-      currentPrice: Math.round(currentPrice * 100) / 100,
-      previousClose: Math.round(previousClose * 100) / 100,
-      change: Math.round(change * 100) / 100,
-      changePercent: Math.round(changePercent * 100) / 100,
-      dayHigh: Math.round((isFinite(dayHigh) ? dayHigh : currentPrice) * 100) / 100,
-      dayLow: Math.round((isFinite(dayLow) ? dayLow : currentPrice) * 100) / 100,
-      lastUpdated: new Date().toISOString(),
-      source: 'yahoo',
-    };
+    pricesJsonCache = data;
+    pricesJsonFetchedAt = Date.now();
+    return data;
   } catch {
     return null;
   }
 }
 
-// ─── Fetch Functions ────────────────────────────────────
-
-export async function fetchStockPrice(
+function parsePriceEntry(
   symbol: string,
-  exchange: StockExchange
-): Promise<StockPrice | null> {
-  // Check cache first
-  const cached = getCachedPrice(symbol);
-  if (cached && cached.source !== 'cache') return cached;
+  entry: PricesJson['data'][string],
+  fetchedAt: string
+): StockPrice {
+  return {
+    symbol,
+    currentPrice: entry.price,
+    previousClose: entry.previousClose,
+    change: entry.change,
+    changePercent: entry.changePercent,
+    dayHigh: entry.dayHigh,
+    dayLow: entry.dayLow,
+    lastUpdated: fetchedAt,
+    source: 'live',
+  };
+}
 
-  await waitForRateLimit();
+// ─── Public API ─────────────────────────────────────────
 
-  const yahooSymbol = toYahooSymbol(symbol, exchange);
-  const yahooUrl = `${YAHOO_BASE}${encodeURIComponent(yahooSymbol)}?interval=1d&range=1d`;
-  const proxyUrl = `${CORS_PROXY}${encodeURIComponent(yahooUrl)}`;
-
-  try {
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 10_000);
-
-    const response = await fetch(proxyUrl, {
-      signal: controller.signal,
-      headers: { 'Accept': 'application/json' },
-    });
-    clearTimeout(timeout);
-
-    if (!response.ok) throw new Error(`HTTP ${response.status}`);
-
-    const data: unknown = await response.json();
-    const price = validatePriceResponse(data, symbol);
-
-    if (price) {
-      cachePrice(symbol, price);
-      return price;
-    }
-
-    // If NSE failed and we haven't tried BSE, try BSE
-    if (exchange !== 'BSE') {
-      const bseSymbol = toYahooSymbol(symbol, 'BSE');
-      const bseUrl = `${CORS_PROXY}${encodeURIComponent(`${YAHOO_BASE}${encodeURIComponent(bseSymbol)}?interval=1d&range=1d`)}`;
-
-      await waitForRateLimit();
-      const bseResp = await fetch(bseUrl, {
-        signal: AbortSignal.timeout(10_000),
-        headers: { 'Accept': 'application/json' },
-      });
-
-      if (bseResp.ok) {
-        const bseData: unknown = await bseResp.json();
-        const bsePrice = validatePriceResponse(bseData, symbol);
-        if (bsePrice) {
-          cachePrice(symbol, bsePrice);
-          return bsePrice;
-        }
-      }
-    }
-  } catch {
-    // Network error or timeout — fall through to cache
+export async function fetchStockPrice(symbol: string): Promise<StockPrice | null> {
+  // Try prices.json first
+  const pricesJson = await fetchPricesJson();
+  if (pricesJson?.data[symbol]) {
+    const price = parsePriceEntry(symbol, pricesJson.data[symbol], pricesJson.fetchedAt);
+    cachePrice(symbol, price);
+    return price;
   }
 
-  // Return stale cache if available
-  return cached ?? null;
+  // Fallback to localStorage cache
+  return getCachedPrice(symbol);
 }
 
 export async function fetchBatchPrices(
@@ -228,20 +176,18 @@ export async function fetchBatchPrices(
   const priceMap = new Map<string, StockPrice>();
   if (holdings.length === 0) return priceMap;
 
-  for (let i = 0; i < holdings.length; i++) {
-    const h = holdings[i];
-    try {
-      const price = await fetchStockPrice(h.symbol, h.exchange);
-      if (price) {
-        priceMap.set(h.symbol, price);
-      }
-    } catch {
-      // Individual fetch failed — continue with others
-    }
+  // Single fetch to get all prices from prices.json
+  const pricesJson = await fetchPricesJson();
 
-    // Delay between requests (except last)
-    if (i < holdings.length - 1) {
-      await new Promise(resolve => setTimeout(resolve, BATCH_DELAY_MS));
+  for (const h of holdings) {
+    if (pricesJson?.data[h.symbol]) {
+      const price = parsePriceEntry(h.symbol, pricesJson.data[h.symbol], pricesJson.fetchedAt);
+      priceMap.set(h.symbol, price);
+      cachePrice(h.symbol, price);
+    } else {
+      // Fallback to cached price
+      const cached = getCachedPrice(h.symbol);
+      if (cached) priceMap.set(h.symbol, cached);
     }
   }
 
@@ -253,7 +199,7 @@ export function getAllCachedPrices(): Map<string, StockPrice> {
   const cache = loadCache();
   const map = new Map<string, StockPrice>();
   for (const [symbol, entry] of Object.entries(cache)) {
-    if (entry && entry.price) {
+    if (entry?.price) {
       map.set(symbol, {
         ...entry.price,
         source: isCacheValid(entry) ? entry.price.source : 'cache',
@@ -266,4 +212,54 @@ export function getAllCachedPrices(): Map<string, StockPrice> {
 /** Clear all cached prices */
 export function clearPriceCache(): void {
   localStorage.removeItem(CACHE_KEY);
+}
+
+/** Get prices.json metadata (for displaying freshness in UI) */
+export async function getPricesFreshness(): Promise<{
+  fetchedAt: string;
+  marketStatus: string;
+  symbolCount: number;
+} | null> {
+  const pricesJson = await fetchPricesJson();
+  if (!pricesJson) return null;
+  return {
+    fetchedAt: pricesJson.fetchedAt,
+    marketStatus: pricesJson.marketStatus,
+    symbolCount: pricesJson.stats.success,
+  };
+}
+
+/**
+ * Update the stock-symbols.json manifest so GitHub Actions knows
+ * which symbols to fetch. Called when user imports new trades.
+ */
+export function getSymbolsForManifest(holdings: PortfolioHolding[]): string[] {
+  return [...new Set(holdings.map(h => h.symbol))].sort();
+}
+
+/** Check if prices.json exists and has data */
+export async function hasPricesData(): Promise<boolean> {
+  const pricesJson = await fetchPricesJson();
+  return pricesJson !== null && Object.keys(pricesJson.data).length > 0;
+}
+
+/** Get the set of symbols currently tracked in prices.json */
+export async function getTrackedSymbols(): Promise<Set<string>> {
+  const pricesJson = await fetchPricesJson();
+  if (!pricesJson?.data) return new Set();
+  return new Set(Object.keys(pricesJson.data));
+}
+
+/** Find symbols from holdings that are NOT in prices.json */
+export async function getUntrackedSymbols(holdingSymbols: string[]): Promise<string[]> {
+  const tracked = await getTrackedSymbols();
+  return holdingSymbols.filter(s => !tracked.has(s));
+}
+
+/** Build the GitHub workflow dispatch URL for adding new symbols */
+export function getWorkflowDispatchUrl(repoUrl: string, symbols: string[]): string {
+  // Strip .git suffix and build Actions URL
+  const base = repoUrl.replace(/\.git$/, '');
+  const symbolsStr = encodeURIComponent(symbols.join(','));
+  return `${base}/actions/workflows/update-prices.yml?query=workflow_dispatch&symbols=${symbolsStr}`;
 }

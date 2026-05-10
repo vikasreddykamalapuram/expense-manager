@@ -2,12 +2,13 @@ import { useState, useCallback, useRef, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   ArrowLeft, CheckCircle2, AlertCircle, FileSpreadsheet,
-  ChevronRight, Loader2, X,
+  ChevronRight, Loader2, X, ExternalLink,
 } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
 import { useAppContext } from '../../../context/AppContext';
 import { parseTradeData, BrokerFormat } from '../../../shared/services/brokerParser';
 import { StockTransaction } from '../../../shared/types';
+import { getUntrackedSymbols } from '../../../shared/services/stockPriceService';
 
 type Step = 'upload' | 'preview' | 'review' | 'done';
 
@@ -40,6 +41,7 @@ export function TradeImportPage() {
   const [parsedTxns, setParsedTxns] = useState<Omit<StockTransaction, 'id' | 'createdAt' | 'updatedAt'>[]>([]);
   const [selectedIndices, setSelectedIndices] = useState<Set<number>>(new Set());
   const [importCount, setImportCount] = useState(0);
+  const [untrackedSymbols, setUntrackedSymbols] = useState<string[]>([]);
 
   // Detect duplicates against existing transactions
   const duplicateIndices = useMemo(() => {
@@ -139,6 +141,16 @@ export function TradeImportPage() {
       });
       await actions.addStockTransactions(toImport);
       setImportCount(toImport.length);
+
+      // Check for symbols not yet tracked in prices.json
+      const importedSymbols = [...new Set(toImport.map(t => t.symbol))];
+      try {
+        const untracked = await getUntrackedSymbols(importedSymbols);
+        setUntrackedSymbols(untracked);
+      } catch {
+        // Non-critical — don't block import
+      }
+
       setStep('done');
     } catch (err) {
       setParseErrors([`Import failed: ${err instanceof Error ? err.message : 'Unknown error'}`]);
@@ -427,6 +439,35 @@ export function TradeImportPage() {
             Successfully imported <span className="font-semibold text-gray-900 dark:text-gray-100">{importCount}</span> trade{importCount !== 1 ? 's' : ''}
             {detectedBroker && <> from <span className="font-semibold text-primary-600 dark:text-primary-400">{detectedBroker}</span></>}
           </p>
+
+          {/* Untracked symbols notice */}
+          {untrackedSymbols.length > 0 && (
+            <div className="mb-6 rounded-xl bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 p-4 text-left">
+              <div className="flex items-start gap-2">
+                <AlertCircle size={18} className="text-amber-600 dark:text-amber-400 mt-0.5 shrink-0" />
+                <div>
+                  <p className="text-sm font-medium text-amber-800 dark:text-amber-300 mb-1">
+                    {untrackedSymbols.length} symbol{untrackedSymbols.length !== 1 ? 's' : ''} not yet tracked for live prices
+                  </p>
+                  <p className="text-xs text-amber-600 dark:text-amber-400 mb-2">
+                    {untrackedSymbols.join(', ')}
+                  </p>
+                  <p className="text-xs text-amber-600 dark:text-amber-400 mb-2">
+                    Prices will be available after the next GitHub Action run. To fetch immediately:
+                  </p>
+                  <a
+                    href={`https://github.com/vikasreddykamalapuram/expense-manager/actions/workflows/update-prices.yml`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 text-xs font-medium text-amber-700 dark:text-amber-300 hover:underline"
+                  >
+                    Trigger price update workflow <ExternalLink size={12} />
+                  </a>
+                </div>
+              </div>
+            </div>
+          )}
+
           <div className="flex justify-center gap-3">
             <button
               onClick={() => navigate('/portfolio')}
