@@ -4,6 +4,7 @@ import { repository } from '../shared/services/repository';
 import { db } from '../shared/services/db';
 import { migrateFromLocalStorage, getActiveProfileIdFromLS } from '../shared/services/migration';
 import { DEFAULT_SETTINGS } from '../shared/constants/categories';
+import { schedulePush, registerVisibilitySync, pullDeltas, isSyncEnabled } from '../shared/services/syncService';
 
 // State
 interface AppState {
@@ -291,16 +292,19 @@ export function AppProvider({ children }: { children: ReactNode }) {
     addTransaction: useCallback(async (tx: Transaction) => {
       await repository.addTransaction(profileIdRef.current, tx);
       dispatch({ type: 'ADD_TRANSACTION', payload: tx });
+      schedulePush(profileIdRef.current);
     }, []),
 
     updateTransaction: useCallback(async (id: string, updates: Partial<Transaction>) => {
       await repository.updateTransaction(profileIdRef.current, id, updates);
       dispatch({ type: 'UPDATE_TRANSACTION', payload: { id, updates } });
+      schedulePush(profileIdRef.current);
     }, []),
 
     deleteTransaction: useCallback(async (id: string) => {
       await repository.deleteTransaction(id);
       dispatch({ type: 'DELETE_TRANSACTION', payload: id });
+      schedulePush(profileIdRef.current);
     }, []),
 
     updateSettings: useCallback(async (updates: Partial<Settings>) => {
@@ -309,49 +313,58 @@ export function AppProvider({ children }: { children: ReactNode }) {
       const newSettings = { ...existing, ...updates };
       await repository.saveSettings(current, newSettings);
       dispatch({ type: 'SET_SETTINGS', payload: newSettings });
+      schedulePush(profileIdRef.current);
     }, []),
 
     setBudget: useCallback(async (budget: Budget) => {
       await repository.setBudget(profileIdRef.current, budget);
       dispatch({ type: 'ADD_BUDGET', payload: budget });
+      schedulePush(profileIdRef.current);
     }, []),
 
     deleteBudget: useCallback(async (id: string) => {
       await repository.deleteBudget(profileIdRef.current, id);
       dispatch({ type: 'DELETE_BUDGET', payload: id });
+      schedulePush(profileIdRef.current);
     }, []),
 
     addCategory:useCallback(async (category: Category) => {
       const cats = await repository.addCustomCategory(profileIdRef.current, category);
       dispatch({ type: 'SET_CATEGORIES', payload: cats });
+      schedulePush(profileIdRef.current);
     }, []),
 
     updateCategory: useCallback(async (id: string, updates: Partial<Category>) => {
       const cats = await repository.updateCustomCategory(profileIdRef.current, id, updates);
       dispatch({ type: 'SET_CATEGORIES', payload: cats });
+      schedulePush(profileIdRef.current);
     }, []),
 
     deleteCategory: useCallback(async (id: string) => {
       const cats = await repository.deleteCustomCategory(profileIdRef.current, id);
       dispatch({ type: 'SET_CATEGORIES', payload: cats });
+      schedulePush(profileIdRef.current);
     }, []),
 
     addAccount: useCallback(async (account: Account) => {
       await repository.addAccount(profileIdRef.current, account);
       const accounts = await repository.getAccounts(profileIdRef.current);
       dispatch({ type: 'SET_ACCOUNTS', payload: accounts });
+      schedulePush(profileIdRef.current);
     }, []),
 
     updateAccount: useCallback(async (id: string, updates: Partial<Account>) => {
       await repository.updateAccount(id, updates);
       const accounts = await repository.getAccounts(profileIdRef.current);
       dispatch({ type: 'SET_ACCOUNTS', payload: accounts });
+      schedulePush(profileIdRef.current);
     }, []),
 
     deleteAccount: useCallback(async (id: string) => {
       await repository.deleteAccount(id);
       const accounts = await repository.getAccounts(profileIdRef.current);
       dispatch({ type: 'SET_ACCOUNTS', payload: accounts });
+      schedulePush(profileIdRef.current);
     }, []),
 
     addProfile: useCallback(async (profile: Profile) => {
@@ -455,6 +468,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     addRecurringRule: useCallback(async (rule: RecurringRule) => {
       await repository.saveRecurringRule(profileIdRef.current, rule);
       dispatch({ type: 'ADD_RECURRING_RULE', payload: rule });
+      schedulePush(profileIdRef.current);
     }, []),
 
     updateRecurringRule: useCallback(async (id: string, updates: Partial<RecurringRule>) => {
@@ -464,12 +478,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
         const updated: RecurringRule = { ...existing, ...updates, updatedAt: new Date().toISOString() };
         await repository.saveRecurringRule(profileIdRef.current, updated);
         dispatch({ type: 'UPDATE_RECURRING_RULE', payload: { id, updates } });
+        schedulePush(profileIdRef.current);
       }
     }, []),
 
     deleteRecurringRule: useCallback(async (id: string) => {
       await repository.deleteRecurringRule(profileIdRef.current, id);
       dispatch({ type: 'DELETE_RECURRING_RULE', payload: id });
+      schedulePush(profileIdRef.current);
     }, []),
 
     processRecurringRules: useCallback(async () => {
@@ -487,25 +503,32 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }, []),
 
     addStockTransaction: useCallback(async (txn: StockTransaction) => {
-      await db.stockTransactions.add({ ...txn, profileId: profileIdRef.current });
+      const now = new Date().toISOString();
+      await db.stockTransactions.add({ ...txn, profileId: profileIdRef.current, updatedAt: txn.updatedAt || now });
       dispatch({ type: 'ADD_STOCK_TRANSACTION', payload: txn });
+      schedulePush(profileIdRef.current);
     }, []),
 
     addStockTransactions: useCallback(async (txns: StockTransaction[]) => {
       const profileId = profileIdRef.current;
-      const withProfile = txns.map(t => ({ ...t, profileId }));
+      const now = new Date().toISOString();
+      const withProfile = txns.map(t => ({ ...t, profileId, updatedAt: t.updatedAt || now }));
       await db.stockTransactions.bulkAdd(withProfile);
       dispatch({ type: 'ADD_STOCK_TRANSACTIONS', payload: txns });
+      schedulePush(profileIdRef.current);
     }, []),
 
     deleteStockTransaction: useCallback(async (id: string) => {
-      await db.stockTransactions.delete(id);
+      const now = new Date().toISOString();
+      await db.stockTransactions.update(id, { isDeleted: true, deletedAt: now, updatedAt: now });
       dispatch({ type: 'DELETE_STOCK_TRANSACTION', payload: id });
+      schedulePush(profileIdRef.current);
     }, []),
 
     addBillReminder: useCallback(async (reminder: BillReminder) => {
       await repository.saveBillReminder(profileIdRef.current, reminder);
       dispatch({ type: 'ADD_BILL_REMINDER', payload: reminder });
+      schedulePush(profileIdRef.current);
     }, []),
 
     updateBillReminder: useCallback(async (id: string, updates: Partial<BillReminder>) => {
@@ -515,14 +538,36 @@ export function AppProvider({ children }: { children: ReactNode }) {
         const updated: BillReminder = { ...existing, ...updates, updatedAt: new Date().toISOString() };
         await repository.saveBillReminder(profileIdRef.current, updated);
         dispatch({ type: 'UPDATE_BILL_REMINDER', payload: { id, updates } });
+        schedulePush(profileIdRef.current);
       }
     }, []),
 
     deleteBillReminder: useCallback(async (id: string) => {
       await repository.deleteBillReminder(profileIdRef.current, id);
       dispatch({ type: 'DELETE_BILL_REMINDER', payload: id });
+      schedulePush(profileIdRef.current);
     }, []),
   };
+
+  // ─── Sync: visibility-based pull + initial pull on startup ──
+  useEffect(() => {
+    if (!isSyncEnabled()) return;
+
+    const profileId = profileIdRef.current;
+    const cleanup = registerVisibilitySync(profileId);
+
+    // Pull on startup
+    pullDeltas(profileId).then((pulled) => {
+      if (pulled) {
+        // Reload data to reflect pulled changes
+        repository.loadProfileData(profileId).then((data) => {
+          dispatch({ type: 'LOAD_PROFILE_DATA', payload: { profileId, ...data } });
+        });
+      }
+    }).catch(console.error);
+
+    return cleanup;
+  }, [state.activeProfileId]);
 
   return (
     <AppContext.Provider value={{ state, dispatch, actions }}>

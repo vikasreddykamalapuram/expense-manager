@@ -6,6 +6,7 @@ import { MsalProvider } from '@azure/msal-react';
 import { PublicClientApplication } from '@azure/msal-browser';
 import { AppProvider } from './context/AppContext';
 import { AuthProvider } from './context/AuthContext';
+import { SyncProviderWrapper } from './context/SyncProviderWrapper';
 import { AUTH_CONFIG } from './shared/config/auth';
 import { router } from './app/router';
 import './index.css';
@@ -29,7 +30,9 @@ createRoot(document.getElementById('root')!).render(
       <MsalProvider instance={msalInstance}>
         <AuthProvider>
           <AppProvider>
-            <RouterProvider router={router} />
+            <SyncProviderWrapper>
+              <RouterProvider router={router} />
+            </SyncProviderWrapper>
           </AppProvider>
         </AuthProvider>
       </MsalProvider>

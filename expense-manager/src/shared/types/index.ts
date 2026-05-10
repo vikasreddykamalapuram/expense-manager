@@ -19,6 +19,8 @@ export interface Account {
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
+  isDeleted?: boolean;
+  deletedAt?: string;
 }
 
 export interface Transaction {
@@ -36,6 +38,8 @@ export interface Transaction {
   receiptId?: string; // references a receipt in the receipts store
   createdAt: string;
   updatedAt: string;
+  isDeleted?: boolean;
+  deletedAt?: string;
 }
 
 export interface Category {
@@ -46,6 +50,10 @@ export interface Category {
   color: string; // hex color
   isCustom: boolean;
   parentId?: string; // if set, this is a subcategory
+  createdAt?: string;
+  updatedAt?: string;
+  isDeleted?: boolean;
+  deletedAt?: string;
 }
 
 export interface Budget {
@@ -54,6 +62,9 @@ export interface Budget {
   amount: number;
   month: string; // YYYY-MM format
   createdAt: string;
+  updatedAt?: string;
+  isDeleted?: boolean;
+  deletedAt?: string;
 }
 
 export type AccentColor = 'blue' | 'magenta' | 'teal' | 'pink' | 'purple' | 'emerald' | 'orange' | 'rose' | 'amber' | 'cyan';
@@ -67,6 +78,7 @@ export interface Settings {
   defaultView: 'dashboard' | 'transactions';
   accentColor: AccentColor;
   darkMode: DarkMode;
+  updatedAt?: string;
 }
 
 export interface MonthlyStats {
@@ -126,6 +138,8 @@ export interface RecurringRule {
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
+  isDeleted?: boolean;
+  deletedAt?: string;
 }
 
 // ─── Stock/Trading Types ────────────────────────────────
@@ -150,6 +164,8 @@ export interface StockTransaction {
   notes: string;
   createdAt: string;
   updatedAt: string;
+  isDeleted?: boolean;
+  deletedAt?: string;
 }
 
 export interface TradeCharges {
@@ -202,6 +218,8 @@ export interface BillReminder {
   notes?: string;
   createdAt: string;
   updatedAt: string;
+  isDeleted?: boolean;
+  deletedAt?: string;
 }
 
 export type AuthProvider = 'google' | 'microsoft';
@@ -212,4 +230,51 @@ export interface AuthUser {
   name: string;
   avatar?: string;
   provider: AuthProvider;
+}
+
+// ─── Sync Types ─────────────────────────────────────────
+
+export type SyncState = 'disabled' | 'idle' | 'syncing' | 'error';
+
+export interface SyncManifest {
+  devices: Record<string, SyncDeviceInfo>;
+  lastFullSnapshot?: string; // ISO timestamp
+  schemaVersion: number;
+}
+
+export interface SyncDeviceInfo {
+  deviceId: string;
+  deviceName: string;
+  lastSyncAt: string; // ISO timestamp
+  lastPushAt?: string;
+}
+
+export interface SyncDelta {
+  deviceId: string;
+  timestamp: string; // ISO timestamp
+  profileId: string;
+  tables: {
+    transactions?: SyncTableDelta<Transaction>;
+    categories?: SyncTableDelta<Category>;
+    accounts?: SyncTableDelta<Account>;
+    budgets?: SyncTableDelta<Budget>;
+    recurringRules?: SyncTableDelta<RecurringRule>;
+    stockTransactions?: SyncTableDelta<StockTransaction>;
+    billReminders?: SyncTableDelta<BillReminder>;
+    settings?: Settings;
+    customInstitutions?: Record<string, string[]>;
+  };
+}
+
+export interface SyncTableDelta<T> {
+  upserted: T[];
+  deleted: string[]; // IDs of deleted records
+}
+
+export interface SyncStatus {
+  state: SyncState;
+  lastSyncAt?: string;
+  lastError?: string;
+  pendingChanges: number;
+  provider?: AuthProvider;
 }

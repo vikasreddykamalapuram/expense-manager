@@ -59,7 +59,7 @@ class ExpenseRepository {
 
   async getTransactions(profileId: string): Promise<Transaction[]> {
     const rows = await db.transactions.where('profileId').equals(profileId).toArray();
-    return rows.map(stripProfileId);
+    return rows.filter((r) => !r.isDeleted).map(stripProfileId);
   }
 
   async saveTransactions(profileId: string, transactions: Transaction[]): Promise<void> {
@@ -71,7 +71,13 @@ class ExpenseRepository {
   }
 
   async addTransaction(profileId: string, transaction: Transaction): Promise<void> {
-    await db.transactions.add({ ...transaction, profileId });
+    const now = new Date().toISOString();
+    await db.transactions.add({
+      ...transaction,
+      profileId,
+      createdAt: transaction.createdAt || now,
+      updatedAt: transaction.updatedAt || now,
+    });
   }
 
   async updateTransaction(_profileId: string, id: string, updates: Partial<Transaction>): Promise<void> {
@@ -79,14 +85,15 @@ class ExpenseRepository {
   }
 
   async deleteTransaction(id: string): Promise<void> {
-    await db.transactions.delete(id);
+    const now = new Date().toISOString();
+    await db.transactions.update(id, { isDeleted: true, deletedAt: now, updatedAt: now });
   }
 
   // ─── Categories ─────────────────────────────────────
 
   async getCustomCategories(profileId: string): Promise<Category[]> {
     const rows = await db.categories.where('profileId').equals(profileId).toArray();
-    return rows.map(stripProfileId);
+    return rows.filter((r) => !r.isDeleted).map(stripProfileId);
   }
 
   async getAllCategories(profileId: string): Promise<Category[]> {
@@ -97,18 +104,20 @@ class ExpenseRepository {
   async addCustomCategory(profileId: string, category: Category): Promise<Category[]> {
     const exists = await db.categories.get(category.id);
     if (!exists) {
-      await db.categories.add({ ...category, isCustom: true, profileId } as DbCategory);
+      const now = new Date().toISOString();
+      await db.categories.add({ ...category, isCustom: true, profileId, createdAt: now, updatedAt: now } as DbCategory);
     }
     return this.getAllCategories(profileId);
   }
 
   async updateCustomCategory(profileId: string, id: string, updates: Partial<Category>): Promise<Category[]> {
-    await db.categories.update(id, updates);
+    await db.categories.update(id, { ...updates, updatedAt: new Date().toISOString() });
     return this.getAllCategories(profileId);
   }
 
   async deleteCustomCategory(profileId: string, id: string): Promise<Category[]> {
-    await db.categories.delete(id);
+    const now = new Date().toISOString();
+    await db.categories.update(id, { isDeleted: true, deletedAt: now, updatedAt: now });
     return this.getAllCategories(profileId);
   }
 
@@ -124,7 +133,7 @@ class ExpenseRepository {
 
   async getAccounts(profileId: string): Promise<Account[]> {
     const rows = await db.accounts.where('profileId').equals(profileId).toArray();
-    return rows.map(stripProfileId);
+    return rows.filter((r) => !r.isDeleted).map(stripProfileId);
   }
 
   async saveAccounts(profileId: string, accounts: Account[]): Promise<void> {
@@ -136,7 +145,8 @@ class ExpenseRepository {
   }
 
   async addAccount(profileId: string, account: Account): Promise<void> {
-    await db.accounts.add({ ...account, profileId } as DbAccount);
+    const now = new Date().toISOString();
+    await db.accounts.add({ ...account, profileId, createdAt: account.createdAt || now, updatedAt: account.updatedAt || now } as DbAccount);
   }
 
   async updateAccount(id: string, updates: Partial<Account>): Promise<void> {
@@ -144,14 +154,15 @@ class ExpenseRepository {
   }
 
   async deleteAccount(id: string): Promise<void> {
-    await db.accounts.delete(id);
+    const now = new Date().toISOString();
+    await db.accounts.update(id, { isDeleted: true, deletedAt: now, updatedAt: now });
   }
 
   // ─── Budgets ────────────────────────────────────────
 
   async getBudgets(profileId: string): Promise<Budget[]> {
     const rows = await db.budgets.where('profileId').equals(profileId).toArray();
-    return rows.map(stripProfileId);
+    return rows.filter((r) => !r.isDeleted).map(stripProfileId);
   }
 
   async saveBudgets(profileId: string, budgets: Budget[]): Promise<void> {
@@ -163,16 +174,18 @@ class ExpenseRepository {
   }
 
   async setBudget(profileId: string, budget: Budget): Promise<void> {
+    const now = new Date().toISOString();
     const existing = await db.budgets.get(budget.id);
     if (existing) {
-      await db.budgets.update(budget.id, { ...budget, profileId });
+      await db.budgets.update(budget.id, { ...budget, profileId, updatedAt: now });
     } else {
-      await db.budgets.add({ ...budget, profileId } as DbBudget);
+      await db.budgets.add({ ...budget, profileId, updatedAt: now } as DbBudget);
     }
   }
 
   async deleteBudget(_profileId: string, id: string): Promise<void> {
-    await db.budgets.delete(id);
+    const now = new Date().toISOString();
+    await db.budgets.update(id, { isDeleted: true, deletedAt: now, updatedAt: now });
   }
 
   // ─── Settings ───────────────────────────────────────
@@ -183,7 +196,7 @@ class ExpenseRepository {
   }
 
   async saveSettings(profileId: string, settings: Settings): Promise<void> {
-    await db.settings.put({ profileId, data: settings });
+    await db.settings.put({ profileId, data: settings, updatedAt: new Date().toISOString() });
   }
 
   // ─── Custom Institutions ────────────────────────────
@@ -199,19 +212,23 @@ class ExpenseRepository {
     if (!institutions[accountType].includes(name)) {
       institutions[accountType].push(name);
     }
-    await db.customInstitutions.put({ profileId, data: institutions });
+    await db.customInstitutions.put({ profileId, data: institutions, updatedAt: new Date().toISOString() });
     return institutions;
   }
 
   // ─── Data Export/Import ─────────────────────────────
 
   async exportData(profileId: string): Promise<string> {
-    const [transactions, categories, budgets, accounts, settings] = await Promise.all([
+    const [transactions, categories, budgets, accounts, settings, recurringRules, stockTransactions, billReminders, customInstitutions] = await Promise.all([
       this.getTransactions(profileId),
       this.getCustomCategories(profileId),
       this.getBudgets(profileId),
       this.getAccounts(profileId),
       this.getSettings(profileId),
+      this.getRecurringRules(profileId),
+      db.stockTransactions.where('profileId').equals(profileId).toArray().then((rows) => rows.filter((r) => !r.isDeleted).map(stripProfileId)),
+      this.getBillReminders(profileId),
+      this.getCustomInstitutions(profileId),
     ]);
     const data = {
       transactions,
@@ -219,8 +236,12 @@ class ExpenseRepository {
       budgets,
       accounts,
       settings,
+      recurringRules,
+      stockTransactions,
+      billReminders,
+      customInstitutions,
       exportedAt: new Date().toISOString(),
-      version: '2.0.0',
+      version: '3.0.0',
     };
     return JSON.stringify(data, null, 2);
   }
@@ -259,12 +280,30 @@ class ExpenseRepository {
           }
         }
       }
-      await db.transaction('rw', [db.transactions, db.categories, db.budgets, db.accounts, db.settings], async () => {
+      await db.transaction('rw', [db.transactions, db.categories, db.budgets, db.accounts, db.settings, db.recurringRules, db.stockTransactions, db.billReminders, db.customInstitutions], async () => {
         await this.saveTransactions(profileId, data.transactions);
         if (data.categories) await this.saveCustomCategories(profileId, data.categories);
         if (data.budgets) await this.saveBudgets(profileId, data.budgets);
         if (data.accounts) await this.saveAccounts(profileId, data.accounts);
         if (data.settings) await this.saveSettings(profileId, data.settings);
+        if (data.recurringRules && Array.isArray(data.recurringRules)) {
+          for (const rule of data.recurringRules) {
+            await this.saveRecurringRule(profileId, rule);
+          }
+        }
+        if (data.stockTransactions && Array.isArray(data.stockTransactions)) {
+          for (const st of data.stockTransactions) {
+            await db.stockTransactions.put({ ...st, profileId });
+          }
+        }
+        if (data.billReminders && Array.isArray(data.billReminders)) {
+          for (const br of data.billReminders) {
+            await this.saveBillReminder(profileId, br);
+          }
+        }
+        if (data.customInstitutions && typeof data.customInstitutions === 'object') {
+          await db.customInstitutions.put({ profileId, data: data.customInstitutions, updatedAt: new Date().toISOString() });
+        }
       });
       return true;
     } catch (error) {
@@ -294,17 +333,18 @@ class ExpenseRepository {
 
   async getRecurringRules(profileId: string): Promise<RecurringRule[]> {
     const rows = await db.recurringRules.where('profileId').equals(profileId).toArray();
-    return rows.map(stripProfileId) as RecurringRule[];
+    return rows.filter((r) => !r.isDeleted).map(stripProfileId) as RecurringRule[];
   }
 
   async saveRecurringRule(profileId: string, rule: RecurringRule): Promise<void> {
-    await db.recurringRules.put({ ...rule, profileId });
+    await db.recurringRules.put({ ...rule, profileId, updatedAt: new Date().toISOString() });
   }
 
   async deleteRecurringRule(profileId: string, id: string): Promise<void> {
     const rule = await db.recurringRules.get(id);
     if (rule && rule.profileId === profileId) {
-      await db.recurringRules.delete(id);
+      const now = new Date().toISOString();
+      await db.recurringRules.update(id, { isDeleted: true, deletedAt: now, updatedAt: now });
     }
   }
 
@@ -393,17 +433,18 @@ class ExpenseRepository {
 
   async getBillReminders(profileId: string): Promise<BillReminder[]> {
     const rows = await db.billReminders.where('profileId').equals(profileId).toArray();
-    return rows.map(stripProfileId) as BillReminder[];
+    return rows.filter((r) => !r.isDeleted).map(stripProfileId) as BillReminder[];
   }
 
   async saveBillReminder(profileId: string, reminder: BillReminder): Promise<void> {
-    await db.billReminders.put({ ...reminder, profileId });
+    await db.billReminders.put({ ...reminder, profileId, updatedAt: new Date().toISOString() });
   }
 
   async deleteBillReminder(profileId: string, id: string): Promise<void> {
     const reminder = await db.billReminders.get(id);
     if (reminder && reminder.profileId === profileId) {
-      await db.billReminders.delete(id);
+      const now = new Date().toISOString();
+      await db.billReminders.update(id, { isDeleted: true, deletedAt: now, updatedAt: now });
     }
   }
 

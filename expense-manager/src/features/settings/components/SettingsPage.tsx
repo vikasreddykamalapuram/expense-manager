@@ -1,8 +1,9 @@
 import { useState, useRef, useEffect } from 'react';
-import { Download, Upload, Trash2, AlertTriangle, FileSpreadsheet, Cloud, CloudOff, LogOut, RefreshCw, CheckCircle2, XCircle, Sun, Moon, Monitor, Palette, Check } from 'lucide-react';
+import { Download, Upload, Trash2, AlertTriangle, FileSpreadsheet, Cloud, CloudOff, LogOut, RefreshCw, CheckCircle2, XCircle, Sun, Moon, Monitor, Palette, Check, RefreshCcw, Smartphone, Shield } from 'lucide-react';
 import type { AccentColor, DarkMode } from '../../../shared/types';
 import { useAppContext } from '../../../context/AppContext';
 import { useAuth } from '../../../context/AuthContext';
+import { useSync } from '../../../context/SyncContext';
 import { useTheme } from '../../../shared/hooks/useTheme';
 import { Button } from '../../../shared/components/ui/Button';
 import { Select } from '../../../shared/components/ui/Input';
@@ -15,6 +16,7 @@ import { backupService, BackupMetadata } from '../../../shared/services/backupSe
 export function SettingsPage() {
   const { state, actions } = useAppContext();
   const { user, isAuthenticated, logout } = useAuth();
+  const { syncStatus, enableSyncForUser, disableSyncForUser, syncNow, deleteCloudData, deviceName } = useSync();
   const { theme, effectiveTheme, setTheme, accentColor, setAccentColor, darkMode, setDarkMode } = useTheme();
   const { settings } = state;
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -26,6 +28,9 @@ export function SettingsPage() {
   const [backupMessage, setBackupMessage] = useState('');
   const [backupInfo, setBackupInfo] = useState<BackupMetadata | null>(null);
   const [loadingBackupInfo, setLoadingBackupInfo] = useState(false);
+  const [syncActionStatus, setSyncActionStatus] = useState<'idle' | 'enabling' | 'syncing' | 'deleting'>('idle');
+  const [syncMessage, setSyncMessage] = useState('');
+  const [showDeleteSyncConfirm, setShowDeleteSyncConfirm] = useState(false);
 
   // Load backup info when authenticated
   useEffect(() => {
@@ -530,13 +535,157 @@ export function SettingsPage() {
         )}
       </div>
 
+      {/* Cross-Device Sync */}
+      <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-6 shadow-sm">
+        <div className="flex items-center gap-2 mb-4">
+          <RefreshCcw size={18} className="text-primary-500" />
+          <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100">Cross-Device Sync</h3>
+        </div>
+
+        {isAuthenticated && user ? (
+          <div className="space-y-4">
+            {/* Sync Status */}
+            <div className="rounded-lg bg-gray-50 dark:bg-gray-700 p-4">
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-2">
+                  {syncStatus.state === 'idle' && <CheckCircle2 size={16} className="text-success-500" />}
+                  {syncStatus.state === 'syncing' && <RefreshCw size={16} className="text-primary-500 animate-spin" />}
+                  {syncStatus.state === 'error' && <XCircle size={16} className="text-danger-500" />}
+                  {syncStatus.state === 'disabled' && <CloudOff size={16} className="text-gray-400" />}
+                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                    {syncStatus.state === 'idle' && 'Synced'}
+                    {syncStatus.state === 'syncing' && 'Syncing...'}
+                    {syncStatus.state === 'error' && 'Sync Error'}
+                    {syncStatus.state === 'disabled' && 'Sync Disabled'}
+                  </span>
+                </div>
+                {syncStatus.state !== 'disabled' && (
+                  <span className="text-xs text-gray-400 dark:text-gray-500">
+                    via {user.provider === 'google' ? 'Google Drive' : 'OneDrive'}
+                  </span>
+                )}
+              </div>
+
+              {syncStatus.lastSyncAt && (
+                <p className="text-xs text-gray-500 dark:text-gray-400">
+                  Last synced: {new Date(syncStatus.lastSyncAt).toLocaleString()}
+                </p>
+              )}
+              {syncStatus.lastError && (
+                <p className="text-xs text-danger-500 mt-1">{syncStatus.lastError}</p>
+              )}
+            </div>
+
+            {/* Device Info */}
+            <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
+              <Smartphone size={14} />
+              <span>This device: {deviceName}</span>
+            </div>
+
+            {/* Security note */}
+            <div className="flex items-start gap-2 rounded-lg bg-primary-50 dark:bg-primary-900/20 p-3">
+              <Shield size={14} className="text-primary-500 mt-0.5 shrink-0" />
+              <p className="text-xs text-primary-700 dark:text-primary-300">
+                Your data is encrypted with AES-256-GCM before leaving this device. Only you can read it — not even {user.provider === 'google' ? 'Google' : 'Microsoft'} can access your financial data.
+              </p>
+            </div>
+
+            {/* Actions */}
+            <div className="flex flex-col gap-2 sm:flex-row">
+              {syncStatus.state === 'disabled' ? (
+                <Button
+                  variant="primary"
+                  icon={syncActionStatus === 'enabling' ? <RefreshCw size={16} className="animate-spin" /> : <RefreshCcw size={16} />}
+                  disabled={syncActionStatus !== 'idle'}
+                  onClick={async () => {
+                    setSyncActionStatus('enabling');
+                    setSyncMessage('');
+                    const ok = await enableSyncForUser();
+                    setSyncMessage(ok ? 'Sync enabled! Your data will sync automatically.' : 'Failed to enable sync. Please try again.');
+                    setSyncActionStatus('idle');
+                    if (ok) setTimeout(() => setSyncMessage(''), 5000);
+                  }}
+                >
+                  Enable Sync
+                </Button>
+              ) : (
+                <>
+                  <Button
+                    variant="primary"
+                    icon={syncActionStatus === 'syncing' ? <RefreshCw size={16} className="animate-spin" /> : <RefreshCcw size={16} />}
+                    disabled={syncActionStatus !== 'idle' || syncStatus.state === 'syncing'}
+                    onClick={async () => {
+                      setSyncActionStatus('syncing');
+                      setSyncMessage('');
+                      const ok = await syncNow();
+                      setSyncMessage(ok ? 'Sync complete!' : 'Sync failed. Check your connection.');
+                      setSyncActionStatus('idle');
+                      setTimeout(() => setSyncMessage(''), 5000);
+                    }}
+                  >
+                    Sync Now
+                  </Button>
+                  <Button
+                    variant="secondary"
+                    onClick={async () => {
+                      await disableSyncForUser();
+                      setSyncMessage('Sync disabled.');
+                      setTimeout(() => setSyncMessage(''), 3000);
+                    }}
+                  >
+                    Disable Sync
+                  </Button>
+                </>
+              )}
+            </div>
+
+            {/* Delete cloud data */}
+            {syncStatus.state !== 'disabled' && (
+              <div className="border-t border-gray-200 dark:border-gray-700 pt-3">
+                <Button
+                  variant="secondary"
+                  icon={<Trash2 size={14} />}
+                  onClick={() => setShowDeleteSyncConfirm(true)}
+                  className="!text-danger-600 !border-danger-300 hover:!bg-danger-50 dark:!border-danger-700 dark:hover:!bg-danger-900/20 text-xs"
+                >
+                  Delete All Cloud Sync Data
+                </Button>
+                <p className="mt-1 text-xs text-gray-400 dark:text-gray-500">
+                  Removes all sync data from the cloud. Local data is not affected.
+                </p>
+              </div>
+            )}
+
+            {syncMessage && (
+              <p className={classNames(
+                'text-sm flex items-center gap-1',
+                syncMessage.includes('Failed') || syncMessage.includes('failed') ? 'text-danger-600' : 'text-success-600'
+              )}>
+                {syncMessage.includes('Failed') || syncMessage.includes('failed') ? <XCircle size={14} /> : <CheckCircle2 size={14} />}
+                {syncMessage}
+              </p>
+            )}
+
+            <p className="text-xs text-gray-400 dark:text-gray-500">
+              Sync automatically when you switch back to this tab, or 5 seconds after any data change.
+              All data is end-to-end encrypted.
+            </p>
+          </div>
+        ) : (
+          <div className="text-center py-4">
+            <RefreshCcw className="mx-auto h-8 w-8 text-gray-300 dark:text-gray-600 mb-2" />
+            <p className="text-sm text-gray-500 dark:text-gray-400">Sign in to sync data across your devices</p>
+          </div>
+        )}
+      </div>
+
       {/* App Info */}
       <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-6 shadow-sm">
         <h3 className="mb-4 text-base font-semibold text-gray-900 dark:text-gray-100">About</h3>
         <div className="space-y-2 text-sm text-gray-600 dark:text-gray-400">
           <p><strong>ExpenseIQ</strong> — Personal Finance Manager</p>
-          <p>Version 2.0.0</p>
-          <p>Data is stored locally in your browser (IndexedDB).</p>
+          <p>Version 3.0.0</p>
+          <p>Data is stored locally in your browser (IndexedDB) with optional encrypted cloud sync.</p>
           <p className="text-xs text-gray-400 dark:text-gray-500 mt-4">
             Total transactions: {state.transactions.length} · 
             Storage: ~{Math.round(JSON.stringify(state.transactions).length / 1024)}KB
@@ -612,6 +761,48 @@ export function SettingsPage() {
         isOpen={showCSVImport}
         onClose={() => setShowCSVImport(false)}
       />
+
+      {/* Delete Sync Data Confirmation */}
+      <Modal
+        isOpen={showDeleteSyncConfirm}
+        onClose={() => setShowDeleteSyncConfirm(false)}
+        title="Delete Cloud Sync Data"
+        size="sm"
+      >
+        <div className="flex items-start gap-3">
+          <div className="rounded-full bg-danger-100 p-2">
+            <AlertTriangle className="text-danger-600" size={20} />
+          </div>
+          <div>
+            <p className="text-sm text-gray-600 dark:text-gray-400">
+              This will delete all sync data from the cloud, including the encryption key and all sync deltas.
+              Sync will be disabled on all devices.
+            </p>
+            <p className="mt-2 text-sm font-medium text-gray-900 dark:text-gray-100">
+              Your local data on this device will not be affected.
+            </p>
+          </div>
+        </div>
+        <div className="mt-4 flex justify-end gap-3">
+          <Button variant="secondary" onClick={() => setShowDeleteSyncConfirm(false)}>
+            Cancel
+          </Button>
+          <Button
+            variant="danger"
+            disabled={syncActionStatus === 'deleting'}
+            onClick={async () => {
+              setSyncActionStatus('deleting');
+              const ok = await deleteCloudData();
+              setSyncMessage(ok ? 'Cloud sync data deleted.' : 'Failed to delete cloud data.');
+              setSyncActionStatus('idle');
+              setShowDeleteSyncConfirm(false);
+              setTimeout(() => setSyncMessage(''), 5000);
+            }}
+          >
+            {syncActionStatus === 'deleting' ? 'Deleting...' : 'Delete Cloud Data'}
+          </Button>
+        </div>
+      </Modal>
     </div>
   );
 }

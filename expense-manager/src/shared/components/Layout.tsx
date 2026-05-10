@@ -3,12 +3,14 @@ import {
   LayoutDashboard, ArrowLeftRight, PlusCircle, CalendarDays,
   Settings, Wallet, Menu, X, Landmark, Tag, ChevronDown,
   Plus, LogIn, LogOut, Target, RefreshCw,FileUp,FileBarChart, Heart, TrendingUp, Bell,
+  Cloud, AlertCircle,
 } from 'lucide-react';
 import { useState, useRef, useEffect } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import { classNames } from '../utils/helpers';
 import { useAppContext } from '../../context/AppContext';
 import { useAuth } from '../../context/AuthContext';
+import { useSync } from '../../context/SyncContext';
 import { useTheme } from '../hooks/useTheme';
 import { FloatingAssistant } from '../../features/assistant/components/FloatingAssistant';
 import { PWAUpdatePrompt } from './PWAUpdatePrompt';
@@ -34,6 +36,7 @@ const navItems = [
 export function Layout() {
   const { state, actions } = useAppContext();
   const { user, isAuthenticated, logout } = useAuth();
+  const { syncStatus } = useSync();
   useTheme();
   const navigate = useNavigate();
   const { profiles, activeProfileId } = state;
@@ -234,6 +237,28 @@ export function Layout() {
               </div>
             )}
           </div>
+
+          {/* Sync Status Indicator */}
+          {syncStatus.state !== 'disabled' && (
+            <button
+              onClick={() => navigate('/settings')}
+              className={classNames(
+                'rounded-lg p-1.5 transition-colors',
+                syncStatus.state === 'idle' ? 'text-success-500 hover:bg-success-50 dark:hover:bg-success-900/20' :
+                syncStatus.state === 'syncing' ? 'text-primary-500 hover:bg-primary-50 dark:hover:bg-primary-900/20' :
+                'text-danger-500 hover:bg-danger-50 dark:hover:bg-danger-900/20'
+              )}
+              title={
+                syncStatus.state === 'idle' ? `Synced${syncStatus.lastSyncAt ? ` · ${new Date(syncStatus.lastSyncAt).toLocaleTimeString()}` : ''}` :
+                syncStatus.state === 'syncing' ? 'Syncing...' :
+                `Sync error: ${syncStatus.lastError || 'Unknown'}`
+              }
+            >
+              {syncStatus.state === 'idle' && <Cloud size={16} />}
+              {syncStatus.state === 'syncing' && <RefreshCw size={16} className="animate-spin" />}
+              {syncStatus.state === 'error' && <AlertCircle size={16} />}
+            </button>
+          )}
 
           {/* User Avatar / Login */}
           {isAuthenticated && user ? (
