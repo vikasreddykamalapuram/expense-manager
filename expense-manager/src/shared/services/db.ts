@@ -183,11 +183,12 @@ export class ExpenseDatabase extends Dexie {
 export const db = new ExpenseDatabase();
 
 /**
- * Runtime migration: fix stock symbols using ISIN-based resolution.
- * Runs once after the symbol map is loaded. Uses the migrations table to track.
+ * Runtime migration: fix stock symbols AND names using ISIN-based resolution.
+ * Uses the official NSE symbol map (2000+ stocks with authoritative ISINs).
+ * Runs once per version. Uses the migrations table to track.
  */
 export async function migrateStockSymbols(): Promise<void> {
-  const MIGRATION_KEY = 'fix-stock-symbols-v1';
+  const MIGRATION_KEY = 'fix-stock-symbols-v2'; // v2: uses official NSE data, fixes names too
   const existing = await db.migrations.get(MIGRATION_KEY);
   if (existing) return; // Already migrated
 
@@ -196,11 +197,13 @@ export async function migrateStockSymbols(): Promise<void> {
 
     // Load the symbol map
     const baseUrl = import.meta.env.BASE_URL || '/';
-    const resp = await fetch(`${baseUrl}nse-symbol-map.json`, { signal: AbortSignal.timeout(5000) });
+    const resp = await fetch(`${baseUrl}nse-symbol-map.json`, { signal: AbortSignal.timeout(10000) });
     if (!resp.ok) return; // Can't migrate without the map
 
     const mapData = await resp.json();
     loadMapSync(mapData);
+
+    const tickerInfo: Record<string, { isin: string; name: string }> = mapData.tickerInfo || {};
 
     // Process all stock transactions
     const allStocks = await db.stockTransactions.toArray();
@@ -216,11 +219,25 @@ export async function migrateStockSymbols(): Promise<void> {
         }
 
         const resolved = resolveSymbolSync(stock.symbol, isin);
+        const updates: Record<string, unknown> = {};
+
+        // Fix symbol if it changed
         if (resolved !== stock.symbol) {
-          await db.stockTransactions.update(stock.id, {
-            symbol: resolved,
-            updatedAt: new Date().toISOString(),
-          });
+          updates.symbol = resolved;
+        }
+
+        // Fix name from official NSE data (always update to authoritative name)
+        const info = tickerInfo[resolved];
+        if (info?.name) {
+          const officialName = info.name.replace(/\s+Limited$/i, '').trim();
+          if (officialName && officialName !== stock.name) {
+            updates.name = officialName;
+          }
+        }
+
+        if (Object.keys(updates).length > 0) {
+          updates.updatedAt = new Date().toISOString();
+          await db.stockTransactions.update(stock.id, updates);
           fixedCount++;
         }
       }
@@ -234,9 +251,9 @@ export async function migrateStockSymbols(): Promise<void> {
     });
 
     if (fixedCount > 0) {
-      console.log(`[DB Migration] Fixed ${fixedCount} stock symbols using ISIN/name resolution`);
+      console.log(`[DB Migration v2] Fixed ${fixedCount} stock transactions (symbols + names)`);
     }
   } catch (err) {
-    console.warn('[DB Migration] Stock symbol migration failed (will retry next load):', err);
+    console.warn('[DB Migration v2] Stock symbol migration failed (will retry next load):', err);
   }
 }
