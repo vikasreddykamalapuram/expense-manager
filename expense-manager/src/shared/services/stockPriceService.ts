@@ -12,6 +12,7 @@
  */
 
 import { PortfolioHolding } from '../types';
+import { resolveSymbolForPriceLookup } from './symbolAliases';
 
 // ─── Types ──────────────────────────────────────────────
 
@@ -158,9 +159,18 @@ function parsePriceEntry(
 // ─── Public API ─────────────────────────────────────────
 
 export async function fetchStockPrice(symbol: string): Promise<StockPrice | null> {
-  // Try prices.json first
+  const resolved = resolveSymbolForPriceLookup(symbol);
+
+  // Try prices.json first (using resolved NSE ticker)
   const pricesJson = await fetchPricesJson();
-  if (pricesJson?.data[symbol]) {
+  if (pricesJson?.data[resolved]) {
+    const price = parsePriceEntry(symbol, pricesJson.data[resolved], pricesJson.fetchedAt);
+    cachePrice(symbol, price);
+    return price;
+  }
+
+  // Also try original symbol in case it matches directly
+  if (resolved !== symbol && pricesJson?.data[symbol]) {
     const price = parsePriceEntry(symbol, pricesJson.data[symbol], pricesJson.fetchedAt);
     cachePrice(symbol, price);
     return price;
@@ -180,8 +190,13 @@ export async function fetchBatchPrices(
   const pricesJson = await fetchPricesJson();
 
   for (const h of holdings) {
-    if (pricesJson?.data[h.symbol]) {
-      const price = parsePriceEntry(h.symbol, pricesJson.data[h.symbol], pricesJson.fetchedAt);
+    const resolved = resolveSymbolForPriceLookup(h.symbol);
+
+    // Try resolved alias first, then original symbol
+    const entry = pricesJson?.data[resolved] || pricesJson?.data[h.symbol];
+
+    if (entry) {
+      const price = parsePriceEntry(h.symbol, entry, pricesJson!.fetchedAt);
       priceMap.set(h.symbol, price);
       cachePrice(h.symbol, price);
     } else {
@@ -250,10 +265,13 @@ export async function getTrackedSymbols(): Promise<Set<string>> {
   return new Set(Object.keys(pricesJson.data));
 }
 
-/** Find symbols from holdings that are NOT in prices.json */
+/** Find symbols from holdings that are NOT in prices.json (checking aliases too) */
 export async function getUntrackedSymbols(holdingSymbols: string[]): Promise<string[]> {
   const tracked = await getTrackedSymbols();
-  return holdingSymbols.filter(s => !tracked.has(s));
+  return holdingSymbols.filter(s => {
+    const resolved = resolveSymbolForPriceLookup(s);
+    return !tracked.has(s) && !tracked.has(resolved);
+  });
 }
 
 /** Build the GitHub workflow dispatch URL for adding new symbols */

@@ -22,13 +22,81 @@ const SYMBOL_OVERRIDES = {
   'TATAMOTORS': 'TMPV', // Demerged into TMPV (passenger) & TMCV (commercial) in 2025
 };
 
+// Broker/company-name symbols → NSE ticker (for Geojit DP Holdings etc.)
+const BROKER_ALIASES = {
+  'HBLPOWERSYSTEMS': 'HBLPOWER',
+  'UJJIVANSMALLFINANCEB': 'UJJIVANSFB',
+  'NATIONALALUMINIUMCOM': 'NATIONALUM',
+  'THEFEDERALBANK': 'FEDERALBNK',
+  'BHARATELECTRONICS': 'BEL',
+  'BHARATFORGE': 'BHARATFORG',
+  'VEDANTA': 'VEDL',
+  'IDFCFITBANK': 'IDFCFIRSTB',
+  'JKTY&INDUSTRIES': 'JKTYRE',
+  'RELIANCEINDUSTRIES': 'RELIANCE',
+  'TATACONSULTANCYSER': 'TCS',
+  'INFOSYS': 'INFY',
+  'STATEBANKOFINDIA': 'SBIN',
+  'HINDUSTANUNILEVER': 'HINDUNILVR',
+  'LARSEN&TOUBRO': 'LT',
+  'MAHINDRA&MAHINDRA': 'M&M',
+  'KOTAKMAHINDRABANK': 'KOTAKBANK',
+  'BAJAJFINANCE': 'BAJFINANCE',
+  'BAJAJFINSERV': 'BAJFINSERV',
+  'ADANIENTERPRISE': 'ADANIENT',
+  'ADANIENTERPRISESLI': 'ADANIENT',
+  'ADANIPORTSANDSPECI': 'ADANIPORTS',
+  'ADANIGREENENERGYLT': 'ADANIGREEN',
+  'ASIANPAINTS': 'ASIANPAINT',
+  'BHARTIAIRTEL': 'BHARTIARTL',
+  'MARUTISUZUKIINDIA': 'MARUTI',
+  'SUNPHARMACEUTICALIN': 'SUNPHARMA',
+  'ULTRATECHCEMENT': 'ULTRACEMCO',
+  'NESTLEINDIA': 'NESTLEIND',
+  'POWERGRIDCORPORATI': 'POWERGRID',
+  'DRREDDYSLABORATORIE': 'DRREDDY',
+  'DIVISLABORATORIES': 'DIVISLAB',
+  'HEROMOTOCORP': 'HEROMOTOCO',
+  'EICHERMOTORS': 'EICHERMOT',
+  'BRITANNIAINDUSTRIES': 'BRITANNIA',
+  'APOLLOHOSPITALSENT': 'APOLLOHOSP',
+  'SHRIRAMFINANCE': 'SHRIRAMFIN',
+  'TITANCOMPANY': 'TITAN',
+  'GRASIMINDUSTRIES': 'GRASIM',
+  'TECHMAHINDRA': 'TECHM',
+  'HCLTECHNOLOGIES': 'HCLTECH',
+  'AVENUEECOMMERCE': 'DMART',
+  'BAJAJAUTO': 'BAJAJ-AUTO',
+  'TATAMOTORSPASSENGE': 'TMPV',
+  'TATAMOTORSCOMMERCI': 'TMCV',
+  'ZOMATOLTD': 'ETERNAL',
+  'PIDILITEINDUSTRIES': 'PIDILITIND',
+  'PAGEINDUSTRIES': 'PAGEIND',
+  'AMBUJACEMENTS': 'AMBUJACEM',
+  'HINDALCOINDUSTRIES': 'HINDALCO',
+  'SUZLOENERGY': 'SUZLON',
+  'ADANITOTALGAS': 'ATGL',
+  'TATASTEELLTD': 'TATASTEEL',
+  'MUTHOOTFINANCE': 'MUTHOOTFIN',
+  'LTIMINDTREE': 'LTIM',
+  'ADANIPOWER': 'ADANIPOWER',
+  'CENTURYTEXTILES&IN': 'CENTURYTEX',
+};
+
 function toYahooSymbol(symbol) {
   // If symbol already has exchange suffix (e.g., AAPL, VOD.L, 9988.HK), use as-is
   if (symbol.includes('.')) return symbol;
-  // Apply Indian market overrides
-  const mapped = SYMBOL_OVERRIDES[symbol] || symbol;
+  // First resolve broker alias to NSE ticker
+  const nseTicker = BROKER_ALIASES[symbol] || symbol;
+  // Then apply Yahoo-specific overrides
+  const mapped = SYMBOL_OVERRIDES[nseTicker] || nseTicker;
   // Default to NSE (.NS) for Indian stocks
   return `${mapped}.NS`;
+}
+
+// Resolve broker symbol to NSE ticker (for storing in prices.json)
+function resolveToNseTicker(symbol) {
+  return BROKER_ALIASES[symbol] || symbol;
 }
 
 async function fetchPrice(symbol) {
@@ -140,26 +208,33 @@ async function main() {
     process.exit(0);
   }
 
-  console.log(`Fetching prices for ${symbols.length} symbols: ${symbols.join(', ')}`);
+  // Resolve broker aliases and deduplicate to NSE tickers
+  const tickerSet = new Set();
+  for (const sym of symbols) {
+    tickerSet.add(resolveToNseTicker(sym));
+  }
+  const tickers = [...tickerSet].sort();
+
+  console.log(`Fetching prices for ${tickers.length} unique tickers (from ${symbols.length} symbols): ${tickers.join(', ')}`);
 
   const prices = {};
   let success = 0;
   let failed = 0;
 
-  for (let i = 0; i < symbols.length; i++) {
-    const sym = symbols[i];
-    const result = await fetchPrice(sym);
+  for (let i = 0; i < tickers.length; i++) {
+    const ticker = tickers[i];
+    const result = await fetchPrice(ticker);
 
     if (result) {
-      prices[sym] = result;
+      prices[ticker] = result;
       success++;
-      console.log(`  ✓ ${sym}: ₹${result.price} (${result.change >= 0 ? '+' : ''}${result.changePercent}%)`);
+      console.log(`  ✓ ${ticker}: ₹${result.price} (${result.change >= 0 ? '+' : ''}${result.changePercent}%)`);
     } else {
       failed++;
     }
 
     // Rate limit: 500ms between requests
-    if (i < symbols.length - 1) {
+    if (i < tickers.length - 1) {
       await new Promise(r => setTimeout(r, 500));
     }
   }
@@ -168,7 +243,7 @@ async function main() {
     data: prices,
     fetchedAt: new Date().toISOString(),
     marketStatus: isIndianMarketOpen() ? 'open' : 'closed',
-    stats: { total: symbols.length, success, failed },
+    stats: { total: tickers.length, success, failed },
   };
 
   // Ensure output directory exists
@@ -176,7 +251,7 @@ async function main() {
   if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
 
   fs.writeFileSync(OUTPUT_FILE, JSON.stringify(output, null, 2));
-  console.log(`\n✅ Wrote ${success}/${symbols.length} prices to ${OUTPUT_FILE}`);
+  console.log(`\n✅ Wrote ${success}/${tickers.length} prices to ${OUTPUT_FILE}`);
   if (failed > 0) console.log(`⚠ ${failed} symbols failed`);
 }
 

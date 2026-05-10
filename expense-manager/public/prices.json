@@ -90,6 +90,26 @@
       "change": -6.2,
       "changePercent": -0.34
     },
+    "BEL": {
+      "symbol": "BEL",
+      "price": 439.7,
+      "previousClose": 439.45,
+      "open": 439.7,
+      "dayHigh": 443.8,
+      "dayLow": 437.8,
+      "change": 0.25,
+      "changePercent": 0.06
+    },
+    "BHARATFORG": {
+      "symbol": "BHARATFORG",
+      "price": 1989.7,
+      "previousClose": 1992.9,
+      "open": 1989.7,
+      "dayHigh": 2044,
+      "dayLow": 1975.1,
+      "change": -3.2,
+      "changePercent": -0.16
+    },
     "BHARTIARTL": {
       "symbol": "BHARTIARTL",
       "price": 1834.5,
@@ -180,6 +200,16 @@
       "change": -25,
       "changePercent": -0.34
     },
+    "FEDERALBNK": {
+      "symbol": "FEDERALBNK",
+      "price": 297.25,
+      "previousClose": 297.05,
+      "open": 297.25,
+      "dayHigh": 298.45,
+      "dayLow": 291.45,
+      "change": 0.2,
+      "changePercent": 0.07
+    },
     "GRASIM": {
       "symbol": "GRASIM",
       "price": 2968.6,
@@ -250,6 +280,16 @@
       "change": -14.2,
       "changePercent": -1.11
     },
+    "IDFCFIRSTB": {
+      "symbol": "IDFCFIRSTB",
+      "price": 71.27,
+      "previousClose": 70.39,
+      "open": 71.27,
+      "dayHigh": 71.45,
+      "dayLow": 69.91,
+      "change": 0.88,
+      "changePercent": 1.25
+    },
     "INDUSINDBK": {
       "symbol": "INDUSINDBK",
       "price": 950.75,
@@ -279,6 +319,16 @@
       "dayLow": 305.7,
       "change": 0.05,
       "changePercent": 0.02
+    },
+    "JKTYRE": {
+      "symbol": "JKTYRE",
+      "price": 405.95,
+      "previousClose": 410.25,
+      "open": 405.95,
+      "dayHigh": 410.35,
+      "dayLow": 405.55,
+      "change": -4.3,
+      "changePercent": -1.05
     },
     "JSWSTEEL": {
       "symbol": "JSWSTEEL",
@@ -319,6 +369,16 @@
       "dayLow": 13626,
       "change": -44,
       "changePercent": -0.32
+    },
+    "NATIONALUM": {
+      "symbol": "NATIONALUM",
+      "price": 401.95,
+      "previousClose": 403.5,
+      "open": 401.95,
+      "dayHigh": 403.9,
+      "dayLow": 396.15,
+      "change": -1.55,
+      "changePercent": -0.38
     },
     "NESTLEIND": {
       "symbol": "NESTLEIND",
@@ -470,6 +530,16 @@
       "change": -51.8,
       "changePercent": -1.21
     },
+    "UJJIVANSFB": {
+      "symbol": "UJJIVANSFB",
+      "price": 62.4,
+      "previousClose": 62.67,
+      "open": 62.4,
+      "dayHigh": 65.46,
+      "dayLow": 62,
+      "change": -0.27,
+      "changePercent": -0.43
+    },
     "ULTRACEMCO": {
       "symbol": "ULTRACEMCO",
       "price": 11950,
@@ -479,6 +549,16 @@
       "dayLow": 11877,
       "change": -196,
       "changePercent": -1.61
+    },
+    "UNITECH": {
+      "symbol": "UNITECH",
+      "price": 4.89,
+      "previousClose": 4.96,
+      "open": 4.89,
+      "dayHigh": 4.99,
+      "dayLow": 4.86,
+      "change": -0.07,
+      "changePercent": -1.41
     },
     "VEDL": {
       "symbol": "VEDL",
@@ -511,11 +591,11 @@
       "changePercent": -0.4
     }
   },
-  "fetchedAt": "2026-05-10T12:43:50.231Z",
+  "fetchedAt": "2026-05-10T13:25:43.017Z",
   "marketStatus": "closed",
   "stats": {
-    "total": 51,
-    "success": 51,
+    "total": 59,
+    "success": 59,
     "failed": 0
   }
 }

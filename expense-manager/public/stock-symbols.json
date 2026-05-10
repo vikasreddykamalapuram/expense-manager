@@ -1,5 +1,5 @@
 {
-  "description": "Stock symbols to track. GitHub Action fetches prices for all symbols listed here + any already in prices.json.",
+  "description": "Stock symbols to track. GitHub Action fetches prices for all symbols listed here + any already in prices.json. Broker aliases are resolved automatically.",
   "symbols": [
     "RELIANCE", "TCS", "INFY", "HDFCBANK", "ICICIBANK", "HINDUNILVR",
     "ITC", "SBIN", "BHARTIARTL", "KOTAKBANK", "LT", "AXISBANK",
@@ -10,7 +10,9 @@
     "GRASIM", "DIVISLAB", "BPCL", "DRREDDY", "CIPLA", "HEROMOTOCO",
     "EICHERMOT", "BAJAJ-AUTO", "BRITANNIA", "APOLLOHOSP", "INDUSINDBK",
     "TRENT", "SHRIRAMFIN", "ZOMATO", "VEDL", "HBLPOWER",
-    "TMPV", "TMCV"
+    "TMPV", "TMCV",
+    "UJJIVANSFB", "NATIONALUM", "FEDERALBNK", "BEL", "BHARATFORG",
+    "IDFCFIRSTB", "JKTYRE", "UNITECH"
   ],
-  "lastUpdated": "2026-05-10T17:50:00.000+05:30"
+  "lastUpdated": "2026-05-10T18:45:00.000+05:30"
 }
