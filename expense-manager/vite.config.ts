@@ -16,6 +16,16 @@ export default defineConfig({
         navigateFallbackAllowlist: [/^(?!\/__).*/],
         runtimeCaching: [
           {
+            // prices.json should always fetch from network (updated every 15 min)
+            urlPattern: /\/prices\.json$/,
+            handler: 'NetworkFirst',
+            options: {
+              cacheName: 'stock-prices-cache',
+              expiration: { maxEntries: 1, maxAgeSeconds: 60 * 60 },
+              cacheableResponse: { statuses: [0, 200] },
+            },
+          },
+          {
             urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
             handler: 'CacheFirst',
             options: {
