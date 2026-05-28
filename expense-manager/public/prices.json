@@ -1042,13 +1042,13 @@
     },
     "SHRIRAMFIN": {
       "symbol": "SHRIRAMFIN",
-      "price": 963.95,
-      "previousClose": 952.15,
-      "open": 963.95,
-      "dayHigh": 968.1,
-      "dayLow": 946.6,
-      "change": 11.8,
-      "changePercent": 1.24
+      "price": 962.45,
+      "previousClose": 951.65,
+      "open": 962.45,
+      "dayHigh": 968,
+      "dayLow": 946.55,
+      "change": 10.8,
+      "changePercent": 1.13
     },
     "SUNPHARMA": {
       "symbol": "SUNPHARMA",
@@ -1271,7 +1271,7 @@
       "changePercent": 0.74
     }
   },
-  "fetchedAt": "2026-05-28T11:51:33.222Z",
+  "fetchedAt": "2026-05-28T12:56:49.372Z",
   "marketStatus": "closed",
   "stats": {
     "total": 130,
