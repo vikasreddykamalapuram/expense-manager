@@ -331,7 +331,7 @@ export function parseAmount(amountStr: string): number | null {
   }
 
   // Remove any remaining whitespace/non-numeric (except minus and dot)
-  cleaned = cleaned.replace(/[^\d.\-]/g, '');
+  cleaned = cleaned.replace(/[^\d./-]/g, '');
 
   const num = parseFloat(cleaned);
   if (isNaN(num)) return null;
@@ -509,7 +509,6 @@ export function processCSVImport(
   csv: ParsedCSV,
   mapping: ColumnMapping,
   dateFormat: DateFormat,
-  _defaultType: 'income' | 'expense',
 ): ImportResult {
   const parsed: ParsedTransaction[] = [];
   const skipped: ImportResult['skipped'] = [];

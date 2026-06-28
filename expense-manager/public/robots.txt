@@ -1,0 +1,19 @@
+# ExpenseIQ - Personal Finance Manager
+# https://vikasreddykamalapuram.github.io/expense-manager
+
+User-agent: *
+Allow: /expense-manager/
+Disallow: /expense-manager/login
+Disallow: /expense-manager/add
+Disallow: /expense-manager/settings
+
+# Allow crawling of static assets
+Allow: /expense-manager/assets/
+Allow: /expense-manager/prices.json
+Allow: /expense-manager/nse-symbol-map.json
+
+# Crawl delay (optional, in seconds)
+Crawl-delay: 1
+
+# Sitemaps
+Sitemap: https://vikasreddykamalapuram.github.io/expense-manager/sitemap.xml

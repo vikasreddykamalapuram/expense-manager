@@ -31,7 +31,7 @@ export function AccountForm({ editAccount, onClose, onCreated }: AccountFormProp
   const [customInstitutions, setCustomInstitutions] = useState<Record<string, string[]>>({});
   useEffect(() => {
     actions.getCustomInstitutions().then(setCustomInstitutions);
-  }, []);
+  }, [actions]);
   const allInstitutions = [
     ...POPULAR_INSTITUTIONS[type].filter((i) => i !== 'Other'),
     ...(customInstitutions[type] || []),

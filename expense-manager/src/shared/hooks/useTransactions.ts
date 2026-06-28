@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useCallback } from 'react';
 import { useAppContext } from '../../context/AppContext';
 import { MonthlyStats, CategoryStat } from '../types';
 import { getMonthRange, getYearRange, getCurrentMonth } from '../utils/helpers';
@@ -8,13 +8,13 @@ export function useTransactions() {
   const { transactions, filters, categories } = state;
 
   // Helper: look up category from state (includes custom + subcategories)
-  const findCategory = (id: string) => categories.find((c) => c.id === id);
+  const findCategory = useCallback((id: string) => categories.find((c) => c.id === id), [categories]);
 
   // Helper: get all child category IDs for a parent (for filtering)
-  const getCategoryFamily = (categoryId: string): string[] => {
+  const getCategoryFamily = useCallback((categoryId: string): string[] => {
     const children = categories.filter((c) => c.parentId === categoryId).map((c) => c.id);
     return [categoryId, ...children];
-  };
+  }, [categories]);
 
   const filteredTransactions = useMemo(() => {
     let result = [...transactions];
@@ -72,12 +72,12 @@ export function useTransactions() {
   }, [transactions, filters, categories]);
 
   // Helper: check if a category is a balance-modification category (not real income/expense)
-  const isBalanceAdjustment = (categoryId: string): boolean => {
+  const isBalanceAdjustment = useCallback((categoryId: string): boolean => {
     const cat = findCategory(categoryId);
     if (!cat) return false;
     const name = cat.name.toLowerCase();
     return name.includes('modified bal') || name.includes('balance adj') || name.includes('balance adjustment');
-  };
+  }, [findCategory]);
 
   // Shared helper: build byCategory from a filtered set of transactions
   // Groups by TRANSACTION type (not category type) to ensure expense breakdown
@@ -215,7 +215,7 @@ export function useTransactions() {
       .filter((t) => t.type === 'expense' && !isBalanceAdjustment(t.categoryId))
       .reduce((sum, t) => sum + t.amount, 0);
     return { income, expense, balance: income - expense };
-  }, [transactions]);
+  }, [transactions, isBalanceAdjustment]);
 
   const recentTransactions = useMemo(() => {
     return [...transactions].sort((a, b) => b.date.localeCompare(a.date)).slice(0, 5);

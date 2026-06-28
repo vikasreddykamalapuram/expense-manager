@@ -38,8 +38,8 @@ export function Dashboard() {
 
   // Health score for dashboard widget
   const healthScore = useMemo(
-    () => calculateHealthScore(allTxns, budgets, accounts, categories, settings),
-    [allTxns, budgets, accounts, categories, settings],
+    () => calculateHealthScore(allTxns, budgets, accounts, categories),
+    [allTxns, budgets, accounts, categories],
   );
   const gaugeRadius = 36;
   const gaugeStroke = 6;

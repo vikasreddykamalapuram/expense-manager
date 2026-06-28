@@ -378,9 +378,9 @@ function geojitParser(row: string[], headers: string[]): Omit<StockTransaction, 
 
     // Clean the display name
     const cleanName = rawName
-      .replace(/\s+(EQ|EQUITY|NEW|FV|F\.V\.?)\s*[\d/\-]*\s*/gi, ' ')
-      .replace(/\s+\bRE\.?\b\s*[\d/\-]*\s*/gi, ' ')
-      .replace(/\s+\bRS\.?\b\s*[\d/\-]*\s*/gi, ' ')
+      .replace(/\s+(EQ|EQUITY|NEW|FV|F\.V\.?)\s*[\d/-]*\s*/gi, ' ')
+      .replace(/\s+\bRE\.?\b\s*[\d/-]*\s*/gi, ' ')
+      .replace(/\s+\bRS\.?\b\s*[\d/-]*\s*/gi, ' ')
       .replace(/\s+LIMITED$/i, '')
       .replace(/\s+LTD\.?$/i, '')
       .trim();
@@ -436,9 +436,9 @@ function geojitParser(row: string[], headers: string[]): Omit<StockTransaction, 
     const isin = getVal(row, iIsin).trim().toUpperCase();
 
     const cleanName = rawName
-      .replace(/\s+(EQ|EQUITY|NEW|FV|F\.V\.?)\s*[\d/\-]*\s*/gi, ' ')
-      .replace(/\s+\bRE\.?\b\s*[\d/\-]*\s*/gi, ' ')
-      .replace(/\s+\bRS\.?\b\s*[\d/\-]*\s*/gi, ' ')
+      .replace(/\s+(EQ|EQUITY|NEW|FV|F\.V\.?)\s*[\d/-]*\s*/gi, ' ')
+      .replace(/\s+\bRE\.?\b\s*[\d/-]*\s*/gi, ' ')
+      .replace(/\s+\bRS\.?\b\s*[\d/-]*\s*/gi, ' ')
       .replace(/\s+LIMITED$/i, '')
       .replace(/\s+LTD\.?$/i, '')
       .trim();

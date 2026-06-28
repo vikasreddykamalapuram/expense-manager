@@ -373,7 +373,7 @@ function parseDateStr(dateStr: string): string | null {
   }
 
   // DD Mon YYYY or DD-Mon-YYYY
-  const dMonY = cleaned.match(/^(\d{1,2})[\s\-]([A-Za-z]{3,9})[\s\-](\d{4})/);
+  const dMonY = cleaned.match(/^(\d{1,2})[\s-]([A-Za-z]{3,9})[\s-](\d{4})/);
   if (dMonY) {
     const [, d, mon, y] = dMonY;
     const month = MONTHS[mon.toLowerCase()];

@@ -87,20 +87,20 @@ function ScoreGauge({ score, grade }: { score: number; grade: string }) {
 
 export function HealthScorePage() {
   const { state } = useAppContext();
-  const { transactions, budgets, accounts, categories, settings } = state;
+  const { transactions, budgets, accounts, categories } = state;
   const navigate = useNavigate();
 
   const result = useMemo(
-    () => calculateHealthScore(transactions, budgets, accounts, categories, settings),
-    [transactions, budgets, accounts, categories, settings],
+    () => calculateHealthScore(transactions, budgets, accounts, categories),
+    [transactions, budgets, accounts, categories],
   );
 
   // Previous month score for comparison
   const last6 = useMemo(() => getLast6Months(), []);
   const prevMonthScore = useMemo(() => {
     if (last6.length < 2) return null;
-    return calculateMonthlyScore(last6[last6.length - 2], transactions, budgets, accounts, categories, settings);
-  }, [last6, transactions, budgets, accounts, categories, settings]);
+    return calculateMonthlyScore(last6[last6.length - 2], transactions, budgets, accounts, categories);
+  }, [last6, transactions, budgets, accounts, categories]);
 
   const scoreDiff = prevMonthScore !== null ? result.totalScore - prevMonthScore : null;
 
@@ -108,9 +108,9 @@ export function HealthScorePage() {
   const trendData = useMemo(() => {
     return last6.map((m) => ({
       month: formatMonth(m).split(' ')[0].slice(0, 3),
-      score: calculateMonthlyScore(m, transactions, budgets, accounts, categories, settings),
+      score: calculateMonthlyScore(m, transactions, budgets, accounts, categories),
     }));
-  }, [last6, transactions, budgets, accounts, categories, settings]);
+  }, [last6, transactions, budgets, accounts, categories]);
 
   const hasEnoughTrend = trendData.some((d) => d.score > 0);
 

@@ -851,7 +851,7 @@ function handleHealthScore(ctx: AssistantContext): string {
   const budgets = ctx.budgets || [];
   let result: HealthScoreResult;
   try {
-    result = calculateHealthScore(ctx.transactions, budgets, ctx.accounts, ctx.categories, ctx.settings);
+    result = calculateHealthScore(ctx.transactions, budgets, ctx.accounts, ctx.categories);
   } catch {
     // Fallback simple calculation
     const period = getDefaultPeriod();
@@ -1020,10 +1020,10 @@ function handleWhen(query: string, ctx: AssistantContext): string {
 
   // Extract what they're looking for
   const patterns = [
-    /when\s+did\s+i\s+(?:last\s+)?(?:pay|paid|spend|spent|buy|bought|get|got)\s+(?:for\s+)?(.+?)[\?.]?$/,
-    /last\s+time\s+i\s+(?:paid|spent|bought)\s+(?:for\s+)?(.+?)[\?.]?$/,
-    /when\s+(?:was|is)\s+(?:my\s+)?(?:last|next)\s+(.+?)[\?.]?$/,
-    /when\s+did\s+i\s+(.+?)[\?.]?$/,
+    /when\s+did\s+i\s+(?:last\s+)?(?:pay|paid|spend|spent|buy|bought|get|got)\s+(?:for\s+)?(.+?)[?.?]?$/,
+    /last\s+time\s+i\s+(?:paid|spent|bought)\s+(?:for\s+)?(.+?)[?.?]?$/,
+    /when\s+(?:was|is)\s+(?:my\s+)?(?:last|next)\s+(.+?)[?.?]?$/,
+    /when\s+did\s+i\s+(.+?)[?.?]?$/,
   ];
 
   let searchTerm = '';

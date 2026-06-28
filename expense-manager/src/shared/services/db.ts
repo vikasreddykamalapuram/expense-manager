@@ -1,5 +1,6 @@
 import Dexie, { Table } from 'dexie';
 import { Transaction, Category, Account, Budget, Settings, Profile, RecurringRule, StockTransaction, BillReminder } from '../types';
+import { loadMapSync, resolveSymbolSync } from './symbolResolver';
 
 // Sync metadata fields added to all syncable records
 export interface SyncFields {
@@ -193,8 +194,6 @@ export async function migrateStockSymbols(): Promise<void> {
   if (existing) return; // Already migrated
 
   try {
-    const { loadMapSync, resolveSymbolSync } = await import('./symbolResolver');
-
     // Load the symbol map
     const baseUrl = import.meta.env.BASE_URL || '/';
     const resp = await fetch(`${baseUrl}nse-symbol-map.json`, { signal: AbortSignal.timeout(10000) });

@@ -128,7 +128,7 @@ function parseDate(dateStr: string): string | null {
   }
 
   // "DD Mon YYYY" or "DD-Mon-YYYY"
-  const dMonY = cleaned.match(/^(\d{1,2})[\s\-]([A-Za-z]{3,9})[\s\-](\d{4})/);
+  const dMonY = cleaned.match(/^(\d{1,2})[\s-]([A-Za-z]{3,9})[\s-](\d{4})/);
   if (dMonY) {
     const [, d, mon, y] = dMonY;
     const month = monthNameToNumber(mon);
@@ -158,7 +158,7 @@ function monthNameToNumber(name: string): number | null {
 function parseAmount(amountStr: string): number | null {
   if (!amountStr || !amountStr.trim()) return null;
   // Remove currency symbols, spaces, and handle Indian comma format (1,50,000.00)
-  let cleaned = amountStr.trim()
+  const cleaned = amountStr.trim()
     .replace(/[₹$€£¥]/g, '')
     .replace(/\s/g, '')
     .replace(/,/g, '') // remove all commas

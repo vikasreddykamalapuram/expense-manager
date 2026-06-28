@@ -104,9 +104,9 @@ function resolveByNameInternal(name: string, map: NseSymbolMap): string | null {
 
   // 4. Remove common suffixes and try
   const cleaned = upper
-    .replace(/\s*(EQ|EQUITY|NEW|FV|F\.V\.?)\s*[\d/\-]*\s*/gi, ' ')
-    .replace(/\s+\bRE\.?\b\s*[\d/\-]*\s*/gi, ' ')
-    .replace(/\s+\bRS\.?\b\s*[\d/\-]*\s*/gi, ' ')
+    .replace(/\s*(EQ|EQUITY|NEW|FV|F\.V\.?)\s*[\d/-]*\s*/gi, ' ')
+    .replace(/\s+\bRE\.?\b\s*[\d/-]*\s*/gi, ' ')
+    .replace(/\s+\bRS\.?\b\s*[\d/-]*\s*/gi, ' ')
     .replace(/\s+(LIMITED|LTD\.?)\s*$/i, '')
     .trim();
   const cleanedNoSpaces = cleaned.replace(/\s+/g, '');

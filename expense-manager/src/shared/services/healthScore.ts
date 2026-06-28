@@ -1,4 +1,4 @@
-import { Transaction, Budget, Account, Category, Settings } from '../types';
+import { Transaction, Budget, Account, Category } from '../types';
 import { getCurrentMonth, getPreviousMonth, getMonthRange } from '../utils/helpers';
 
 // ── Types ────────────────────────────────────────────────
@@ -355,7 +355,6 @@ export function calculateHealthScore(
   budgets: Budget[],
   accounts: Account[],
   categories: Category[],
-  _settings: Settings,
 ): HealthScoreResult {
   const savings = calcSavingsRate(transactions, categories);
   const budget = calcBudgetAdherence(transactions, budgets, categories);
@@ -447,11 +446,10 @@ export function calculateMonthlyScore(
   budgets: Budget[],
   accounts: Account[],
   categories: Category[],
-  settings: Settings,
 ): number {
   // Filter transactions up to and including the target month
   const { end } = getMonthRange(month);
   const filtered = transactions.filter((t) => t.date <= end);
   const monthBudgets = budgets.filter((b) => b.month === month);
-  return calculateHealthScore(filtered, monthBudgets, accounts, categories, settings).totalScore;
+  return calculateHealthScore(filtered, monthBudgets, accounts, categories).totalScore;
 }

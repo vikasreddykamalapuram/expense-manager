@@ -115,7 +115,6 @@ export function CSVImportModal({ isOpen, onClose }: CSVImportModalProps) {
       csv,
       mapping,
       dateFormat as Parameters<typeof processCSVImport>[2],
-      defaultType,
     );
     setImportResult(result);
     setStep('preview');

@@ -71,24 +71,24 @@ expense-manager/
 17. **Theming** — Light/Dark/System + 10 accent colors (Indigo, Magenta, Teal, etc.) + AMOLED black mode
 18. **Code Splitting** — 16 lazy-loaded routes, 6 vendor chunks (total ~2.1MB → fast initial load)
 19. **Financial Health Score** — Dashboard scoring finances across multiple dimensions
+20. **Cross-Device Sync** — E2E encrypted (AES-256-GCM) sync via Google Drive / OneDrive delta sync
+21. **Live Stock Prices** — GitHub Actions fetches Yahoo Finance every 90 min during market hours → static prices.json
+22. **ISIN-Based Symbol Resolution** — Official NSE EQUITY_L.csv (2,130 stocks) for broker import symbol→ticker mapping
 
-### Dexie DB Schema (v5)
+### Dexie DB Schema (v6)
 - v1: transactions, categories, accounts, settings
 - v2: + recurringRules
 - v3: + receipts
 - v4: + stockTransactions
 - v5: + billReminders
+- v6: + updatedAt compound indexes for sync delta queries
+- Runtime migration v2: fixes stock symbols + names using official NSE ISIN data
 
 ### Deploy Workflow
 - **Source repo:** `D:\Repos\Personal_Projects\expense-manager` (development)
-- **Deploy repo:** `D:\Repos\Personal_Projects\expense-manager-deploy` (built output)
-  - Has its own `.git` pointing to `https://github.com/vikasreddykamalapuram/expense-manager.git`
-  - GitHub Pages serves from `master` branch root
-- **Process:**
-  1. `cd expense-manager && npm run build`
-  2. `robocopy dist ../expense-manager-deploy /MIR` (excluding `.git`, `node_modules`, etc.)
-  3. `cd ../expense-manager-deploy && git checkout -- .github/workflows/deploy.yml` (preserve workflow)
-  4. `git add -A && git commit && git push`
+- **GitHub:** `vikasreddykamalapuram/expense-manager` (master branch)
+- **Deploy:** GitHub Actions workflow at `.github/workflows/deploy.yml` (uses `working-directory: expense-manager`)
+- **Stock prices:** GitHub Actions workflow at `.github/workflows/update-prices.yml` (5 cron runs/day during IST market hours)
 - **Commit authoring:** `vikasreddykamalapuram <vikasreddykamalapuram@gmail.com>` — NO Co-authored-by Copilot trailer
 - **Build:** `npm run build` (= `tsc -b && vite build`)
 - **Test:** `npx vitest run` (12 tests: encryption + auth)
@@ -96,47 +96,39 @@ expense-manager/
 ### Pending / Next Features (Parked for Later)
 | Priority | Feature | Notes |
 |----------|---------|-------|
-| 🔴 High | Live Stock Prices | No free Indian stock API supports browser-direct access (CORS). Need server-side fetch. GitHub Action approach prototyped but reverted. See "Stock Price Discovery Notes" below. |
+| 🟡 Medium | Verify stock prices post-migration | Check that migration v2 fixed symbol/name associations correctly on live site |
 | 🟡 Medium | Portfolio Analytics | P&L charts, diversification pie, sector breakdown |
 | 🟡 Medium | Google Search Console Verification | App not indexed — needs domain verification + sitemap |
 | 🟢 Low | Custom Domain (.in) | Deferred — will set up when going fully public |
 | 🟢 Low | Android/iOS Mobile App | Future phase — React Native or Capacitor |
 
-### Stock Price Discovery Notes (IMPORTANT — Read Before Resuming)
-**Problem:** Need live Indian stock prices (NSE/BSE) in a browser-only PWA.
+### Stock Prices — Current Architecture (IMPLEMENTED)
+**Solution:** GitHub Actions → static `prices.json` → same-origin fetch (zero CORS issues)
 
-**What was tried & why it failed:**
-1. **Yahoo Finance v8 API** — Works server-side, CORS-blocked from browser ❌
-2. **NSE India API** — Works server-side with cookies, CORS-blocked ❌
-3. **Twelve Data API** (free plan) — Returns 403 for ALL Indian stocks, requires paid "Grow" plan ($29/mo) ❌
-4. **Zerodha Kite Connect** — Free plan has NO market data, paid ₹500-2000/mo, NO CORS ❌
-5. **CORS proxies** (allorigins, corsproxy, codetabs) — Down, blocked by corporate IT, or rate-limited ❌
-6. **CSP blocker** — `index.html` line 6 has strict `connect-src` that blocks ALL external API calls from browser
+**How it works:**
+1. `.github/workflows/update-prices.yml` runs 5x/day during IST market hours (3:45, 5:15, 6:45, 8:15, 9:45 UTC)
+2. `scripts/fetch-prices.mjs` fetches Yahoo Finance v8 server-side → writes `public/prices.json`
+3. App reads `prices.json` from same origin — NetworkFirst caching in service worker
+4. `[skip ci]` in commit message prevents price updates from triggering deploy
 
-**Prototype built but reverted:**
-- GitHub Action (`update-prices.yml`) runs every 15 min during market hours
-- `scripts/fetch-prices.mjs` fetches Yahoo Finance server-side → outputs `prices.json`
-- App reads `prices.json` from same-origin (no CORS)
-- 47/51 symbols worked. **Reverted** because force-push to deploy repo wiped commit history.
-- Source code for the prototype is in git reflog (commits `175f3fa`, `8fc9005`, `18d6694`)
+**Symbol Resolution:** `scripts/generate-nse-map.mjs` fetches official NSE EQUITY_L.csv (2,130+ stocks)
+- Generates `public/nse-symbol-map.json` with ISIN→ticker + name→ticker mappings
+- `src/shared/services/symbolResolver.ts` uses this map at import time (ISIN-first resolution)
+- Geojit DP Holdings/Transactions parsers use ISIN column for reliable symbol lookup
+- Run `node scripts/generate-nse-map.mjs` monthly to capture new NSE listings
 
-**Yahoo Finance symbol quirks discovered:**
-- `BAJFINSERV` → `BAJAJFINSV` on Yahoo
-- `ZOMATO` → `ETERNAL` on Yahoo (rebranded 2025)
-- `HBLPOWER` → `HBLENGINE` on Yahoo
-- `TATAMOTORS` → temporarily unavailable (404)
-- `VEDL` → `chartPreviousClose` is wrong post-demerger (use `regularMarketPreviousClose`)
+**Yahoo Finance symbol overrides** (in fetch-prices.mjs):
+- `BAJFINSERV` → `BAJAJFINSV`, `ZOMATO` → `ETERNAL`, `HBLPOWER` → `HBLENGINE`, `TATAMOTORS` → `TMPV`
 
-**Recommended approach when resuming:**
-1. Carefully set up deploy repo's `.git` FIRST (don't re-init, just add remote)
-2. Use the GitHub Action approach (static `prices.json`)
-3. Merge price update workflow with existing deploy workflow to avoid conflicts
-4. Test locally with `node scripts/fetch-prices.mjs` before pushing
+**Known Limitations:**
+- Prices update 5x/day (not real-time) — acceptable for portfolio tracking
+- Delisted stocks (RAJESH EXPORTS, GVK POWER, SWATI PROJECTS) show N/A
+- GitHub Actions: unlimited minutes for public repos
+- VEDL previousClose may be unreliable post-demerger (use `regularMarketPreviousClose`)
 
 ### Known Issues
-- Stock prices show as "unavailable" (feature exists but no live data source)
-- VEDL previousClose unreliable post-demerger
-- TATAMOTORS not available on Yahoo Finance
+- A few delisted/suspended stocks will always show N/A (user should manually manage)
+- Service worker may serve stale JS bundles — users may need to close/reopen PWA after deploy
 
 ---
 

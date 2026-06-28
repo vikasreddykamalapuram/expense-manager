@@ -482,7 +482,8 @@ class ExpenseRepository {
 
 // Strip profileId when returning data to consumers
 function stripProfileId<T extends { profileId: string }>(row: T): Omit<T, 'profileId'> {
-  const { profileId: _, ...rest } = row;
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const { profileId, ...rest } = row;
   return rest as Omit<T, 'profileId'>;
 }
 

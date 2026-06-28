@@ -120,7 +120,7 @@ export function AnalyticsView() {
       case 'trend':
         return getRangeStats(lastDateRange.start, lastDateRange.end);
     }
-  }, [viewMode, selectedMonth, selectedYear, selectedWeek, periodStart, periodEnd, lastDateRange,
+  }, [viewMode, selectedMonth, selectedYear, periodStart, periodEnd, lastDateRange,
       getMonthlyStats, getYearlyStats, getRangeStats, activeDateRange]);
 
   const prevStats = useMemo(() => {
@@ -295,7 +295,7 @@ export function AnalyticsView() {
       }
     }
     return data;
-  }, [viewMode, trendDateRange, getRangeStats, getMonthlyStats, categories]);
+  }, [viewMode, trendDateRange, getRangeStats, getMonthlyStats]);
 
   // Top expense categories for trend legend (computed alongside trendData)
   const trendTopCategories = useMemo(() => {

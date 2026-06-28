@@ -1,0 +1,599 @@
+# Objective
+
+Build a production-ready modern boutique e-commerce web application for a children’s clothing/costume business. The boutique specializes in custom-tailored dresses and costumes for kids. The application should allow customers to browse costumes, filter by age/gender/category, view professional product galleries, place orders securely, make payments online, and allow admins to manage inventory, orders, customers, and portfolio items.
+
+The application must follow enterprise-grade architecture, security, scalability, maintainability, and UI/UX standards.
+
+The final outcome should be deployable to production with CI/CD, monitoring, security hardening, documentation, automated testing, and cloud deployment readiness.
+
+---
+
+# Business Context
+
+This boutique creates custom-tailored outfits for children:
+- Traditional wear
+- Party wear
+- Fancy dress costumes
+- Birthday outfits
+- Festival collections
+- Customized tailoring based on measurements
+
+Primary audience:
+- Parents purchasing outfits for children
+- Customers browsing via mobile devices
+- Instagram/social media driven traffic
+
+The web application should feel:
+- Elegant
+- Premium
+- Trustworthy
+- Fast
+- Mobile-first
+- Instagram-worthy
+- Boutique/luxury inspired
+
+---
+
+# Core Requirements
+
+## Customer Features
+
+### Authentication & User Accounts
+Implement:
+- Email/password signup/login
+- Social login:
+  - Google
+  - Facebook
+  - Apple (optional)
+- Password reset
+- Email verification
+- OTP login (optional)
+- Session management
+- JWT authentication
+- Secure refresh token handling
+- Remember me functionality
+
+### Product Browsing
+Customers should be able to:
+- Browse costume catalog
+- Search products
+- Filter by:
+  - Gender
+  - Age group
+  - Size
+  - Occasion
+  - Color
+  - Fabric
+  - Price
+  - Availability
+  - Trending/New arrivals
+- Sort by:
+  - Latest
+  - Price
+  - Popularity
+  - Featured
+  - Ratings
+
+### Product Details Page
+Each product page should include:
+- High-quality image gallery
+- Zoom functionality
+- Multiple angles
+- Video support
+- Product description
+- Fabric details
+- Care instructions
+- Available sizes
+- Age recommendations
+- Estimated delivery time
+- Customer reviews
+- Related products
+- Stock availability
+- Wishlist support
+- Share to WhatsApp/Instagram/Facebook
+
+### Custom Tailoring Feature
+Allow customers to:
+- Submit custom measurements
+- Upload reference images
+- Add tailoring notes
+- Request alterations
+- Select express delivery
+- Choose stitching preferences
+
+### Shopping Cart
+Features:
+- Add/remove/update quantity
+- Save for later
+- Apply coupons
+- Gift wrapping
+- Shipping estimation
+- Tax calculation
+- Persistent cart
+
+### Checkout Flow
+Implement modern checkout:
+- Guest checkout
+- Address management
+- Multiple payment options
+- Shipping method selection
+- Order summary
+- GST/tax handling
+- Order confirmation email
+- Invoice generation PDF
+
+### Payments Integration
+Integrate secure payment gateways:
+- Razorpay
+- Stripe
+- PayPal (optional)
+- UPI
+- Cards
+- Net banking
+- Wallets
+
+Security requirements:
+- PCI-DSS aligned practices
+- Never store card details
+- Tokenized payment handling
+- Webhook validation
+- Payment fraud prevention
+- Secure retry mechanism
+
+### Order Tracking
+Customers should:
+- Track order status
+- Receive notifications:
+  - Order placed
+  - Payment confirmed
+  - Stitching started
+  - Shipped
+  - Delivered
+- Download invoices
+- Request returns/exchanges
+
+### Reviews & Ratings
+Allow:
+- Verified customer reviews
+- Ratings
+- Photo reviews
+- Moderation system
+- Spam prevention
+
+### Wishlist
+Users can:
+- Save products
+- Move to cart
+- Share wishlist
+
+### Notifications
+Implement:
+- Email notifications
+- SMS integration
+- WhatsApp notifications (optional)
+- Push notifications
+
+---
+
+# Admin Panel Requirements
+
+Build a fully featured admin dashboard.
+
+## Admin Authentication
+- RBAC (Role-Based Access Control)
+- Admin audit logs
+- MFA support
+- Session timeout
+- IP/device monitoring
+
+## Product Management
+Admins should:
+- Add/edit/delete products
+- Upload multiple images
+- Manage categories
+- Manage pricing
+- Manage stock
+- Create seasonal collections
+- Mark featured products
+
+## Order Management
+Admins can:
+- View orders
+- Update order status
+- Generate shipping labels
+- Manage refunds
+- View payment status
+- Export reports
+
+## Customer Management
+Admins can:
+- View customers
+- View order history
+- Handle support tickets
+- Manage loyalty programs
+
+## Analytics Dashboard
+Provide:
+- Revenue charts
+- Sales trends
+- Conversion analytics
+- Inventory analytics
+- Best-selling products
+- Traffic insights
+
+---
+
+# Technology Stack (Recommended)
+
+## Frontend
+Use:
+- Next.js (latest stable version)
+- React
+- TypeScript
+- Tailwind CSS
+- ShadCN UI
+- Framer Motion
+
+Requirements:
+- Responsive design
+- SEO optimized
+- SSR/SSG support
+- Accessibility (WCAG compliant)
+- Progressive Web App (PWA)
+
+## Backend
+Use:
+- Node.js
+- NestJS or Express
+- TypeScript
+
+Implement:
+- REST APIs or GraphQL
+- Clean architecture
+- Repository pattern
+- Service layer separation
+- Validation layer
+- API versioning
+
+## Database
+Use:
+- PostgreSQL
+
+Include:
+- Proper indexing
+- Transactions
+- ORM:
+  - Prisma preferred
+
+## Caching
+Use:
+- Redis
+
+For:
+- Sessions
+- Rate limiting
+- Caching
+- Queues
+
+## File Storage
+Use:
+- AWS S3 or Azure Blob Storage
+- CDN support
+
+## Search
+Implement:
+- Elasticsearch or Algolia (preferred)
+
+---
+
+# Security Requirements (Critical)
+
+Implement enterprise-grade security.
+
+## Application Security
+Mandatory:
+- HTTPS everywhere
+- Secure headers
+- CSP (Content Security Policy)
+- XSS prevention
+- CSRF protection
+- SQL injection prevention
+- Rate limiting
+- API throttling
+- Request validation
+- Input sanitization
+- Secure cookie handling
+- Helmet middleware
+- CORS restrictions
+
+## Authentication Security
+Implement:
+- JWT best practices
+- Refresh token rotation
+- Password hashing using bcrypt/argon2
+- MFA support
+- Session invalidation
+- Brute-force protection
+
+## Infrastructure Security
+Include:
+- Secrets management
+- Environment variable protection
+- Vault integration support
+- WAF compatibility
+- DDoS mitigation readiness
+
+## Compliance
+Design system aligned with:
+- OWASP Top 10
+- PCI-DSS principles
+- GDPR readiness
+- Secure logging practices
+
+## Logging & Monitoring
+Integrate:
+- Structured logging
+- Audit trails
+- Error monitoring
+- Centralized logs
+
+Recommended:
+- OpenTelemetry
+- Grafana
+- Prometheus
+- Sentry
+
+---
+
+# Performance Requirements
+
+The application should:
+- Load under 2 seconds
+- Be optimized for mobile
+- Use lazy loading
+- Use image optimization
+- Use CDN delivery
+- Use caching strategies
+- Have Lighthouse score above 90
+
+Implement:
+- Code splitting
+- Dynamic imports
+- SSR optimization
+- Compression
+- Database query optimization
+
+---
+
+# UI/UX Requirements
+
+Design style:
+- Premium boutique aesthetics
+- Minimalist luxury
+- Elegant typography
+- Soft pastel palette
+- Smooth animations
+- Modern card layouts
+
+Key UI features:
+- Mobile-first design
+- Sticky navigation
+- Fast filtering
+- Skeleton loaders
+- Smooth transitions
+- Elegant checkout flow
+
+Pages required:
+- Home page
+- Product listing
+- Product detail
+- Categories
+- About Us
+- Contact
+- Custom tailoring request
+- Cart
+- Checkout
+- User profile
+- Order history
+- Wishlist
+- Admin dashboard
+
+Include:
+- Dark mode support
+- Accessibility support
+- SEO metadata
+- Structured data schema
+
+---
+
+# SEO Requirements
+
+Implement:
+- Dynamic metadata
+- OpenGraph support
+- Sitemap generation
+- Robots.txt
+- Canonical URLs
+- SEO-friendly URLs
+- Schema.org product schema
+- Image alt optimization
+
+---
+
+# DevOps & Deployment
+
+## Containerization
+Use:
+- Docker
+- Docker Compose
+
+## CI/CD
+Implement pipelines using:
+- GitHub Actions or Azure DevOps
+
+Pipelines should include:
+- Linting
+- Unit testing
+- Security scanning
+- Build validation
+- Docker build
+- Deployment automation
+
+## Deployment
+Prepare deployment for:
+- Azure
+- AWS
+- Vercel (frontend optional)
+
+## Infrastructure as Code
+Use:
+- Terraform or Bicep
+
+## Reverse Proxy
+Use:
+- NGINX
+
+## SSL
+Use:
+- Let’s Encrypt or managed certificates
+
+---
+
+# Testing Requirements
+
+Implement:
+- Unit tests
+- Integration tests
+- E2E tests
+- API tests
+- Security tests
+
+Recommended tools:
+- Jest
+- Playwright
+- Cypress
+- Supertest
+
+Minimum:
+- 80% test coverage
+
+---
+
+# Documentation Requirements
+
+Generate:
+- Architecture diagrams
+- API documentation
+- Swagger/OpenAPI docs
+- Setup instructions
+- Deployment guide
+- Environment configuration guide
+- Security practices guide
+- Troubleshooting guide
+
+---
+
+# AI/Automation Features (Optional but Preferred)
+
+Include:
+- AI-based product recommendations
+- Smart search
+- Similar product suggestions
+- AI image optimization pipeline
+- WhatsApp chatbot integration
+
+---
+
+# Multi-Tenant / Scalability Readiness
+
+Architecture should support future expansion:
+- Multiple boutiques
+- Multi-language
+- Multi-currency
+- Regional tax support
+- High scalability
+
+---
+
+# Deliverables Expected
+
+The agent should generate:
+
+1. Complete production-ready frontend
+2. Complete production-ready backend
+3. Database schema and migrations
+4. Admin dashboard
+5. Payment integrations
+6. Authentication system
+7. Docker setup
+8. CI/CD pipelines
+9. Infrastructure configuration
+10. Automated tests
+11. API documentation
+12. Deployment documentation
+13. Security hardening
+14. Seed/demo data
+15. Environment variable templates
+16. Responsive UI
+17. SEO implementation
+18. Monitoring setup
+19. Logging implementation
+
+---
+
+# Code Quality Standards
+
+All generated code must:
+- Follow SOLID principles
+- Follow clean architecture
+- Be modular and reusable
+- Be fully typed
+- Avoid hardcoded secrets
+- Use environment variables
+- Follow linting standards
+- Include comments where necessary
+- Include proper error handling
+
+---
+
+# Suggested Folder Structure
+
+Generate a scalable monorepo structure:
+- apps/
+  - frontend/
+  - backend/
+- packages/
+  - ui/
+  - shared/
+  - config/
+- infra/
+- docs/
+- scripts/
+
+---
+
+# Final Instruction to Agent
+
+Generate the application incrementally in professional production-grade quality.
+
+Start with:
+1. Architecture planning
+2. Database schema
+3. Backend APIs
+4. Authentication
+5. Frontend foundation
+6. Admin dashboard
+7. Payment integration
+8. Security hardening
+9. Testing
+10. Deployment
+
+At every stage:
+- Validate security
+- Ensure scalability
+- Ensure production readiness
+- Maintain clean code standards
+- Keep mobile responsiveness
+- Keep accessibility compliance
+
+The final application should be capable of being deployed immediately to production for a real boutique business handling actual customer orders and payments.
