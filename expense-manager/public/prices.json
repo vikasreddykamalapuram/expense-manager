@@ -186,7 +186,7 @@
       "previousClose": 1337.4,
       "open": 1326.3,
       "dayHigh": 1349.6,
-      "dayLow": 1321.9,
+      "dayLow": 1321,
       "change": -11.1,
       "changePercent": -0.83
     },
@@ -985,7 +985,7 @@
       "price": 352,
       "previousClose": 348.75,
       "open": 352,
-      "dayHigh": 353.85,
+      "dayHigh": 353.95,
       "dayLow": 345.7,
       "change": 3.25,
       "changePercent": 0.93
@@ -1271,7 +1271,7 @@
       "changePercent": 0.96
     }
   },
-  "fetchedAt": "2026-07-09T10:07:39.523Z",
+  "fetchedAt": "2026-07-09T11:24:39.229Z",
   "marketStatus": "closed",
   "stats": {
     "total": 130,
