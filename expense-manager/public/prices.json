@@ -2,1276 +2,1276 @@
   "data": {
     "ACC": {
       "symbol": "ACC",
-      "price": 1374.7,
+      "price": 1363.6,
       "previousClose": 1378.8,
-      "open": 1374.7,
+      "open": 1363.6,
       "dayHigh": 1381,
       "dayLow": 1359.1,
-      "change": -4.1,
-      "changePercent": -0.3
+      "change": -15.2,
+      "changePercent": -1.1
     },
     "ADANIENT": {
       "symbol": "ADANIENT",
-      "price": 3210.1,
+      "price": 3179,
       "previousClose": 3177.5,
-      "open": 3210.1,
+      "open": 3179,
       "dayHigh": 3219.7,
       "dayLow": 3145,
-      "change": 32.6,
-      "changePercent": 1.03
+      "change": 1.5,
+      "changePercent": 0.05
     },
     "ADANIGREEN": {
       "symbol": "ADANIGREEN",
-      "price": 1621.7,
+      "price": 1605.8,
       "previousClose": 1546.5,
-      "open": 1621.7,
+      "open": 1605.8,
       "dayHigh": 1631.5,
       "dayLow": 1533,
-      "change": 75.2,
-      "changePercent": 4.86
+      "change": 59.3,
+      "changePercent": 3.83
     },
     "ADANIPORTS": {
       "symbol": "ADANIPORTS",
-      "price": 1839,
+      "price": 1823.1,
       "previousClose": 1810.3,
-      "open": 1839,
+      "open": 1823.1,
       "dayHigh": 1840.9,
       "dayLow": 1808.6,
-      "change": 28.7,
-      "changePercent": 1.59
+      "change": 12.8,
+      "changePercent": 0.71
     },
     "ADANIPOWER": {
       "symbol": "ADANIPOWER",
-      "price": 226.59,
+      "price": 225.9,
       "previousClose": 215.46,
-      "open": 226.59,
+      "open": 225.9,
       "dayHigh": 228.94,
       "dayLow": 216.3,
-      "change": 11.13,
-      "changePercent": 5.17
+      "change": 10.44,
+      "changePercent": 4.85
     },
     "ALKEM": {
       "symbol": "ALKEM",
-      "price": 5636.5,
+      "price": 5608.5,
       "previousClose": 5567,
-      "open": 5636.5,
-      "dayHigh": 5649.5,
+      "open": 5608.5,
+      "dayHigh": 5665,
       "dayLow": 5515.5,
-      "change": 69.5,
-      "changePercent": 1.25
+      "change": 41.5,
+      "changePercent": 0.75
     },
     "AMBUJACEM": {
       "symbol": "AMBUJACEM",
-      "price": 434.2,
+      "price": 430.85,
       "previousClose": 432.15,
-      "open": 434.2,
+      "open": 430.85,
       "dayHigh": 436.45,
       "dayLow": 427.2,
-      "change": 2.05,
-      "changePercent": 0.47
+      "change": -1.3,
+      "changePercent": -0.3
     },
     "APOLLOHOSP": {
       "symbol": "APOLLOHOSP",
-      "price": 8883.5,
+      "price": 8899,
       "previousClose": 8782.5,
-      "open": 8883.5,
-      "dayHigh": 8883.5,
+      "open": 8899,
+      "dayHigh": 8899,
       "dayLow": 8739,
-      "change": 101,
-      "changePercent": 1.15
+      "change": 116.5,
+      "changePercent": 1.33
     },
     "ASIANPAINT": {
       "symbol": "ASIANPAINT",
-      "price": 2644.9,
+      "price": 2648.2,
       "previousClose": 2652.1,
-      "open": 2644.9,
-      "dayHigh": 2648,
+      "open": 2648.2,
+      "dayHigh": 2650,
       "dayLow": 2579.9,
-      "change": -7.2,
-      "changePercent": -0.27
+      "change": -3.9,
+      "changePercent": -0.15
     },
     "ATGL": {
       "symbol": "ATGL",
-      "price": 738,
+      "price": 725.85,
       "previousClose": 720.95,
-      "open": 738,
+      "open": 725.85,
       "dayHigh": 740.45,
       "dayLow": 716.5,
-      "change": 17.05,
-      "changePercent": 2.36
+      "change": 4.9,
+      "changePercent": 0.68
     },
     "AUROPHARMA": {
       "symbol": "AUROPHARMA",
-      "price": 1566.9,
+      "price": 1563.2,
       "previousClose": 1549.3,
-      "open": 1566.9,
+      "open": 1563.2,
       "dayHigh": 1572,
       "dayLow": 1549,
-      "change": 17.6,
-      "changePercent": 1.14
+      "change": 13.9,
+      "changePercent": 0.9
     },
     "AXISBANK": {
       "symbol": "AXISBANK",
-      "price": 1310.2,
+      "price": 1311,
       "previousClose": 1319.4,
-      "open": 1310.2,
+      "open": 1311,
       "dayHigh": 1321.8,
       "dayLow": 1298.6,
-      "change": -9.2,
-      "changePercent": -0.7
+      "change": -8.4,
+      "changePercent": -0.64
     },
     "BAJAJ-AUTO": {
       "symbol": "BAJAJ-AUTO",
-      "price": 10212.5,
+      "price": 10222,
       "previousClose": 10381,
-      "open": 10212.5,
+      "open": 10222,
       "dayHigh": 10374,
       "dayLow": 10145.5,
-      "change": -168.5,
-      "changePercent": -1.62
+      "change": -159,
+      "changePercent": -1.53
     },
     "BAJAJHLDNG": {
       "symbol": "BAJAJHLDNG",
-      "price": 10621,
+      "price": 10588,
       "previousClose": 10752,
-      "open": 10621,
+      "open": 10588,
       "dayHigh": 10714,
       "dayLow": 10560,
-      "change": -131,
-      "changePercent": -1.22
+      "change": -164,
+      "changePercent": -1.53
     },
     "BAJFINANCE": {
       "symbol": "BAJFINANCE",
-      "price": 1003.3,
+      "price": 1006.6,
       "previousClose": 1022.6,
-      "open": 1003.3,
+      "open": 1006.6,
       "dayHigh": 1022,
       "dayLow": 995.2,
-      "change": -19.3,
-      "changePercent": -1.89
+      "change": -16,
+      "changePercent": -1.56
     },
     "BAJFINSERV": {
       "symbol": "BAJFINSERV",
-      "price": 1879,
+      "price": 1871.1,
       "previousClose": 1908.1,
-      "open": 1879,
+      "open": 1871.1,
       "dayHigh": 1899,
-      "dayLow": 1867,
-      "change": -29.1,
-      "changePercent": -1.53
+      "dayLow": 1865,
+      "change": -37,
+      "changePercent": -1.94
     },
     "BANKBARODA": {
       "symbol": "BANKBARODA",
-      "price": 248.35,
+      "price": 246.9,
       "previousClose": 250.65,
-      "open": 248.35,
+      "open": 246.9,
       "dayHigh": 251.15,
-      "dayLow": 247.25,
-      "change": -2.3,
-      "changePercent": -0.92
+      "dayLow": 246.05,
+      "change": -3.75,
+      "changePercent": -1.5
     },
     "BANKINDIA": {
       "symbol": "BANKINDIA",
-      "price": 143.52,
+      "price": 143.17,
       "previousClose": 145.59,
-      "open": 143.52,
+      "open": 143.17,
       "dayHigh": 146.13,
       "dayLow": 142.56,
-      "change": -2.07,
-      "changePercent": -1.42
+      "change": -2.42,
+      "changePercent": -1.66
     },
     "BDL": {
       "symbol": "BDL",
-      "price": 1277.5,
+      "price": 1272.8,
       "previousClose": 1302.8,
-      "open": 1277.5,
+      "open": 1272.8,
       "dayHigh": 1299.9,
       "dayLow": 1265.1,
-      "change": -25.3,
-      "changePercent": -1.94
+      "change": -30,
+      "changePercent": -2.3
     },
     "BEL": {
       "symbol": "BEL",
-      "price": 408.95,
+      "price": 410.15,
       "previousClose": 410.8,
-      "open": 408.95,
-      "dayHigh": 410.65,
+      "open": 410.15,
+      "dayHigh": 411.25,
       "dayLow": 405.7,
-      "change": -1.85,
-      "changePercent": -0.45
+      "change": -0.65,
+      "changePercent": -0.16
     },
     "BHARATFORG": {
       "symbol": "BHARATFORG",
-      "price": 2126,
+      "price": 2116.8,
       "previousClose": 2145.6,
-      "open": 2126,
+      "open": 2116.8,
       "dayHigh": 2149,
-      "dayLow": 2112,
-      "change": -19.6,
-      "changePercent": -0.91
+      "dayLow": 2105.6,
+      "change": -28.8,
+      "changePercent": -1.34
     },
     "BHARTIARTL": {
       "symbol": "BHARTIARTL",
-      "price": 1934,
+      "price": 1933.7,
       "previousClose": 1901.8,
-      "open": 1934,
-      "dayHigh": 1938,
+      "open": 1933.7,
+      "dayHigh": 1938.9,
       "dayLow": 1885,
-      "change": 32.2,
-      "changePercent": 1.69
+      "change": 31.9,
+      "changePercent": 1.68
     },
     "BHEL": {
       "symbol": "BHEL",
-      "price": 406.75,
+      "price": 404.8,
       "previousClose": 409.1,
-      "open": 406.75,
+      "open": 404.8,
       "dayHigh": 409,
       "dayLow": 401,
-      "change": -2.35,
-      "changePercent": -0.57
+      "change": -4.3,
+      "changePercent": -1.05
     },
     "BIOCON": {
       "symbol": "BIOCON",
-      "price": 441.9,
+      "price": 439.65,
       "previousClose": 410.95,
-      "open": 441.9,
-      "dayHigh": 443.45,
+      "open": 439.65,
+      "dayHigh": 444.5,
       "dayLow": 422.2,
-      "change": 30.95,
-      "changePercent": 7.53
+      "change": 28.7,
+      "changePercent": 6.98
     },
     "BPCL": {
       "symbol": "BPCL",
-      "price": 304.4,
+      "price": 304.2,
       "previousClose": 307.55,
-      "open": 304.4,
+      "open": 304.2,
       "dayHigh": 305.4,
       "dayLow": 302.05,
-      "change": -3.15,
-      "changePercent": -1.02
+      "change": -3.35,
+      "changePercent": -1.09
     },
     "BRITANNIA": {
       "symbol": "BRITANNIA",
-      "price": 5265,
+      "price": 5281,
       "previousClose": 5348.5,
-      "open": 5265,
+      "open": 5281,
       "dayHigh": 5347.5,
       "dayLow": 5235.5,
-      "change": -83.5,
-      "changePercent": -1.56
+      "change": -67.5,
+      "changePercent": -1.26
     },
     "CANBK": {
       "symbol": "CANBK",
-      "price": 126.74,
+      "price": 126,
       "previousClose": 129.33,
-      "open": 126.74,
+      "open": 126,
       "dayHigh": 128.9,
-      "dayLow": 126.23,
-      "change": -2.59,
-      "changePercent": -2
+      "dayLow": 125.92,
+      "change": -3.33,
+      "changePercent": -2.57
     },
     "CAPACITE": {
       "symbol": "CAPACITE",
-      "price": 229.5,
+      "price": 228.6,
       "previousClose": 233.05,
-      "open": 229.5,
+      "open": 228.6,
       "dayHigh": 233.1,
-      "dayLow": 227.95,
-      "change": -3.55,
-      "changePercent": -1.52
+      "dayLow": 227.4,
+      "change": -4.45,
+      "changePercent": -1.91
     },
     "CDSL": {
       "symbol": "CDSL",
-      "price": 1431.6,
+      "price": 1439,
       "previousClose": 1444.5,
-      "open": 1431.6,
-      "dayHigh": 1442.8,
+      "open": 1439,
+      "dayHigh": 1445.8,
       "dayLow": 1421,
-      "change": -12.9,
-      "changePercent": -0.89
+      "change": -5.5,
+      "changePercent": -0.38
     },
     "CHOLAFIN": {
       "symbol": "CHOLAFIN",
-      "price": 1774.7,
+      "price": 1773.5,
       "previousClose": 1810.9,
-      "open": 1774.7,
+      "open": 1773.5,
       "dayHigh": 1792.4,
       "dayLow": 1742.7,
-      "change": -36.2,
-      "changePercent": -2
+      "change": -37.4,
+      "changePercent": -2.07
     },
     "CIPLA": {
       "symbol": "CIPLA",
-      "price": 1448.4,
+      "price": 1450.9,
       "previousClose": 1426.7,
-      "open": 1448.4,
-      "dayHigh": 1453.9,
+      "open": 1450.9,
+      "dayHigh": 1454.5,
       "dayLow": 1425.3,
-      "change": 21.7,
-      "changePercent": 1.52
+      "change": 24.2,
+      "changePercent": 1.7
     },
     "COALINDIA": {
       "symbol": "COALINDIA",
-      "price": 434.4,
+      "price": 432.15,
       "previousClose": 430.2,
-      "open": 434.4,
-      "dayHigh": 435.9,
+      "open": 432.15,
+      "dayHigh": 436.5,
       "dayLow": 428.05,
-      "change": 4.2,
-      "changePercent": 0.98
+      "change": 1.95,
+      "changePercent": 0.45
     },
     "COCHINSHIP": {
       "symbol": "COCHINSHIP",
-      "price": 1389.6,
+      "price": 1393.6,
       "previousClose": 1411.8,
-      "open": 1389.6,
+      "open": 1393.6,
       "dayHigh": 1418,
-      "dayLow": 1388.9,
-      "change": -22.2,
-      "changePercent": -1.57
+      "dayLow": 1382.6,
+      "change": -18.2,
+      "changePercent": -1.29
     },
     "COFORGE": {
       "symbol": "COFORGE",
-      "price": 1554,
+      "price": 1542.4,
       "previousClose": 1540.9,
-      "open": 1554,
+      "open": 1542.4,
       "dayHigh": 1569,
-      "dayLow": 1542,
-      "change": 13.1,
-      "changePercent": 0.85
+      "dayLow": 1538.9,
+      "change": 1.5,
+      "changePercent": 0.1
     },
     "CROMPTON": {
       "symbol": "CROMPTON",
-      "price": 259.35,
+      "price": 258.95,
       "previousClose": 261.8,
-      "open": 259.35,
+      "open": 258.95,
       "dayHigh": 261.95,
       "dayLow": 257.05,
-      "change": -2.45,
-      "changePercent": -0.94
+      "change": -2.85,
+      "changePercent": -1.09
     },
     "CYIENT": {
       "symbol": "CYIENT",
-      "price": 853.05,
+      "price": 847.85,
       "previousClose": 867.4,
-      "open": 853.05,
+      "open": 847.85,
       "dayHigh": 870,
-      "dayLow": 850.4,
-      "change": -14.35,
-      "changePercent": -1.65
+      "dayLow": 845.05,
+      "change": -19.55,
+      "changePercent": -2.25
     },
     "DBL": {
       "symbol": "DBL",
-      "price": 411.15,
+      "price": 411.25,
       "previousClose": 418.15,
-      "open": 411.15,
+      "open": 411.25,
       "dayHigh": 418.9,
-      "dayLow": 410.5,
-      "change": -7,
-      "changePercent": -1.67
+      "dayLow": 410,
+      "change": -6.9,
+      "changePercent": -1.65
     },
     "DIVISLAB": {
       "symbol": "DIVISLAB",
-      "price": 7074,
+      "price": 7138.5,
       "previousClose": 6938.5,
-      "open": 7074,
-      "dayHigh": 7110,
+      "open": 7138.5,
+      "dayHigh": 7153,
       "dayLow": 6909,
-      "change": 135.5,
-      "changePercent": 1.95
+      "change": 200,
+      "changePercent": 2.88
     },
     "DLF": {
       "symbol": "DLF",
-      "price": 669.65,
+      "price": 669.15,
       "previousClose": 682.35,
-      "open": 669.65,
+      "open": 669.15,
       "dayHigh": 681.6,
       "dayLow": 665.4,
-      "change": -12.7,
-      "changePercent": -1.86
+      "change": -13.2,
+      "changePercent": -1.93
     },
     "DMART": {
       "symbol": "DMART",
-      "price": 3923,
+      "price": 3912,
       "previousClose": 3994.1,
-      "open": 3923,
+      "open": 3912,
       "dayHigh": 3994.4,
-      "dayLow": 3917,
-      "change": -71.1,
-      "changePercent": -1.78
+      "dayLow": 3909.9,
+      "change": -82.1,
+      "changePercent": -2.06
     },
     "DRREDDY": {
       "symbol": "DRREDDY",
-      "price": 1245.3,
+      "price": 1242.6,
       "previousClose": 1234.5,
-      "open": 1245.3,
+      "open": 1242.6,
       "dayHigh": 1247.8,
       "dayLow": 1231.2,
-      "change": 10.8,
-      "changePercent": 0.87
+      "change": 8.1,
+      "changePercent": 0.66
     },
     "EICHERMOT": {
       "symbol": "EICHERMOT",
-      "price": 7234.5,
+      "price": 7251.5,
       "previousClose": 7296.5,
-      "open": 7234.5,
+      "open": 7251.5,
       "dayHigh": 7313,
       "dayLow": 7140,
-      "change": -62,
-      "changePercent": -0.85
+      "change": -45,
+      "changePercent": -0.62
     },
     "FEDERALBNK": {
       "symbol": "FEDERALBNK",
-      "price": 328.2,
+      "price": 326.7,
       "previousClose": 332.5,
-      "open": 328.2,
+      "open": 326.7,
       "dayHigh": 332.8,
-      "dayLow": 327.55,
-      "change": -4.3,
-      "changePercent": -1.29
+      "dayLow": 326.15,
+      "change": -5.8,
+      "changePercent": -1.74
     },
     "FINCABLES": {
       "symbol": "FINCABLES",
-      "price": 1038.6,
+      "price": 1039.1,
       "previousClose": 1058.4,
-      "open": 1038.6,
+      "open": 1039.1,
       "dayHigh": 1052.9,
       "dayLow": 1027.7,
-      "change": -19.8,
-      "changePercent": -1.87
+      "change": -19.3,
+      "changePercent": -1.82
     },
     "FORTIS": {
       "symbol": "FORTIS",
-      "price": 961.5,
+      "price": 965.65,
       "previousClose": 963.5,
-      "open": 961.5,
+      "open": 965.65,
       "dayHigh": 968.35,
       "dayLow": 960.05,
-      "change": -2,
-      "changePercent": -0.21
+      "change": 2.15,
+      "changePercent": 0.22
     },
     "GLOBALVECT": {
       "symbol": "GLOBALVECT",
-      "price": 156.48,
+      "price": 155.66,
       "previousClose": 158.42,
-      "open": 156.48,
+      "open": 155.66,
       "dayHigh": 158.02,
       "dayLow": 153,
-      "change": -1.94,
-      "changePercent": -1.22
+      "change": -2.76,
+      "changePercent": -1.74
     },
     "GODREJPROP": {
       "symbol": "GODREJPROP",
-      "price": 2116.4,
+      "price": 2108.4,
       "previousClose": 2162.6,
-      "open": 2116.4,
+      "open": 2108.4,
       "dayHigh": 2158.4,
-      "dayLow": 2104.8,
-      "change": -46.2,
-      "changePercent": -2.14
+      "dayLow": 2104.1,
+      "change": -54.2,
+      "changePercent": -2.51
     },
     "GRAPHITE": {
       "symbol": "GRAPHITE",
-      "price": 628.35,
+      "price": 621,
       "previousClose": 626.5,
-      "open": 628.35,
+      "open": 621,
       "dayHigh": 641,
       "dayLow": 618.2,
-      "change": 1.85,
-      "changePercent": 0.3
+      "change": -5.5,
+      "changePercent": -0.88
     },
     "GRASIM": {
       "symbol": "GRASIM",
-      "price": 3109.3,
+      "price": 3111.3,
       "previousClose": 3144.3,
-      "open": 3109.3,
+      "open": 3111.3,
       "dayHigh": 3153.5,
       "dayLow": 3093.1,
-      "change": -35,
-      "changePercent": -1.11
+      "change": -33,
+      "changePercent": -1.05
     },
     "GRAUWEIL": {
       "symbol": "GRAUWEIL",
-      "price": 79.31,
+      "price": 77.24,
       "previousClose": 79.89,
-      "open": 79.31,
+      "open": 77.24,
       "dayHigh": 80.33,
-      "dayLow": 78.11,
-      "change": -0.58,
-      "changePercent": -0.73
+      "dayLow": 76.65,
+      "change": -2.65,
+      "changePercent": -3.32
     },
     "GRSE": {
       "symbol": "GRSE",
-      "price": 2623.7,
+      "price": 2625.9,
       "previousClose": 2640.6,
-      "open": 2623.7,
+      "open": 2625.9,
       "dayHigh": 2639,
       "dayLow": 2613,
-      "change": -16.9,
-      "changePercent": -0.64
+      "change": -14.7,
+      "changePercent": -0.56
     },
     "HAL": {
       "symbol": "HAL",
-      "price": 4430.1,
+      "price": 4435.3,
       "previousClose": 4511.3,
-      "open": 4430.1,
+      "open": 4435.3,
       "dayHigh": 4510.1,
       "dayLow": 4392,
-      "change": -81.2,
-      "changePercent": -1.8
+      "change": -76,
+      "changePercent": -1.68
     },
     "HAVELLS": {
       "symbol": "HAVELLS",
-      "price": 1187.4,
+      "price": 1180.9,
       "previousClose": 1178.8,
-      "open": 1187.4,
+      "open": 1180.9,
       "dayHigh": 1187.7,
       "dayLow": 1167.3,
-      "change": 8.6,
-      "changePercent": 0.73
+      "change": 2.1,
+      "changePercent": 0.18
     },
     "HBLPOWER": {
       "symbol": "HBLPOWER",
-      "price": 751.65,
+      "price": 747.9,
       "previousClose": 766.2,
-      "open": 751.65,
+      "open": 747.9,
       "dayHigh": 765.9,
-      "dayLow": 748.55,
-      "change": -14.55,
-      "changePercent": -1.9
+      "dayLow": 742.25,
+      "change": -18.3,
+      "changePercent": -2.39
     },
     "HCLTECH": {
       "symbol": "HCLTECH",
-      "price": 1184,
+      "price": 1178.6,
       "previousClose": 1221.2,
-      "open": 1184,
+      "open": 1178.6,
       "dayHigh": 1209.1,
-      "dayLow": 1180.1,
-      "change": -37.2,
-      "changePercent": -3.05
+      "dayLow": 1177,
+      "change": -42.6,
+      "changePercent": -3.49
     },
     "HDFCBANK": {
       "symbol": "HDFCBANK",
-      "price": 814,
+      "price": 811.6,
       "previousClose": 817.95,
-      "open": 814,
+      "open": 811.6,
       "dayHigh": 818.4,
       "dayLow": 808.3,
-      "change": -3.95,
-      "changePercent": -0.48
+      "change": -6.35,
+      "changePercent": -0.78
     },
     "HEROMOTOCO": {
       "symbol": "HEROMOTOCO",
-      "price": 4925,
+      "price": 4923.3,
       "previousClose": 4952.1,
-      "open": 4925,
+      "open": 4923.3,
       "dayHigh": 4958,
-      "dayLow": 4907,
-      "change": -27.1,
-      "changePercent": -0.55
+      "dayLow": 4900,
+      "change": -28.8,
+      "changePercent": -0.58
     },
     "HINDALCO": {
       "symbol": "HINDALCO",
-      "price": 988.5,
+      "price": 982.9,
       "previousClose": 966.85,
-      "open": 988.5,
+      "open": 982.9,
       "dayHigh": 998,
       "dayLow": 964,
-      "change": 21.65,
-      "changePercent": 2.24
+      "change": 16.05,
+      "changePercent": 1.66
     },
     "HINDUNILVR": {
       "symbol": "HINDUNILVR",
-      "price": 2138.6,
+      "price": 2130,
       "previousClose": 2130.6,
-      "open": 2138.6,
+      "open": 2130,
       "dayHigh": 2145,
       "dayLow": 2117,
-      "change": 8,
-      "changePercent": 0.38
+      "change": -0.6,
+      "changePercent": -0.03
     },
     "ICICIBANK": {
       "symbol": "ICICIBANK",
-      "price": 1410,
+      "price": 1404.3,
       "previousClose": 1409.5,
-      "open": 1410,
+      "open": 1404.3,
       "dayHigh": 1411.8,
       "dayLow": 1392,
-      "change": 0.5,
-      "changePercent": 0.04
+      "change": -5.2,
+      "changePercent": -0.37
     },
     "IDFCFIRSTB": {
       "symbol": "IDFCFIRSTB",
-      "price": 79.65,
+      "price": 79.5,
       "previousClose": 80.58,
-      "open": 79.65,
+      "open": 79.5,
       "dayHigh": 80.09,
       "dayLow": 79.09,
-      "change": -0.93,
-      "changePercent": -1.15
+      "change": -1.08,
+      "changePercent": -1.34
     },
     "INDIANB": {
       "symbol": "INDIANB",
-      "price": 834.75,
+      "price": 831.2,
       "previousClose": 842.55,
-      "open": 834.75,
+      "open": 831.2,
       "dayHigh": 846,
       "dayLow": 824.5,
-      "change": -7.8,
-      "changePercent": -0.93
+      "change": -11.35,
+      "changePercent": -1.35
     },
     "INDUSINDBK": {
       "symbol": "INDUSINDBK",
-      "price": 1002.2,
+      "price": 1001.1,
       "previousClose": 1012.9,
-      "open": 1002.2,
+      "open": 1001.1,
       "dayHigh": 1009,
       "dayLow": 996.3,
-      "change": -10.7,
-      "changePercent": -1.06
+      "change": -11.8,
+      "changePercent": -1.16
     },
     "INDUSTOWER": {
       "symbol": "INDUSTOWER",
-      "price": 405.1,
+      "price": 408.1,
       "previousClose": 409.55,
-      "open": 405.1,
+      "open": 408.1,
       "dayHigh": 409.85,
       "dayLow": 403.3,
-      "change": -4.45,
-      "changePercent": -1.09
+      "change": -1.45,
+      "changePercent": -0.35
     },
     "INFY": {
       "symbol": "INFY",
-      "price": 1100.7,
+      "price": 1093.7,
       "previousClose": 1102.6,
-      "open": 1100.7,
+      "open": 1093.7,
       "dayHigh": 1113.5,
-      "dayLow": 1091.7,
-      "change": -1.9,
-      "changePercent": -0.17
+      "dayLow": 1091.1,
+      "change": -8.9,
+      "changePercent": -0.81
     },
     "IRCTC": {
       "symbol": "IRCTC",
-      "price": 497.4,
+      "price": 496.95,
       "previousClose": 502.05,
-      "open": 497.4,
+      "open": 496.95,
       "dayHigh": 501.4,
-      "dayLow": 496.8,
-      "change": -4.65,
-      "changePercent": -0.93
+      "dayLow": 496.25,
+      "change": -5.1,
+      "changePercent": -1.02
     },
     "IREDA": {
       "symbol": "IREDA",
-      "price": 121.98,
+      "price": 122,
       "previousClose": 124.81,
-      "open": 121.98,
+      "open": 122,
       "dayHigh": 124.19,
-      "dayLow": 121.85,
-      "change": -2.83,
-      "changePercent": -2.27
+      "dayLow": 121.5,
+      "change": -2.81,
+      "changePercent": -2.25
     },
     "ITC": {
       "symbol": "ITC",
-      "price": 278,
+      "price": 276.65,
       "previousClose": 279.65,
-      "open": 278,
+      "open": 276.65,
       "dayHigh": 280.65,
-      "dayLow": 277.75,
-      "change": -1.65,
-      "changePercent": -0.59
+      "dayLow": 276.4,
+      "change": -3,
+      "changePercent": -1.07
     },
     "JINDALSTEL": {
       "symbol": "JINDALSTEL",
-      "price": 1048.9,
+      "price": 1031.8,
       "previousClose": 1028.8,
-      "open": 1048.9,
+      "open": 1031.8,
       "dayHigh": 1049.9,
       "dayLow": 1025,
-      "change": 20.1,
-      "changePercent": 1.95
+      "change": 3,
+      "changePercent": 0.29
     },
     "JKTYRE": {
       "symbol": "JKTYRE",
-      "price": 403.15,
+      "price": 402.75,
       "previousClose": 410.1,
-      "open": 403.15,
+      "open": 402.75,
       "dayHigh": 409.1,
-      "dayLow": 401.7,
-      "change": -6.95,
-      "changePercent": -1.69
+      "dayLow": 400.25,
+      "change": -7.35,
+      "changePercent": -1.79
     },
     "JSWSTEEL": {
       "symbol": "JSWSTEEL",
-      "price": 1250.1,
+      "price": 1242.7,
       "previousClose": 1237.4,
-      "open": 1250.1,
+      "open": 1242.7,
       "dayHigh": 1254.8,
       "dayLow": 1225.1,
-      "change": 12.7,
-      "changePercent": 1.03
+      "change": 5.3,
+      "changePercent": 0.43
     },
     "KOTAKBANK": {
       "symbol": "KOTAKBANK",
-      "price": 378.45,
+      "price": 376.8,
       "previousClose": 384.65,
-      "open": 378.45,
+      "open": 376.8,
       "dayHigh": 383.5,
-      "dayLow": 377.7,
-      "change": -6.2,
-      "changePercent": -1.61
+      "dayLow": 376.5,
+      "change": -7.85,
+      "changePercent": -2.04
     },
     "KPITTECH": {
       "symbol": "KPITTECH",
-      "price": 563.25,
+      "price": 559.2,
       "previousClose": 573.45,
-      "open": 563.25,
+      "open": 559.2,
       "dayHigh": 576.6,
-      "dayLow": 562.7,
-      "change": -10.2,
-      "changePercent": -1.78
+      "dayLow": 556.1,
+      "change": -14.25,
+      "changePercent": -2.48
     },
     "LICHSGFIN": {
       "symbol": "LICHSGFIN",
-      "price": 545.75,
+      "price": 545.3,
       "previousClose": 551.9,
-      "open": 545.75,
+      "open": 545.3,
       "dayHigh": 551.8,
       "dayLow": 543.35,
-      "change": -6.15,
-      "changePercent": -1.11
+      "change": -6.6,
+      "changePercent": -1.2
     },
     "LT": {
       "symbol": "LT",
-      "price": 3868.3,
+      "price": 3859,
       "previousClose": 3928.5,
-      "open": 3868.3,
+      "open": 3859,
       "dayHigh": 3897.9,
-      "dayLow": 3856.5,
-      "change": -60.2,
-      "changePercent": -1.53
+      "dayLow": 3855.1,
+      "change": -69.5,
+      "changePercent": -1.77
     },
     "LUPIN": {
       "symbol": "LUPIN",
-      "price": 2491.6,
+      "price": 2491.1,
       "previousClose": 2492.6,
-      "open": 2491.6,
+      "open": 2491.1,
       "dayHigh": 2508.8,
       "dayLow": 2486,
-      "change": -1,
-      "changePercent": -0.04
+      "change": -1.5,
+      "changePercent": -0.06
     },
     "M&M": {
       "symbol": "M&M",
-      "price": 3105,
+      "price": 3108.3,
       "previousClose": 3160.4,
-      "open": 3105,
+      "open": 3108.3,
       "dayHigh": 3130,
       "dayLow": 3086.2,
-      "change": -55.4,
-      "changePercent": -1.75
+      "change": -52.1,
+      "changePercent": -1.65
     },
     "MANAPPURAM": {
       "symbol": "MANAPPURAM",
-      "price": 327.45,
+      "price": 330.35,
       "previousClose": 331.75,
-      "open": 327.45,
-      "dayHigh": 329.15,
+      "open": 330.35,
+      "dayHigh": 331,
       "dayLow": 322.75,
-      "change": -4.3,
-      "changePercent": -1.3
+      "change": -1.4,
+      "changePercent": -0.42
     },
     "MARUTI": {
       "symbol": "MARUTI",
-      "price": 13535,
+      "price": 13539,
       "previousClose": 13695,
-      "open": 13535,
+      "open": 13539,
       "dayHigh": 13690,
       "dayLow": 13506,
-      "change": -160,
-      "changePercent": -1.17
+      "change": -156,
+      "changePercent": -1.14
     },
     "MAXHEALTH": {
       "symbol": "MAXHEALTH",
-      "price": 1103.5,
+      "price": 1096.9,
       "previousClose": 1106.2,
-      "open": 1103.5,
+      "open": 1096.9,
       "dayHigh": 1120.7,
       "dayLow": 1096.5,
-      "change": -2.7,
-      "changePercent": -0.24
+      "change": -9.3,
+      "changePercent": -0.84
     },
     "METROPOLIS": {
       "symbol": "METROPOLIS",
-      "price": 560,
+      "price": 561,
       "previousClose": 564.7,
-      "open": 560,
+      "open": 561,
       "dayHigh": 564.7,
       "dayLow": 551.15,
-      "change": -4.7,
-      "changePercent": -0.83
+      "change": -3.7,
+      "changePercent": -0.66
     },
     "MPHASIS": {
       "symbol": "MPHASIS",
-      "price": 2393.7,
+      "price": 2387.2,
       "previousClose": 2390.4,
-      "open": 2393.7,
+      "open": 2387.2,
       "dayHigh": 2422.3,
       "dayLow": 2379.8,
-      "change": 3.3,
-      "changePercent": 0.14
+      "change": -3.2,
+      "changePercent": -0.13
     },
     "MUTHOOTFIN": {
       "symbol": "MUTHOOTFIN",
-      "price": 3006.6,
+      "price": 3020.5,
       "previousClose": 3058.5,
-      "open": 3006.6,
+      "open": 3020.5,
       "dayHigh": 3036.1,
       "dayLow": 2976.3,
-      "change": -51.9,
-      "changePercent": -1.7
+      "change": -38,
+      "changePercent": -1.24
     },
     "NATCOPHARM": {
       "symbol": "NATCOPHARM",
-      "price": 970.5,
+      "price": 972.75,
       "previousClose": 979.95,
-      "open": 970.5,
+      "open": 972.75,
       "dayHigh": 983.5,
-      "dayLow": 968.5,
-      "change": -9.45,
-      "changePercent": -0.96
+      "dayLow": 966.5,
+      "change": -7.2,
+      "changePercent": -0.73
     },
     "NATIONALUM": {
       "symbol": "NATIONALUM",
-      "price": 361.8,
+      "price": 363.95,
       "previousClose": 355.2,
-      "open": 361.8,
-      "dayHigh": 363.95,
+      "open": 363.95,
+      "dayHigh": 365.7,
       "dayLow": 357.2,
-      "change": 6.6,
-      "changePercent": 1.86
+      "change": 8.75,
+      "changePercent": 2.46
     },
     "NESTLEIND": {
       "symbol": "NESTLEIND",
-      "price": 1432.3,
+      "price": 1431.2,
       "previousClose": 1427,
-      "open": 1432.3,
+      "open": 1431.2,
       "dayHigh": 1448.7,
       "dayLow": 1418.5,
-      "change": 5.3,
-      "changePercent": 0.37
+      "change": 4.2,
+      "changePercent": 0.29
     },
     "NHPC": {
       "symbol": "NHPC",
-      "price": 78.63,
+      "price": 78.78,
       "previousClose": 79.46,
-      "open": 78.63,
+      "open": 78.78,
       "dayHigh": 79.3,
-      "dayLow": 78.53,
-      "change": -0.83,
-      "changePercent": -1.04
+      "dayLow": 78.3,
+      "change": -0.68,
+      "changePercent": -0.86
     },
     "NTPC": {
       "symbol": "NTPC",
-      "price": 350.7,
+      "price": 351.55,
       "previousClose": 351.75,
-      "open": 350.7,
+      "open": 351.55,
       "dayHigh": 353.95,
       "dayLow": 348.5,
-      "change": -1.05,
-      "changePercent": -0.3
+      "change": -0.2,
+      "changePercent": -0.06
     },
     "OBEROIRLTY": {
       "symbol": "OBEROIRLTY",
-      "price": 1909.8,
+      "price": 1905.7,
       "previousClose": 1925.2,
-      "open": 1909.8,
+      "open": 1905.7,
       "dayHigh": 1947.9,
-      "dayLow": 1904.5,
-      "change": -15.4,
-      "changePercent": -0.8
+      "dayLow": 1902.7,
+      "change": -19.5,
+      "changePercent": -1.01
     },
     "ONGC": {
       "symbol": "ONGC",
-      "price": 247.93,
+      "price": 247.73,
       "previousClose": 248.45,
-      "open": 247.93,
+      "open": 247.73,
       "dayHigh": 252,
-      "dayLow": 247.81,
-      "change": -0.52,
-      "changePercent": -0.21
+      "dayLow": 247.3,
+      "change": -0.72,
+      "changePercent": -0.29
     },
     "PAGEIND": {
       "symbol": "PAGEIND",
-      "price": 40090,
+      "price": 40270,
       "previousClose": 39955,
-      "open": 40090,
-      "dayHigh": 40195,
+      "open": 40270,
+      "dayHigh": 40410,
       "dayLow": 39675,
-      "change": 135,
-      "changePercent": 0.34
+      "change": 315,
+      "changePercent": 0.79
     },
     "PERSISTENT": {
       "symbol": "PERSISTENT",
-      "price": 5197.9,
+      "price": 5156.9,
       "previousClose": 5192.4,
-      "open": 5197.9,
+      "open": 5156.9,
       "dayHigh": 5257,
-      "dayLow": 5160,
-      "change": 5.5,
-      "changePercent": 0.11
+      "dayLow": 5143,
+      "change": -35.5,
+      "changePercent": -0.68
     },
     "PFC": {
       "symbol": "PFC",
-      "price": 406.1,
+      "price": 407.05,
       "previousClose": 405.1,
-      "open": 406.1,
+      "open": 407.05,
       "dayHigh": 408.9,
       "dayLow": 400.15,
-      "change": 1,
-      "changePercent": 0.25
+      "change": 1.95,
+      "changePercent": 0.48
     },
     "PIDILITIND": {
       "symbol": "PIDILITIND",
-      "price": 1552.3,
+      "price": 1562.6,
       "previousClose": 1580.7,
-      "open": 1552.3,
+      "open": 1562.6,
       "dayHigh": 1572.9,
       "dayLow": 1547.4,
-      "change": -28.4,
-      "changePercent": -1.8
+      "change": -18.1,
+      "changePercent": -1.15
     },
     "PNB": {
       "symbol": "PNB",
-      "price": 105.27,
+      "price": 105.04,
       "previousClose": 106.34,
-      "open": 105.27,
+      "open": 105.04,
       "dayHigh": 106.3,
       "dayLow": 104.7,
-      "change": -1.07,
-      "changePercent": -1.01
+      "change": -1.3,
+      "changePercent": -1.22
     },
     "POLYCAB": {
       "symbol": "POLYCAB",
-      "price": 9465,
+      "price": 9517,
       "previousClose": 9306.5,
-      "open": 9465,
-      "dayHigh": 9536,
+      "open": 9517,
+      "dayHigh": 9547,
       "dayLow": 9228,
-      "change": 158.5,
-      "changePercent": 1.7
+      "change": 210.5,
+      "changePercent": 2.26
     },
     "POWERGRID": {
       "symbol": "POWERGRID",
-      "price": 282.85,
+      "price": 283.25,
       "previousClose": 286,
-      "open": 282.85,
+      "open": 283.25,
       "dayHigh": 285.4,
       "dayLow": 282.3,
-      "change": -3.15,
-      "changePercent": -1.1
-    },
-    "PRESTIGE": {
-      "symbol": "PRESTIGE",
-      "price": 1701.5,
-      "previousClose": 1724.3,
-      "open": 1701.5,
-      "dayHigh": 1729.9,
-      "dayLow": 1684,
-      "change": -22.8,
-      "changePercent": -1.32
-    },
-    "RECLTD": {
-      "symbol": "RECLTD",
-      "price": 347.95,
-      "previousClose": 351.05,
-      "open": 347.95,
-      "dayHigh": 350.45,
-      "dayLow": 346.85,
-      "change": -3.1,
-      "changePercent": -0.88
-    },
-    "RELIANCE": {
-      "symbol": "RELIANCE",
-      "price": 1304.3,
-      "previousClose": 1296.9,
-      "open": 1304.3,
-      "dayHigh": 1308,
-      "dayLow": 1290,
-      "change": 7.4,
-      "changePercent": 0.57
-    },
-    "SAMMAANCAP": {
-      "symbol": "SAMMAANCAP",
-      "price": 162.24,
-      "previousClose": 164.91,
-      "open": 162.24,
-      "dayHigh": 163.94,
-      "dayLow": 161.41,
-      "change": -2.67,
-      "changePercent": -1.62
-    },
-    "SBICARD": {
-      "symbol": "SBICARD",
-      "price": 626.35,
-      "previousClose": 618.7,
-      "open": 626.35,
-      "dayHigh": 633.25,
-      "dayLow": 612.65,
-      "change": 7.65,
-      "changePercent": 1.24
-    },
-    "SBILIFE": {
-      "symbol": "SBILIFE",
-      "price": 1840.3,
-      "previousClose": 1855.9,
-      "open": 1840.3,
-      "dayHigh": 1852.6,
-      "dayLow": 1829.6,
-      "change": -15.6,
-      "changePercent": -0.84
-    },
-    "SBIN": {
-      "symbol": "SBIN",
-      "price": 1023.7,
-      "previousClose": 1037,
-      "open": 1023.7,
-      "dayHigh": 1033.7,
-      "dayLow": 1019.2,
-      "change": -13.3,
-      "changePercent": -1.28
-    },
-    "SHRIRAMFIN": {
-      "symbol": "SHRIRAMFIN",
-      "price": 1027.2,
-      "previousClose": 1048.1,
-      "open": 1027.2,
-      "dayHigh": 1042.3,
-      "dayLow": 1007,
-      "change": -20.9,
-      "changePercent": -1.99
-    },
-    "SUNPHARMA": {
-      "symbol": "SUNPHARMA",
-      "price": 1932.2,
-      "previousClose": 1921.4,
-      "open": 1932.2,
-      "dayHigh": 1940.4,
-      "dayLow": 1910,
-      "change": 10.8,
-      "changePercent": 0.56
-    },
-    "SUZLON": {
-      "symbol": "SUZLON",
-      "price": 52.78,
-      "previousClose": 53.17,
-      "open": 52.78,
-      "dayHigh": 52.99,
-      "dayLow": 52.4,
-      "change": -0.39,
-      "changePercent": -0.73
-    },
-    "TATACHEM": {
-      "symbol": "TATACHEM",
-      "price": 703.2,
-      "previousClose": 714.4,
-      "open": 703.2,
-      "dayHigh": 714.45,
-      "dayLow": 702,
-      "change": -11.2,
-      "changePercent": -1.57
-    },
-    "TATACOMM": {
-      "symbol": "TATACOMM",
-      "price": 1847,
-      "previousClose": 1835.4,
-      "open": 1847,
-      "dayHigh": 1852.6,
-      "dayLow": 1831,
-      "change": 11.6,
-      "changePercent": 0.63
-    },
-    "TATAELXSI": {
-      "symbol": "TATAELXSI",
-      "price": 3780.6,
-      "previousClose": 3823.6,
-      "open": 3780.6,
-      "dayHigh": 3840,
-      "dayLow": 3751,
-      "change": -43,
-      "changePercent": -1.12
-    },
-    "TATAPOWER": {
-      "symbol": "TATAPOWER",
-      "price": 378.25,
-      "previousClose": 377.85,
-      "open": 378.25,
-      "dayHigh": 379,
-      "dayLow": 375,
-      "change": 0.4,
-      "changePercent": 0.11
-    },
-    "TATASTEEL": {
-      "symbol": "TATASTEEL",
-      "price": 190.16,
-      "previousClose": 187.11,
-      "open": 190.16,
-      "dayHigh": 190.32,
-      "dayLow": 186.7,
-      "change": 3.05,
-      "changePercent": 1.63
-    },
-    "TCS": {
-      "symbol": "TCS",
-      "price": 2198.9,
-      "previousClose": 2181.5,
-      "open": 2198.9,
-      "dayHigh": 2228,
-      "dayLow": 2179,
-      "change": 17.4,
-      "changePercent": 0.8
-    },
-    "TECHM": {
-      "symbol": "TECHM",
-      "price": 1507.9,
-      "previousClose": 1504.5,
-      "open": 1507.9,
-      "dayHigh": 1519.9,
-      "dayLow": 1500,
-      "change": 3.4,
-      "changePercent": 0.23
-    },
-    "TITAN": {
-      "symbol": "TITAN",
-      "price": 4575.7,
-      "previousClose": 4601.5,
-      "open": 4575.7,
-      "dayHigh": 4600,
-      "dayLow": 4554,
-      "change": -25.8,
-      "changePercent": -0.56
-    },
-    "TMCV": {
-      "symbol": "TMCV",
-      "price": 418,
-      "previousClose": 420.75,
-      "open": 418,
-      "dayHigh": 421.4,
-      "dayLow": 414,
-      "change": -2.75,
-      "changePercent": -0.65
-    },
-    "TMPV": {
-      "symbol": "TMPV",
-      "price": 336,
-      "previousClose": 342.25,
-      "open": 336,
-      "dayHigh": 340.75,
-      "dayLow": 335.6,
-      "change": -6.25,
-      "changePercent": -1.83
-    },
-    "TRENT": {
-      "symbol": "TRENT",
-      "price": 2877.1,
-      "previousClose": 2900.1,
-      "open": 2877.1,
-      "dayHigh": 2900,
-      "dayLow": 2870.7,
-      "change": -23,
-      "changePercent": -0.79
-    },
-    "UJJIVANSFB": {
-      "symbol": "UJJIVANSFB",
-      "price": 65.13,
-      "previousClose": 66.87,
-      "open": 65.13,
-      "dayHigh": 67.45,
-      "dayLow": 65.05,
-      "change": -1.74,
-      "changePercent": -2.6
-    },
-    "ULTRACEMCO": {
-      "symbol": "ULTRACEMCO",
-      "price": 11529,
-      "previousClose": 11571,
-      "open": 11529,
-      "dayHigh": 11540,
-      "dayLow": 11355,
-      "change": -42,
-      "changePercent": -0.36
-    },
-    "UNITECH": {
-      "symbol": "UNITECH",
-      "price": 4.58,
-      "previousClose": 4.59,
-      "open": 4.58,
-      "dayHigh": 4.61,
-      "dayLow": 4.55,
-      "change": -0.01,
-      "changePercent": -0.22
-    },
-    "VEDL": {
-      "symbol": "VEDL",
-      "price": 267.65,
-      "previousClose": 269.65,
-      "open": 267.65,
-      "dayHigh": 270.95,
-      "dayLow": 266.2,
-      "change": -2,
-      "changePercent": -0.74
-    },
-    "VOLTAS": {
-      "symbol": "VOLTAS",
-      "price": 1352.5,
-      "previousClose": 1349.5,
-      "open": 1352.5,
-      "dayHigh": 1359.5,
-      "dayLow": 1329.1,
-      "change": 3,
-      "changePercent": 0.22
-    },
-    "WHIRLPOOL": {
-      "symbol": "WHIRLPOOL",
-      "price": 785,
-      "previousClose": 790.35,
-      "open": 785,
-      "dayHigh": 792,
-      "dayLow": 780,
-      "change": -5.35,
-      "changePercent": -0.68
-    },
-    "WIPRO": {
-      "symbol": "WIPRO",
-      "price": 178.18,
-      "previousClose": 178.43,
-      "open": 178.18,
-      "dayHigh": 180.5,
-      "dayLow": 177.6,
-      "change": -0.25,
-      "changePercent": -0.14
-    },
-    "ZOMATO": {
-      "symbol": "ZOMATO",
-      "price": 282.45,
-      "previousClose": 285.2,
-      "open": 282.45,
-      "dayHigh": 285.4,
-      "dayLow": 281.1,
       "change": -2.75,
       "changePercent": -0.96
     },
+    "PRESTIGE": {
+      "symbol": "PRESTIGE",
+      "price": 1700.2,
+      "previousClose": 1724.3,
+      "open": 1700.2,
+      "dayHigh": 1729.9,
+      "dayLow": 1684,
+      "change": -24.1,
+      "changePercent": -1.4
+    },
+    "RECLTD": {
+      "symbol": "RECLTD",
+      "price": 350.15,
+      "previousClose": 351.05,
+      "open": 350.15,
+      "dayHigh": 350.5,
+      "dayLow": 346.85,
+      "change": -0.9,
+      "changePercent": -0.26
+    },
+    "RELIANCE": {
+      "symbol": "RELIANCE",
+      "price": 1301,
+      "previousClose": 1296.9,
+      "open": 1301,
+      "dayHigh": 1308,
+      "dayLow": 1290,
+      "change": 4.1,
+      "changePercent": 0.32
+    },
+    "SAMMAANCAP": {
+      "symbol": "SAMMAANCAP",
+      "price": 161.55,
+      "previousClose": 164.91,
+      "open": 161.55,
+      "dayHigh": 163.94,
+      "dayLow": 160.84,
+      "change": -3.36,
+      "changePercent": -2.04
+    },
+    "SBICARD": {
+      "symbol": "SBICARD",
+      "price": 624.9,
+      "previousClose": 618.7,
+      "open": 624.9,
+      "dayHigh": 633.85,
+      "dayLow": 612.65,
+      "change": 6.2,
+      "changePercent": 1
+    },
+    "SBILIFE": {
+      "symbol": "SBILIFE",
+      "price": 1837.5,
+      "previousClose": 1855.9,
+      "open": 1837.5,
+      "dayHigh": 1852.6,
+      "dayLow": 1829.6,
+      "change": -18.4,
+      "changePercent": -0.99
+    },
+    "SBIN": {
+      "symbol": "SBIN",
+      "price": 1021.3,
+      "previousClose": 1037,
+      "open": 1021.3,
+      "dayHigh": 1033.7,
+      "dayLow": 1019.2,
+      "change": -15.7,
+      "changePercent": -1.51
+    },
+    "SHRIRAMFIN": {
+      "symbol": "SHRIRAMFIN",
+      "price": 1026.1,
+      "previousClose": 1048.1,
+      "open": 1026.1,
+      "dayHigh": 1042.3,
+      "dayLow": 1007,
+      "change": -22,
+      "changePercent": -2.1
+    },
+    "SUNPHARMA": {
+      "symbol": "SUNPHARMA",
+      "price": 1945.3,
+      "previousClose": 1921.4,
+      "open": 1945.3,
+      "dayHigh": 1949.8,
+      "dayLow": 1910,
+      "change": 23.9,
+      "changePercent": 1.24
+    },
+    "SUZLON": {
+      "symbol": "SUZLON",
+      "price": 52.6,
+      "previousClose": 53.17,
+      "open": 52.6,
+      "dayHigh": 52.99,
+      "dayLow": 52.4,
+      "change": -0.57,
+      "changePercent": -1.07
+    },
+    "TATACHEM": {
+      "symbol": "TATACHEM",
+      "price": 702,
+      "previousClose": 714.4,
+      "open": 702,
+      "dayHigh": 714.45,
+      "dayLow": 701,
+      "change": -12.4,
+      "changePercent": -1.74
+    },
+    "TATACOMM": {
+      "symbol": "TATACOMM",
+      "price": 1849.7,
+      "previousClose": 1835.4,
+      "open": 1849.7,
+      "dayHigh": 1852.6,
+      "dayLow": 1831,
+      "change": 14.3,
+      "changePercent": 0.78
+    },
+    "TATAELXSI": {
+      "symbol": "TATAELXSI",
+      "price": 3712.8,
+      "previousClose": 3823.6,
+      "open": 3712.8,
+      "dayHigh": 3840,
+      "dayLow": 3692,
+      "change": -110.8,
+      "changePercent": -2.9
+    },
+    "TATAPOWER": {
+      "symbol": "TATAPOWER",
+      "price": 376.2,
+      "previousClose": 377.85,
+      "open": 376.2,
+      "dayHigh": 379,
+      "dayLow": 375,
+      "change": -1.65,
+      "changePercent": -0.44
+    },
+    "TATASTEEL": {
+      "symbol": "TATASTEEL",
+      "price": 188.68,
+      "previousClose": 187.11,
+      "open": 188.68,
+      "dayHigh": 190.35,
+      "dayLow": 186.7,
+      "change": 1.57,
+      "changePercent": 0.84
+    },
+    "TCS": {
+      "symbol": "TCS",
+      "price": 2190.5,
+      "previousClose": 2181.5,
+      "open": 2190.5,
+      "dayHigh": 2228,
+      "dayLow": 2179,
+      "change": 9,
+      "changePercent": 0.41
+    },
+    "TECHM": {
+      "symbol": "TECHM",
+      "price": 1500.3,
+      "previousClose": 1504.5,
+      "open": 1500.3,
+      "dayHigh": 1519.9,
+      "dayLow": 1493.3,
+      "change": -4.2,
+      "changePercent": -0.28
+    },
+    "TITAN": {
+      "symbol": "TITAN",
+      "price": 4580,
+      "previousClose": 4601.5,
+      "open": 4580,
+      "dayHigh": 4600,
+      "dayLow": 4554,
+      "change": -21.5,
+      "changePercent": -0.47
+    },
+    "TMCV": {
+      "symbol": "TMCV",
+      "price": 417.45,
+      "previousClose": 420.75,
+      "open": 417.45,
+      "dayHigh": 421.4,
+      "dayLow": 414,
+      "change": -3.3,
+      "changePercent": -0.78
+    },
+    "TMPV": {
+      "symbol": "TMPV",
+      "price": 334.95,
+      "previousClose": 342.25,
+      "open": 334.95,
+      "dayHigh": 340.75,
+      "dayLow": 334,
+      "change": -7.3,
+      "changePercent": -2.13
+    },
+    "TRENT": {
+      "symbol": "TRENT",
+      "price": 2864.5,
+      "previousClose": 2900.1,
+      "open": 2864.5,
+      "dayHigh": 2900,
+      "dayLow": 2862,
+      "change": -35.6,
+      "changePercent": -1.23
+    },
+    "UJJIVANSFB": {
+      "symbol": "UJJIVANSFB",
+      "price": 65.15,
+      "previousClose": 66.87,
+      "open": 65.15,
+      "dayHigh": 67.45,
+      "dayLow": 64.93,
+      "change": -1.72,
+      "changePercent": -2.57
+    },
+    "ULTRACEMCO": {
+      "symbol": "ULTRACEMCO",
+      "price": 11492,
+      "previousClose": 11571,
+      "open": 11492,
+      "dayHigh": 11543,
+      "dayLow": 11355,
+      "change": -79,
+      "changePercent": -0.68
+    },
+    "UNITECH": {
+      "symbol": "UNITECH",
+      "price": 4.56,
+      "previousClose": 4.59,
+      "open": 4.56,
+      "dayHigh": 4.61,
+      "dayLow": 4.55,
+      "change": -0.03,
+      "changePercent": -0.65
+    },
+    "VEDL": {
+      "symbol": "VEDL",
+      "price": 268.4,
+      "previousClose": 269.65,
+      "open": 268.4,
+      "dayHigh": 270.95,
+      "dayLow": 266.2,
+      "change": -1.25,
+      "changePercent": -0.46
+    },
+    "VOLTAS": {
+      "symbol": "VOLTAS",
+      "price": 1352.1,
+      "previousClose": 1349.5,
+      "open": 1352.1,
+      "dayHigh": 1359.5,
+      "dayLow": 1329.1,
+      "change": 2.6,
+      "changePercent": 0.19
+    },
+    "WHIRLPOOL": {
+      "symbol": "WHIRLPOOL",
+      "price": 784,
+      "previousClose": 790.35,
+      "open": 784,
+      "dayHigh": 792,
+      "dayLow": 780,
+      "change": -6.35,
+      "changePercent": -0.8
+    },
+    "WIPRO": {
+      "symbol": "WIPRO",
+      "price": 177.6,
+      "previousClose": 178.43,
+      "open": 177.6,
+      "dayHigh": 180.5,
+      "dayLow": 177.25,
+      "change": -0.83,
+      "changePercent": -0.47
+    },
+    "ZOMATO": {
+      "symbol": "ZOMATO",
+      "price": 283.8,
+      "previousClose": 285.2,
+      "open": 283.8,
+      "dayHigh": 286.15,
+      "dayLow": 278.55,
+      "change": -1.4,
+      "changePercent": -0.49
+    },
     "ZYDUSLIFE": {
       "symbol": "ZYDUSLIFE",
-      "price": 1147.4,
+      "price": 1142.2,
       "previousClose": 1131.3,
-      "open": 1147.4,
-      "dayHigh": 1148,
+      "open": 1142.2,
+      "dayHigh": 1151.7,
       "dayLow": 1126.6,
-      "change": 16.1,
-      "changePercent": 1.42
+      "change": 10.9,
+      "changePercent": 0.96
     }
   },
-  "fetchedAt": "2026-07-14T05:57:58.359Z",
+  "fetchedAt": "2026-07-14T07:21:58.939Z",
   "marketStatus": "open",
   "stats": {
     "total": 130,
