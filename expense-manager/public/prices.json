@@ -182,11 +182,11 @@
     },
     "BDL": {
       "symbol": "BDL",
-      "price": 1271.2,
-      "previousClose": 1277.8,
-      "open": 1271.2,
-      "dayHigh": 1297.4,
-      "dayLow": 1268,
+      "price": 1271,
+      "previousClose": 1277.6,
+      "open": 1271,
+      "dayHigh": 1297.8,
+      "dayLow": 1268.95,
       "change": -6.6,
       "changePercent": -0.52
     },
@@ -743,12 +743,12 @@
     "LT": {
       "symbol": "LT",
       "price": 3783.9,
-      "previousClose": 3848.7,
+      "previousClose": 3848.9,
       "open": 3783.9,
-      "dayHigh": 3868,
-      "dayLow": 3778.6,
-      "change": -64.8,
-      "changePercent": -1.68
+      "dayHigh": 3864.8,
+      "dayLow": 3777,
+      "change": -65,
+      "changePercent": -1.69
     },
     "LUPIN": {
       "symbol": "LUPIN",
@@ -1271,7 +1271,7 @@
       "changePercent": 2.06
     }
   },
-  "fetchedAt": "2026-07-15T10:16:39.783Z",
+  "fetchedAt": "2026-07-15T11:16:48.453Z",
   "marketStatus": "closed",
   "stats": {
     "total": 130,
