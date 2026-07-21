@@ -652,10 +652,10 @@
     },
     "IRCTC": {
       "symbol": "IRCTC",
-      "price": 499.85,
-      "previousClose": 504.8,
-      "open": 499.85,
-      "dayHigh": 504,
+      "price": 499.8,
+      "previousClose": 504.75,
+      "open": 499.8,
+      "dayHigh": 504.1,
       "dayLow": 498.15,
       "change": -4.95,
       "changePercent": -0.98
@@ -1212,13 +1212,13 @@
     },
     "VEDL": {
       "symbol": "VEDL",
-      "price": 264.85,
-      "previousClose": 261.85,
-      "open": 264.85,
-      "dayHigh": 266.3,
-      "dayLow": 259.55,
-      "change": 3,
-      "changePercent": 1.15
+      "price": 264.75,
+      "previousClose": 261.8,
+      "open": 264.75,
+      "dayHigh": 266.15,
+      "dayLow": 259.5,
+      "change": 2.95,
+      "changePercent": 1.13
     },
     "VOLTAS": {
       "symbol": "VOLTAS",
@@ -1271,7 +1271,7 @@
       "changePercent": -0.51
     }
   },
-  "fetchedAt": "2026-07-21T10:34:38.368Z",
+  "fetchedAt": "2026-07-21T11:31:01.530Z",
   "marketStatus": "closed",
   "stats": {
     "total": 130,
