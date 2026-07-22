@@ -9,11 +9,15 @@ import { AuthProvider } from './context/AuthContext';
 import { SyncProviderWrapper } from './context/SyncProviderWrapper';
 import { AUTH_CONFIG } from './shared/config/auth';
 import { preloadSymbolMap } from './shared/services/symbolResolver';
+import { initSupabaseAuth } from './shared/services/supabaseAuthService';
 import { router } from './app/router';
 import './index.css';
 
 // Pre-load NSE symbol map for ISIN→ticker resolution (non-blocking)
 preloadSymbolMap().catch(() => {});
+
+// Initialize Supabase auth — restores session if previously connected (non-blocking)
+initSupabaseAuth().catch(() => {});
 
 // MSAL instance (singleton)
 const msalInstance = new PublicClientApplication({
