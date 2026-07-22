@@ -2,8 +2,8 @@ import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard, ArrowLeftRight, PlusCircle, CalendarDays,
   Settings, Wallet, Menu, X, Landmark, Tag, ChevronDown,
-  Plus, LogIn, LogOut, Target, RefreshCw,FileUp,FileBarChart, Heart, TrendingUp, Bell,
-  Cloud, AlertCircle, Users,
+  Plus, LogIn, LogOut, Target, RefreshCw, FileUp, FileBarChart, Heart, TrendingUp, Bell,
+  Cloud, AlertCircle, Users, PanelLeftClose, PanelLeftOpen,
 } from 'lucide-react';
 import { useState, useRef, useEffect } from 'react';
 import { v4 as uuidv4 } from 'uuid';
@@ -41,13 +41,24 @@ export function Layout() {
   useTheme();
   const navigate = useNavigate();
   const { profiles, activeProfileId } = state;
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false); // mobile drawer
+  const [sidebarPinned, setSidebarPinned] = useState(() => {
+    try { return localStorage.getItem('expenseiq_sidebar_pinned') === 'true'; } catch { return false; }
+  });
+  const [sidebarHovered, setSidebarHovered] = useState(false);
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
   const [showNewProfile, setShowNewProfile] = useState(false);
   const [newProfileName, setNewProfileName] = useState('');
   const dropdownRef = useRef<HTMLDivElement>(null);
 
+  const sidebarExpanded = sidebarPinned || sidebarHovered;
   const activeProfile = profiles.find((p) => p.id === activeProfileId) || profiles[0];
+
+  const togglePin = () => {
+    const next = !sidebarPinned;
+    setSidebarPinned(next);
+    try { localStorage.setItem('expenseiq_sidebar_pinned', String(next)); } catch { /* */ }
+  };
 
   // Close dropdown on outside click
   useEffect(() => {
@@ -92,40 +103,63 @@ export function Layout() {
         />
       )}
 
-      {/* Sidebar */}
+      {/* Sidebar — Collapsible on desktop, slide-in on mobile */}
       <aside
+        onMouseEnter={() => setSidebarHovered(true)}
+        onMouseLeave={() => setSidebarHovered(false)}
         className={classNames(
-          'fixed inset-y-0 left-0 z-50 flex w-64 flex-col bg-white dark:bg-gray-800 shadow-xl transition-transform duration-300 lg:static lg:translate-x-0',
-          sidebarOpen ? 'translate-x-0' : '-translate-x-full'
+          'fixed inset-y-0 left-0 z-50 flex flex-col bg-white dark:bg-gray-800 shadow-xl transition-all duration-300 ease-in-out',
+          // Mobile: slide in/out
+          'lg:static lg:translate-x-0',
+          sidebarOpen ? 'translate-x-0' : '-translate-x-full',
+          // Desktop: width transition
+          sidebarExpanded ? 'w-64' : 'lg:w-[68px] w-64'
         )}
       >
         {/* Logo */}
-        <div className="flex h-16 items-center gap-3 border-b border-gray-100 dark:border-gray-700 px-6">
-          <div className="rounded-xl bg-primary-600 p-2">
+        <div className="flex h-16 items-center gap-3 border-b border-gray-100 dark:border-gray-700 px-4 overflow-hidden">
+          <div className="rounded-xl bg-primary-600 p-2 shrink-0">
             <Wallet className="h-5 w-5 text-white" />
           </div>
-          <div>
-            <h1 className="text-lg font-bold text-gray-900 dark:text-gray-100">ExpenseIQ</h1>
-            <p className="text-[10px] font-medium uppercase tracking-wider text-gray-400 dark:text-gray-500">Finance Manager</p>
+          <div className={classNames(
+            'transition-opacity duration-200 min-w-0',
+            sidebarExpanded ? 'opacity-100' : 'lg:opacity-0 lg:w-0 opacity-100'
+          )}>
+            <h1 className="text-lg font-bold text-gray-900 dark:text-gray-100 whitespace-nowrap">ExpenseIQ</h1>
+            <p className="text-[10px] font-medium uppercase tracking-wider text-gray-400 dark:text-gray-500 whitespace-nowrap">Finance Manager</p>
           </div>
+          {/* Mobile close */}
           <button
-            className="ml-auto rounded-lg p-1 text-gray-400 dark:text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-600 lg:hidden"
+            className="ml-auto rounded-lg p-1 text-gray-400 dark:text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-600 lg:hidden shrink-0"
             onClick={() => setSidebarOpen(false)}
           >
             <X size={20} />
           </button>
+          {/* Desktop pin toggle */}
+          <button
+            className={classNames(
+              'ml-auto rounded-lg p-1 text-gray-400 dark:text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-600 hidden shrink-0 transition-opacity',
+              sidebarExpanded ? 'lg:block' : 'lg:hidden'
+            )}
+            onClick={togglePin}
+            title={sidebarPinned ? 'Collapse sidebar' : 'Pin sidebar open'}
+          >
+            {sidebarPinned ? <PanelLeftClose size={18} /> : <PanelLeftOpen size={18} />}
+          </button>
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 space-y-1 px-3 py-4">
+        <nav className="flex-1 space-y-1 px-2 py-4 overflow-y-auto overflow-x-hidden">
           {navItems.map(({ path, icon: Icon, label }) => (
             <NavLink
               key={path}
               to={path}
               onClick={() => setSidebarOpen(false)}
+              title={!sidebarExpanded ? label : undefined}
               className={({ isActive }) =>
                 classNames(
-                  'flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all',
+                  'group relative flex items-center rounded-xl text-sm font-medium transition-all',
+                  sidebarExpanded ? 'gap-3 px-3 py-2.5' : 'lg:justify-center lg:px-0 lg:py-2.5 gap-3 px-3 py-2.5',
                   isActive
                     ? 'bg-primary-50 dark:bg-primary-900/30 text-primary-700 dark:text-primary-400 shadow-sm'
                     : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-gray-200'
@@ -133,14 +167,28 @@ export function Layout() {
               }
               end={path === '/'}
             >
-              <Icon size={20} />
-              {label}
+              <Icon size={20} className="shrink-0" />
+              <span className={classNames(
+                'whitespace-nowrap transition-opacity duration-200',
+                sidebarExpanded ? 'opacity-100' : 'lg:hidden opacity-100'
+              )}>
+                {label}
+              </span>
+              {/* Tooltip for collapsed state */}
+              {!sidebarExpanded && (
+                <span className="absolute left-full ml-2 hidden lg:group-hover:block z-[60] rounded-lg bg-gray-900 dark:bg-gray-700 px-2.5 py-1.5 text-xs font-medium text-white shadow-lg whitespace-nowrap">
+                  {label}
+                </span>
+              )}
             </NavLink>
           ))}
         </nav>
 
         {/* Footer */}
-        <div className="border-t border-gray-100 dark:border-gray-700 p-4">
+        <div className={classNames(
+          'border-t border-gray-100 dark:border-gray-700 p-3 transition-opacity duration-200',
+          sidebarExpanded ? 'opacity-100' : 'lg:opacity-0 lg:h-0 lg:p-0 lg:overflow-hidden opacity-100'
+        )}>
           {isAuthenticated && user ? (
             <div className="rounded-xl bg-gradient-to-r from-green-500 to-emerald-600 p-4 text-white">
               <p className="text-xs font-medium opacity-80">Signed in via {user.provider === 'google' ? 'Google' : 'Microsoft'}</p>
