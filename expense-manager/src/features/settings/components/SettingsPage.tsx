@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { Download, Upload, Trash2, AlertTriangle, FileSpreadsheet, Cloud, CloudOff, LogOut, RefreshCw, CheckCircle2, XCircle, Sun, Moon, Monitor, Palette, Check, RefreshCcw, Smartphone, Shield, Database, Unplug } from 'lucide-react';
+import { Download, Upload, Trash2, AlertTriangle, FileSpreadsheet, Cloud, CloudOff, LogOut, RefreshCw, CheckCircle2, XCircle, Sun, Moon, Monitor, Palette, Check, RefreshCcw, Smartphone, Shield, Database, Unplug, ArrowUpDown } from 'lucide-react';
 import type { AccentColor, DarkMode } from '../../../shared/types';
 import { useAppContext } from '../../../context/AppContext';
 import { useAuth } from '../../../context/AuthContext';
@@ -13,6 +13,7 @@ import { downloadFile, classNames } from '../../../shared/utils/helpers';
 import { CURRENCIES } from '../../../shared/constants/categories';
 import { CSVImportModal } from './CSVImportModal';
 import { backupService, BackupMetadata } from '../../../shared/services/backupService';
+import { backendSync, backendFullPush, clearBackendSyncState } from '../../../shared/services/supabaseSyncService';
 
 export function SettingsPage() {
   const { state, actions } = useAppContext();
@@ -783,17 +784,58 @@ export function SettingsPage() {
                   Connect to Backend
                 </Button>
               ) : (
-                <Button
-                  variant="secondary"
-                  icon={<Unplug size={16} />}
-                  onClick={async () => {
-                    await supabase.signOutSupabase();
-                    setBackendMessage('Disconnected from backend.');
-                    setTimeout(() => setBackendMessage(''), 3000);
-                  }}
-                >
-                  Disconnect
-                </Button>
+                <>
+                  <Button
+                    variant="primary"
+                    icon={backendConnecting ? <RefreshCw size={16} className="animate-spin" /> : <ArrowUpDown size={16} />}
+                    disabled={backendConnecting}
+                    onClick={async () => {
+                      setBackendConnecting(true);
+                      setBackendMessage('Syncing...');
+                      const result = await backendSync(state.activeProfileId);
+                      setBackendConnecting(false);
+                      if (result.success) {
+                        setBackendMessage(`Sync complete! Pushed ${result.pushed}, pulled ${result.pulled} records.`);
+                      } else {
+                        setBackendMessage(`Sync failed: ${result.error}`);
+                      }
+                      setTimeout(() => setBackendMessage(''), 8000);
+                    }}
+                  >
+                    Sync Now
+                  </Button>
+                  <Button
+                    variant="secondary"
+                    icon={<Upload size={16} />}
+                    disabled={backendConnecting}
+                    onClick={async () => {
+                      setBackendConnecting(true);
+                      setBackendMessage('Pushing all local data...');
+                      const result = await backendFullPush(state.activeProfileId);
+                      setBackendConnecting(false);
+                      if (result.success) {
+                        setBackendMessage(`Full push complete! ${result.pushed} records synced.`);
+                      } else {
+                        setBackendMessage(`Push failed: ${result.error}`);
+                      }
+                      setTimeout(() => setBackendMessage(''), 8000);
+                    }}
+                  >
+                    Push All Data
+                  </Button>
+                  <Button
+                    variant="secondary"
+                    icon={<Unplug size={16} />}
+                    onClick={async () => {
+                      clearBackendSyncState();
+                      await supabase.signOutSupabase();
+                      setBackendMessage('Disconnected from backend.');
+                      setTimeout(() => setBackendMessage(''), 3000);
+                    }}
+                  >
+                    Disconnect
+                  </Button>
+                </>
               )}
             </div>
 

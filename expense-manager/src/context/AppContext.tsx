@@ -5,6 +5,7 @@ import { db, migrateStockSymbols } from '../shared/services/db';
 import { migrateFromLocalStorage, getActiveProfileIdFromLS } from '../shared/services/migration';
 import { DEFAULT_SETTINGS } from '../shared/constants/categories';
 import { schedulePush, registerVisibilitySync, pullDeltas, isSyncEnabled } from '../shared/services/syncService';
+import { scheduleBackendSync } from '../shared/services/supabaseSyncService';
 
 // State
 interface AppState {
@@ -289,25 +290,31 @@ export function AppProvider({ children }: { children: ReactNode }) {
     return () => { cancelled = true; };
   }, []);
 
+  // ─── Sync helper: triggers both cloud file sync + backend DB sync ──
+  const scheduleAllSync = useCallback((profileId: string) => {
+    schedulePush(profileId);
+    scheduleBackendSync(profileId);
+  }, []);
+
   // ─── Action creators ─────────────────────────────────
 
   const actions: AppActions = {
     addTransaction: useCallback(async (tx: Transaction) => {
       await repository.addTransaction(profileIdRef.current, tx);
       dispatch({ type: 'ADD_TRANSACTION', payload: tx });
-      schedulePush(profileIdRef.current);
-    }, []),
+      scheduleAllSync(profileIdRef.current);
+    }, [scheduleAllSync]),
 
     updateTransaction: useCallback(async (id: string, updates: Partial<Transaction>) => {
       await repository.updateTransaction(profileIdRef.current, id, updates);
       dispatch({ type: 'UPDATE_TRANSACTION', payload: { id, updates } });
-      schedulePush(profileIdRef.current);
+      scheduleAllSync(profileIdRef.current);
     }, []),
 
     deleteTransaction: useCallback(async (id: string) => {
       await repository.deleteTransaction(id);
       dispatch({ type: 'DELETE_TRANSACTION', payload: id });
-      schedulePush(profileIdRef.current);
+      scheduleAllSync(profileIdRef.current);
     }, []),
 
     updateSettings: useCallback(async (updates: Partial<Settings>) => {
@@ -316,58 +323,58 @@ export function AppProvider({ children }: { children: ReactNode }) {
       const newSettings = { ...existing, ...updates };
       await repository.saveSettings(current, newSettings);
       dispatch({ type: 'SET_SETTINGS', payload: newSettings });
-      schedulePush(profileIdRef.current);
+      scheduleAllSync(profileIdRef.current);
     }, []),
 
     setBudget: useCallback(async (budget: Budget) => {
       await repository.setBudget(profileIdRef.current, budget);
       dispatch({ type: 'ADD_BUDGET', payload: budget });
-      schedulePush(profileIdRef.current);
+      scheduleAllSync(profileIdRef.current);
     }, []),
 
     deleteBudget: useCallback(async (id: string) => {
       await repository.deleteBudget(profileIdRef.current, id);
       dispatch({ type: 'DELETE_BUDGET', payload: id });
-      schedulePush(profileIdRef.current);
+      scheduleAllSync(profileIdRef.current);
     }, []),
 
     addCategory:useCallback(async (category: Category) => {
       const cats = await repository.addCustomCategory(profileIdRef.current, category);
       dispatch({ type: 'SET_CATEGORIES', payload: cats });
-      schedulePush(profileIdRef.current);
+      scheduleAllSync(profileIdRef.current);
     }, []),
 
     updateCategory: useCallback(async (id: string, updates: Partial<Category>) => {
       const cats = await repository.updateCustomCategory(profileIdRef.current, id, updates);
       dispatch({ type: 'SET_CATEGORIES', payload: cats });
-      schedulePush(profileIdRef.current);
+      scheduleAllSync(profileIdRef.current);
     }, []),
 
     deleteCategory: useCallback(async (id: string) => {
       const cats = await repository.deleteCustomCategory(profileIdRef.current, id);
       dispatch({ type: 'SET_CATEGORIES', payload: cats });
-      schedulePush(profileIdRef.current);
+      scheduleAllSync(profileIdRef.current);
     }, []),
 
     addAccount: useCallback(async (account: Account) => {
       await repository.addAccount(profileIdRef.current, account);
       const accounts = await repository.getAccounts(profileIdRef.current);
       dispatch({ type: 'SET_ACCOUNTS', payload: accounts });
-      schedulePush(profileIdRef.current);
+      scheduleAllSync(profileIdRef.current);
     }, []),
 
     updateAccount: useCallback(async (id: string, updates: Partial<Account>) => {
       await repository.updateAccount(id, updates);
       const accounts = await repository.getAccounts(profileIdRef.current);
       dispatch({ type: 'SET_ACCOUNTS', payload: accounts });
-      schedulePush(profileIdRef.current);
+      scheduleAllSync(profileIdRef.current);
     }, []),
 
     deleteAccount: useCallback(async (id: string) => {
       await repository.deleteAccount(id);
       const accounts = await repository.getAccounts(profileIdRef.current);
       dispatch({ type: 'SET_ACCOUNTS', payload: accounts });
-      schedulePush(profileIdRef.current);
+      scheduleAllSync(profileIdRef.current);
     }, []),
 
     addProfile: useCallback(async (profile: Profile) => {
@@ -471,7 +478,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     addRecurringRule: useCallback(async (rule: RecurringRule) => {
       await repository.saveRecurringRule(profileIdRef.current, rule);
       dispatch({ type: 'ADD_RECURRING_RULE', payload: rule });
-      schedulePush(profileIdRef.current);
+      scheduleAllSync(profileIdRef.current);
     }, []),
 
     updateRecurringRule: useCallback(async (id: string, updates: Partial<RecurringRule>) => {
@@ -481,14 +488,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
         const updated: RecurringRule = { ...existing, ...updates, updatedAt: new Date().toISOString() };
         await repository.saveRecurringRule(profileIdRef.current, updated);
         dispatch({ type: 'UPDATE_RECURRING_RULE', payload: { id, updates } });
-        schedulePush(profileIdRef.current);
+        scheduleAllSync(profileIdRef.current);
       }
     }, []),
 
     deleteRecurringRule: useCallback(async (id: string) => {
       await repository.deleteRecurringRule(profileIdRef.current, id);
       dispatch({ type: 'DELETE_RECURRING_RULE', payload: id });
-      schedulePush(profileIdRef.current);
+      scheduleAllSync(profileIdRef.current);
     }, []),
 
     processRecurringRules: useCallback(async () => {
@@ -509,7 +516,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       const now = new Date().toISOString();
       await db.stockTransactions.add({ ...txn, profileId: profileIdRef.current, updatedAt: txn.updatedAt || now });
       dispatch({ type: 'ADD_STOCK_TRANSACTION', payload: txn });
-      schedulePush(profileIdRef.current);
+      scheduleAllSync(profileIdRef.current);
     }, []),
 
     addStockTransactions: useCallback(async (txns: StockTransaction[]) => {
@@ -518,20 +525,20 @@ export function AppProvider({ children }: { children: ReactNode }) {
       const withProfile = txns.map(t => ({ ...t, profileId, updatedAt: t.updatedAt || now }));
       await db.stockTransactions.bulkAdd(withProfile);
       dispatch({ type: 'ADD_STOCK_TRANSACTIONS', payload: txns });
-      schedulePush(profileIdRef.current);
+      scheduleAllSync(profileIdRef.current);
     }, []),
 
     deleteStockTransaction: useCallback(async (id: string) => {
       const now = new Date().toISOString();
       await db.stockTransactions.update(id, { isDeleted: true, deletedAt: now, updatedAt: now });
       dispatch({ type: 'DELETE_STOCK_TRANSACTION', payload: id });
-      schedulePush(profileIdRef.current);
+      scheduleAllSync(profileIdRef.current);
     }, []),
 
     addBillReminder: useCallback(async (reminder: BillReminder) => {
       await repository.saveBillReminder(profileIdRef.current, reminder);
       dispatch({ type: 'ADD_BILL_REMINDER', payload: reminder });
-      schedulePush(profileIdRef.current);
+      scheduleAllSync(profileIdRef.current);
     }, []),
 
     updateBillReminder: useCallback(async (id: string, updates: Partial<BillReminder>) => {
@@ -541,14 +548,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
         const updated: BillReminder = { ...existing, ...updates, updatedAt: new Date().toISOString() };
         await repository.saveBillReminder(profileIdRef.current, updated);
         dispatch({ type: 'UPDATE_BILL_REMINDER', payload: { id, updates } });
-        schedulePush(profileIdRef.current);
+        scheduleAllSync(profileIdRef.current);
       }
     }, []),
 
     deleteBillReminder: useCallback(async (id: string) => {
       await repository.deleteBillReminder(profileIdRef.current, id);
       dispatch({ type: 'DELETE_BILL_REMINDER', payload: id });
-      schedulePush(profileIdRef.current);
+      scheduleAllSync(profileIdRef.current);
     }, []),
   };
 
