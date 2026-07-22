@@ -1,10 +1,11 @@
 import { useState, useRef, useEffect } from 'react';
-import { Download, Upload, Trash2, AlertTriangle, FileSpreadsheet, Cloud, CloudOff, LogOut, RefreshCw, CheckCircle2, XCircle, Sun, Moon, Monitor, Palette, Check, RefreshCcw, Smartphone, Shield } from 'lucide-react';
+import { Download, Upload, Trash2, AlertTriangle, FileSpreadsheet, Cloud, CloudOff, LogOut, RefreshCw, CheckCircle2, XCircle, Sun, Moon, Monitor, Palette, Check, RefreshCcw, Smartphone, Shield, Database, Unplug } from 'lucide-react';
 import type { AccentColor, DarkMode } from '../../../shared/types';
 import { useAppContext } from '../../../context/AppContext';
 import { useAuth } from '../../../context/AuthContext';
 import { useSync } from '../../../context/SyncContext';
 import { useTheme } from '../../../shared/hooks/useTheme';
+import { useSupabaseAuth } from '../../../shared/hooks/useSupabaseAuth';
 import { Button } from '../../../shared/components/ui/Button';
 import { Select } from '../../../shared/components/ui/Input';
 import { Modal } from '../../../shared/components/ui/Modal';
@@ -18,6 +19,7 @@ export function SettingsPage() {
   const { user, isAuthenticated, logout } = useAuth();
   const { syncStatus, enableSyncForUser, disableSyncForUser, syncNow, deleteCloudData, deviceName } = useSync();
   const { theme, effectiveTheme, setTheme, accentColor, setAccentColor, darkMode, setDarkMode } = useTheme();
+  const supabase = useSupabaseAuth();
   const { settings } = state;
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [showClearConfirm, setShowClearConfirm] = useState(false);
@@ -31,6 +33,8 @@ export function SettingsPage() {
   const [syncActionStatus, setSyncActionStatus] = useState<'idle' | 'enabling' | 'syncing' | 'deleting'>('idle');
   const [syncMessage, setSyncMessage] = useState('');
   const [showDeleteSyncConfirm, setShowDeleteSyncConfirm] = useState(false);
+  const [backendConnecting, setBackendConnecting] = useState(false);
+  const [backendMessage, setBackendMessage] = useState('');
 
   // Load backup info when authenticated
   useEffect(() => {
@@ -675,6 +679,144 @@ export function SettingsPage() {
           <div className="text-center py-4">
             <RefreshCcw className="mx-auto h-8 w-8 text-gray-300 dark:text-gray-600 mb-2" />
             <p className="text-sm text-gray-500 dark:text-gray-400">Sign in to sync data across your devices</p>
+          </div>
+        )}
+      </div>
+
+      {/* Backend Database Status */}
+      <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-6 shadow-sm">
+        <h3 className="mb-4 text-base font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2">
+          <Database size={18} />
+          Cloud Database
+        </h3>
+
+        {!supabase.isConfigured ? (
+          <div className="text-center py-4">
+            <Database className="mx-auto h-8 w-8 text-gray-300 dark:text-gray-600 mb-2" />
+            <p className="text-sm text-gray-500 dark:text-gray-400">Backend not configured</p>
+            <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
+              Set <code className="bg-gray-100 dark:bg-gray-700 px-1 rounded text-xs">VITE_SUPABASE_URL</code> and{' '}
+              <code className="bg-gray-100 dark:bg-gray-700 px-1 rounded text-xs">VITE_SUPABASE_ANON_KEY</code> in your .env file
+            </p>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {/* Connection status */}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className={classNames(
+                  'h-2.5 w-2.5 rounded-full',
+                  supabase.isConnected ? 'bg-success-500' : 'bg-gray-300 dark:bg-gray-600'
+                )} />
+                <span className="text-sm text-gray-700 dark:text-gray-300">
+                  {supabase.isConnected ? 'Connected' : 'Not connected'}
+                </span>
+              </div>
+              {supabase.isConnected && supabase.user && (
+                <span className="text-xs text-gray-400 dark:text-gray-500">
+                  {supabase.user.email}
+                </span>
+              )}
+            </div>
+
+            {/* User info when connected */}
+            {supabase.isConnected && (
+              <div className="bg-success-50 dark:bg-success-900/20 border border-success-200 dark:border-success-800 rounded-lg p-3">
+                <div className="flex items-center gap-2 text-success-700 dark:text-success-400 text-sm">
+                  <CheckCircle2 size={16} />
+                  <span>Backend connected — data sync is available</span>
+                </div>
+                {supabase.lastSyncAt && (
+                  <p className="text-xs text-success-600 dark:text-success-500 mt-1 ml-6">
+                    Last synced: {new Date(supabase.lastSyncAt).toLocaleString()}
+                  </p>
+                )}
+              </div>
+            )}
+
+            {/* Error display */}
+            {supabase.error && (
+              <div className="bg-danger-50 dark:bg-danger-900/20 border border-danger-200 dark:border-danger-800 rounded-lg p-3">
+                <div className="flex items-center gap-2 text-danger-700 dark:text-danger-400 text-sm">
+                  <XCircle size={16} />
+                  <span>{supabase.error}</span>
+                </div>
+              </div>
+            )}
+
+            {/* Actions */}
+            <div className="flex flex-wrap gap-2">
+              {!supabase.isConnected ? (
+                <Button
+                  variant="primary"
+                  icon={backendConnecting ? <RefreshCw size={16} className="animate-spin" /> : <Database size={16} />}
+                  disabled={!isAuthenticated || backendConnecting}
+                  onClick={async () => {
+                    if (!user?.provider) return;
+                    setBackendConnecting(true);
+                    setBackendMessage('');
+
+                    // Get the ID token from the current session
+                    const idToken = sessionStorage.getItem(
+                      user.provider === 'google' ? 'em_google_id_token' : 'em_microsoft_id_token'
+                    );
+
+                    if (!idToken) {
+                      setBackendMessage('No auth token found. Please sign out and sign in again.');
+                      setBackendConnecting(false);
+                      return;
+                    }
+
+                    const success = user.provider === 'google'
+                      ? await supabase.bridgeGoogleAuth(idToken)
+                      : await supabase.bridgeMicrosoftAuth(idToken);
+
+                    setBackendMessage(
+                      success
+                        ? 'Connected to backend successfully!'
+                        : 'Failed to connect. Check Supabase provider config.'
+                    );
+                    setBackendConnecting(false);
+                    if (success) setTimeout(() => setBackendMessage(''), 5000);
+                  }}
+                >
+                  Connect to Backend
+                </Button>
+              ) : (
+                <Button
+                  variant="secondary"
+                  icon={<Unplug size={16} />}
+                  onClick={async () => {
+                    await supabase.signOutSupabase();
+                    setBackendMessage('Disconnected from backend.');
+                    setTimeout(() => setBackendMessage(''), 3000);
+                  }}
+                >
+                  Disconnect
+                </Button>
+              )}
+            </div>
+
+            {!isAuthenticated && !supabase.isConnected && (
+              <p className="text-xs text-gray-400 dark:text-gray-500">
+                Sign in with Google or Microsoft first, then connect to the cloud database.
+              </p>
+            )}
+
+            {backendMessage && (
+              <p className={classNames(
+                'text-sm flex items-center gap-1',
+                backendMessage.includes('Failed') || backendMessage.includes('No auth') ? 'text-danger-600' : 'text-success-600'
+              )}>
+                {backendMessage.includes('Failed') || backendMessage.includes('No auth') ? <XCircle size={14} /> : <CheckCircle2 size={14} />}
+                {backendMessage}
+              </p>
+            )}
+
+            <p className="text-xs text-gray-400 dark:text-gray-500">
+              Cloud database enables real-time sync across devices with automatic backup.
+              Your local data remains the primary store — the app works fully offline.
+            </p>
           </div>
         )}
       </div>
