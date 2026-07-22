@@ -6,6 +6,8 @@ import { migrateFromLocalStorage, getActiveProfileIdFromLS } from '../shared/ser
 import { DEFAULT_SETTINGS } from '../shared/constants/categories';
 import { schedulePush, registerVisibilitySync, pullDeltas, isSyncEnabled } from '../shared/services/syncService';
 import { scheduleBackendSync } from '../shared/services/supabaseSyncService';
+import { startRealtimeSync, stopRealtimeSync, setRealtimeDataChangedCallback } from '../shared/services/supabaseRealtimeService';
+import { onSupabaseAuthChange } from '../shared/services/supabaseAuthService';
 
 // State
 interface AppState {
@@ -578,6 +580,34 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
     return cleanup;
   }, [state.activeProfileId]);
+
+  // ─── Supabase Realtime: auto-start/stop on auth changes ──
+  useEffect(() => {
+    // Register a callback so realtime events trigger a data reload
+    const reloadData = () => {
+      const profileId = profileIdRef.current;
+      repository.loadProfileData(profileId).then((data) => {
+        dispatch({ type: 'LOAD_PROFILE_DATA', payload: { profileId, ...data } });
+      }).catch(console.error);
+    };
+
+    setRealtimeDataChangedCallback(reloadData);
+
+    // Listen for auth state changes to auto-start/stop realtime
+    const unsubscribe = onSupabaseAuthChange((authState) => {
+      if (authState.isConnected && authState.session) {
+        startRealtimeSync();
+      } else {
+        stopRealtimeSync();
+      }
+    });
+
+    return () => {
+      setRealtimeDataChangedCallback(null);
+      stopRealtimeSync();
+      unsubscribe();
+    };
+  }, []);
 
   return (
     <AppContext.Provider value={{ state, dispatch, actions }}>

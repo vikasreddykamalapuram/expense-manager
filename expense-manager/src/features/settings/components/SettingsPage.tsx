@@ -1,11 +1,12 @@
 import { useState, useRef, useEffect } from 'react';
-import { Download, Upload, Trash2, AlertTriangle, FileSpreadsheet, Cloud, CloudOff, LogOut, RefreshCw, CheckCircle2, XCircle, Sun, Moon, Monitor, Palette, Check, RefreshCcw, Smartphone, Shield, Database, Unplug, ArrowUpDown } from 'lucide-react';
+import { Download, Upload, Trash2, AlertTriangle, FileSpreadsheet, Cloud, CloudOff, LogOut, RefreshCw, CheckCircle2, XCircle, Sun, Moon, Monitor, Palette, Check, RefreshCcw, Smartphone, Shield, Database, Unplug, ArrowUpDown, Wifi, WifiOff } from 'lucide-react';
 import type { AccentColor, DarkMode } from '../../../shared/types';
 import { useAppContext } from '../../../context/AppContext';
 import { useAuth } from '../../../context/AuthContext';
 import { useSync } from '../../../context/SyncContext';
 import { useTheme } from '../../../shared/hooks/useTheme';
 import { useSupabaseAuth } from '../../../shared/hooks/useSupabaseAuth';
+import { useSupabaseRealtime } from '../../../shared/hooks/useSupabaseRealtime';
 import { Button } from '../../../shared/components/ui/Button';
 import { Select } from '../../../shared/components/ui/Input';
 import { Modal } from '../../../shared/components/ui/Modal';
@@ -21,6 +22,7 @@ export function SettingsPage() {
   const { syncStatus, enableSyncForUser, disableSyncForUser, syncNow, deleteCloudData, deviceName } = useSync();
   const { theme, effectiveTheme, setTheme, accentColor, setAccentColor, darkMode, setDarkMode } = useTheme();
   const supabase = useSupabaseAuth();
+  const realtime = useSupabaseRealtime();
   const { settings } = state;
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [showClearConfirm, setShowClearConfirm] = useState(false);
@@ -735,6 +737,60 @@ export function SettingsPage() {
               </div>
             )}
 
+            {/* Realtime status */}
+            {supabase.isConnected && (
+              <div className={classNames(
+                'rounded-lg p-3 border',
+                realtime.status === 'connected'
+                  ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800'
+                  : realtime.status === 'error'
+                    ? 'bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-800'
+                    : 'bg-gray-50 dark:bg-gray-700/30 border-gray-200 dark:border-gray-600'
+              )}>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2 text-sm">
+                    {realtime.status === 'connected' ? (
+                      <Wifi size={16} className="text-blue-600 dark:text-blue-400" />
+                    ) : realtime.status === 'connecting' ? (
+                      <RefreshCw size={16} className="text-gray-500 animate-spin" />
+                    ) : (
+                      <WifiOff size={16} className="text-gray-400 dark:text-gray-500" />
+                    )}
+                    <span className={classNames(
+                      realtime.status === 'connected' ? 'text-blue-700 dark:text-blue-400' :
+                      realtime.status === 'error' ? 'text-amber-700 dark:text-amber-400' :
+                      'text-gray-600 dark:text-gray-400'
+                    )}>
+                      {realtime.status === 'connected' ? 'Live sync active' :
+                       realtime.status === 'connecting' ? 'Connecting...' :
+                       realtime.status === 'error' ? `Realtime error: ${realtime.error}` :
+                       'Realtime disconnected'}
+                    </span>
+                  </div>
+                  {realtime.status === 'connected' && realtime.eventsReceived > 0 && (
+                    <span className="text-xs text-blue-500 dark:text-blue-400">
+                      {realtime.eventsReceived} live {realtime.eventsReceived === 1 ? 'update' : 'updates'}
+                    </span>
+                  )}
+                </div>
+                {realtime.status === 'connected' && (
+                  <p className="text-xs text-blue-500 dark:text-blue-400 mt-1 ml-6">
+                    Changes on other devices appear here instantly
+                  </p>
+                )}
+                {realtime.status !== 'connected' && realtime.status !== 'connecting' && (
+                  <div className="mt-2 ml-6">
+                    <button
+                      className="text-xs text-blue-600 dark:text-blue-400 hover:underline"
+                      onClick={() => realtime.startRealtimeSync()}
+                    >
+                      Start live sync
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+
             {/* Error display */}
             {supabase.error && (
               <div className="bg-danger-50 dark:bg-danger-900/20 border border-danger-200 dark:border-danger-800 rounded-lg p-3">
@@ -827,6 +883,7 @@ export function SettingsPage() {
                     variant="secondary"
                     icon={<Unplug size={16} />}
                     onClick={async () => {
+                      realtime.stopRealtimeSync();
                       clearBackendSyncState();
                       await supabase.signOutSupabase();
                       setBackendMessage('Disconnected from backend.');
