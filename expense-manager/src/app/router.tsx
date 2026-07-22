@@ -21,6 +21,7 @@ const PortfolioPage = lazy(() => import('../features/stocks/components/Portfolio
 const PortfolioAnalytics = lazy(() => import('../features/stocks/components/PortfolioAnalytics').then(m => ({ default: m.PortfolioAnalytics })));
 const TradeHistoryPage = lazy(() => import('../features/stocks/components/TradeHistoryPage').then(m => ({ default: m.TradeHistoryPage })));
 const TradeImportPage = lazy(() => import('../features/stocks/components/TradeImportPage').then(m => ({ default: m.TradeImportPage })));
+const SplitwisePage = lazy(() => import('../features/splitwise/components/SplitwisePage').then(m => ({ default: m.SplitwisePage })));
 
 function RouteLoader() {
   return (
@@ -64,6 +65,7 @@ export const router = createBrowserRouter([
       { path: 'accounts', element: <Suspense fallback={<RouteLoader />}><AccountsPage /></Suspense> },
       { path: 'categories', element: <Suspense fallback={<RouteLoader />}><CategoriesPage /></Suspense> },
       { path: 'import', element: <Suspense fallback={<RouteLoader />}><StatementImportPage /></Suspense> },
+      { path: 'splitwise', element: <Suspense fallback={<RouteLoader />}><SplitwisePage /></Suspense> },
       { path: 'settings', element: <Suspense fallback={<RouteLoader />}><SettingsPage /></Suspense> },
     ],
   },

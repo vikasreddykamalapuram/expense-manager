@@ -222,6 +222,82 @@ export interface BillReminder {
   deletedAt?: string;
 }
 
+// ─── Splitwise / Group Expense Types ────────────────────
+
+export type SplitType = 'equal' | 'percentage' | 'exact' | 'shares';
+
+export interface SplitMember {
+  id: string;
+  name: string;
+  phone?: string;
+  email?: string;
+  avatarColor: string;
+  createdAt: string;
+  updatedAt: string;
+  isDeleted?: boolean;
+  deletedAt?: string;
+}
+
+export interface SplitGroup {
+  id: string;
+  name: string;
+  description?: string;
+  memberIds: string[];
+  category?: string; // trip, flat, office, couple, other
+  createdAt: string;
+  updatedAt: string;
+  isDeleted?: boolean;
+  deletedAt?: string;
+}
+
+export interface SplitShare {
+  memberId: string;
+  amount: number; // computed final amount this member owes
+}
+
+export interface SplitExpense {
+  id: string;
+  groupId: string;
+  description: string;
+  amount: number;
+  paidBy: string; // member ID who paid
+  splitType: SplitType;
+  splits: SplitShare[];
+  category?: string;
+  date: string; // ISO date string YYYY-MM-DD
+  notes?: string;
+  createdAt: string;
+  updatedAt: string;
+  isDeleted?: boolean;
+  deletedAt?: string;
+}
+
+export interface SplitSettlement {
+  id: string;
+  groupId: string;
+  fromMemberId: string; // who paid
+  toMemberId: string; // who received
+  amount: number;
+  date: string;
+  notes?: string;
+  createdAt: string;
+  updatedAt: string;
+  isDeleted?: boolean;
+  deletedAt?: string;
+}
+
+export interface MemberBalance {
+  memberId: string;
+  memberName: string;
+  balance: number; // positive = owed money, negative = owes money
+}
+
+export interface DebtEdge {
+  from: string; // member ID who owes
+  to: string; // member ID who is owed
+  amount: number;
+}
+
 export type AuthProvider = 'google' | 'microsoft';
 
 export interface AuthUser {
