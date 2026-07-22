@@ -5,7 +5,17 @@
 -- Run in Supabase SQL Editor:
 --   Dashboard → SQL Editor → New query → paste & run
 
+-- Set REPLICA IDENTITY FULL (required for filtered realtime with RLS)
+ALTER TABLE transactions REPLICA IDENTITY FULL;
+ALTER TABLE categories REPLICA IDENTITY FULL;
+ALTER TABLE accounts REPLICA IDENTITY FULL;
+ALTER TABLE budgets REPLICA IDENTITY FULL;
+ALTER TABLE recurring_rules REPLICA IDENTITY FULL;
+ALTER TABLE stock_transactions REPLICA IDENTITY FULL;
+ALTER TABLE bill_reminders REPLICA IDENTITY FULL;
+
 -- Enable realtime for all synced tables
+-- (If you get "relation already exists in publication", the table is already added — safe to skip)
 ALTER PUBLICATION supabase_realtime ADD TABLE transactions;
 ALTER PUBLICATION supabase_realtime ADD TABLE categories;
 ALTER PUBLICATION supabase_realtime ADD TABLE accounts;

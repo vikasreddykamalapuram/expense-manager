@@ -17,7 +17,7 @@
 import { getSupabase } from '../config/supabase';
 import { db } from './db';
 import { getSupabaseUserId, isBackendConnected } from './supabaseAuthService';
-import type { RealtimeChannel, RealtimePostgresChangesPayload } from '@supabase/supabase-js';
+import type { RealtimePostgresChangesPayload } from '@supabase/supabase-js';
 
 // ─── Types ──────────────────────────────────────────────
 
@@ -25,7 +25,8 @@ type DataChangedCallback = () => void;
 
 interface RealtimeState {
   status: 'disconnected' | 'connecting' | 'connected' | 'error';
-  channel: RealtimeChannel | null;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  channel: any;
   eventsReceived: number;
   lastEventAt: string | null;
   error: string | null;
@@ -130,21 +131,19 @@ export function startRealtimeSync(): void {
 
   updateState({ status: 'connecting', error: null });
 
-  // Create a single channel with multiple table subscriptions
-  const channel = supabase.channel(`db-changes-${userId}`, {
-    config: { broadcast: { self: false } },
-  });
+  // Build channel with chained .on() calls for each table
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let channel: any = supabase.channel(`db-changes-${userId}`);
 
-  // Subscribe to each table's changes
   for (const table of REALTIME_TABLES) {
-    channel.on(
-      'postgres_changes' as 'system', // type workaround for supabase-js
+    channel = channel.on(
+      'postgres_changes',
       {
         event: '*',
         schema: table.schema,
         table: table.remote,
         filter: `user_id=eq.${userId}`,
-      } as Record<string, unknown>,
+      },
       (payload: RealtimePostgresChangesPayload<Record<string, unknown>>) => {
         handleChange(table, payload);
       },
