@@ -23,6 +23,8 @@ const SYMBOL_OVERRIDES = {
 };
 
 function toYahooSymbol(symbol) {
+  // Index symbols (^NSEI, ^BSESN) — use as-is
+  if (symbol.startsWith('^')) return symbol;
   // If symbol already has exchange suffix (e.g., AAPL, VOD.L, 9988.HK), use as-is
   if (symbol.includes('.')) return symbol;
   // Apply Yahoo-specific overrides
@@ -42,8 +44,8 @@ async function fetchPrice(symbol) {
     });
 
     if (!resp.ok) {
-      // Try BSE as fallback only for Indian stocks (no dot in original symbol)
-      if (!symbol.includes('.')) {
+      // Try BSE as fallback only for Indian stocks (no dot or caret in original symbol)
+      if (!symbol.includes('.') && !symbol.startsWith('^')) {
         const bseUrl = `${YAHOO_BASE}${encodeURIComponent(symbol + '.BO')}?interval=1d&range=1d`;
         const bseResp = await fetch(bseUrl, {
           headers: { 'User-Agent': USER_AGENT, 'Accept': 'application/json' },
@@ -153,7 +155,8 @@ async function main() {
     if (result) {
       prices[ticker] = result;
       success++;
-      console.log(`  ✓ ${ticker}: ₹${result.price} (${result.change >= 0 ? '+' : ''}${result.changePercent}%)`);
+      const unit = ticker.startsWith('^') ? '' : '₹';
+      console.log(`  ✓ ${ticker}: ${unit}${result.price} (${result.change >= 0 ? '+' : ''}${result.changePercent}%)`);
     } else {
       failed++;
     }

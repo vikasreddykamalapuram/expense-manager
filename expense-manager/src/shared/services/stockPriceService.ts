@@ -260,6 +260,50 @@ export async function getUntrackedSymbols(holdingSymbols: string[]): Promise<str
   return holdingSymbols.filter(s => !tracked.has(s));
 }
 
+// ─── Index / Benchmark Prices ───────────────────────────
+
+export interface IndexPrice {
+  symbol: string;
+  name: string;
+  currentPrice: number;
+  previousClose: number;
+  change: number;
+  changePercent: number;
+  dayHigh: number;
+  dayLow: number;
+  lastUpdated: string;
+}
+
+const INDEX_META: Record<string, string> = {
+  '^NSEI': 'Nifty 50',
+  '^BSESN': 'Sensex',
+};
+
+/** Fetch benchmark index prices (Nifty 50, Sensex) from prices.json */
+export async function fetchIndexPrices(): Promise<IndexPrice[]> {
+  const pricesJson = await fetchPricesJson();
+  if (!pricesJson?.data) return [];
+
+  const indices: IndexPrice[] = [];
+  for (const [symbol, name] of Object.entries(INDEX_META)) {
+    const entry = pricesJson.data[symbol];
+    if (entry) {
+      indices.push({
+        symbol,
+        name,
+        currentPrice: entry.price,
+        previousClose: entry.previousClose,
+        change: entry.change,
+        changePercent: entry.changePercent,
+        dayHigh: entry.dayHigh,
+        dayLow: entry.dayLow,
+        lastUpdated: pricesJson.fetchedAt,
+      });
+    }
+  }
+  return indices;
+}
+
 /** Build the GitHub workflow dispatch URL for adding new symbols */
 export function getWorkflowDispatchUrl(repoUrl: string, symbols: string[]): string {
   // Strip .git suffix and build Actions URL
