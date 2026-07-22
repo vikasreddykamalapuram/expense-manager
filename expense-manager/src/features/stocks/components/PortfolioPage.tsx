@@ -326,6 +326,7 @@ function HeaderCell({ label, col, onSort, sortIcon, className }: {
 }
 
 function HoldingRow({ holding, settings, loading }: { holding: PortfolioHolding; settings: Settings; loading?: boolean }) {
+  const navigate = useNavigate();
   const plColor = (holding.unrealizedPL ?? 0) >= 0
     ? 'text-green-600 dark:text-green-400'
     : 'text-red-600 dark:text-red-400';
@@ -334,7 +335,7 @@ function HoldingRow({ holding, settings, loading }: { holding: PortfolioHolding;
     : 'text-red-600 dark:text-red-400';
 
   return (
-    <tr className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
+    <tr className="hover:bg-gray-50 dark:hover:bg-gray-700/50 cursor-pointer" onClick={() => navigate(`/portfolio/${holding.symbol}`)}>
       <td className="px-4 py-3 font-medium text-gray-900 dark:text-gray-100">{holding.symbol}</td>
       <td className="px-4 py-3 text-gray-600 dark:text-gray-400 hidden md:table-cell truncate max-w-[180px]">{holding.name}</td>
       <td className="px-4 py-3 text-gray-900 dark:text-gray-100">{holding.quantity}</td>

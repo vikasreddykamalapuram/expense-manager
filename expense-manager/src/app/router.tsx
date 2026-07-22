@@ -21,6 +21,7 @@ const PortfolioPage = lazy(() => import('../features/stocks/components/Portfolio
 const PortfolioAnalytics = lazy(() => import('../features/stocks/components/PortfolioAnalytics').then(m => ({ default: m.PortfolioAnalytics })));
 const TradeHistoryPage = lazy(() => import('../features/stocks/components/TradeHistoryPage').then(m => ({ default: m.TradeHistoryPage })));
 const TradeImportPage = lazy(() => import('../features/stocks/components/TradeImportPage').then(m => ({ default: m.TradeImportPage })));
+const StockDetailPage = lazy(() => import('../features/stocks/components/StockDetailPage').then(m => ({ default: m.StockDetailPage })));
 const SplitwisePage = lazy(() => import('../features/splitwise/components/SplitwisePage').then(m => ({ default: m.SplitwisePage })));
 
 function RouteLoader() {
@@ -60,6 +61,7 @@ export const router = createBrowserRouter([
       { path: 'reports', element: <Suspense fallback={<RouteLoader />}><MonthlyReport /></Suspense> },
       { path: 'health', element: <Suspense fallback={<RouteLoader />}><HealthScorePage /></Suspense> },
       { path: 'portfolio', element: <Suspense fallback={<RouteLoader />}><PortfolioPage /></Suspense> },
+      { path: 'portfolio/:symbol', element: <Suspense fallback={<RouteLoader />}><StockDetailPage /></Suspense> },
       { path: 'trades', element: <Suspense fallback={<RouteLoader />}><TradeHistoryPage /></Suspense> },
       { path: 'trade-import', element: <Suspense fallback={<RouteLoader />}><TradeImportPage /></Suspense> },
       { path: 'accounts', element: <Suspense fallback={<RouteLoader />}><AccountsPage /></Suspense> },
