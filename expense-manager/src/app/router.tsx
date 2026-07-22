@@ -18,8 +18,10 @@ const RecurringPage = lazy(() => import('../features/recurring/components/Recurr
 const BillRemindersPage = lazy(() => import('../features/reminders/components/BillRemindersPage').then(m => ({ default: m.BillRemindersPage })));
 const HealthScorePage = lazy(() => import('../features/health/components/HealthScorePage').then(m => ({ default: m.HealthScorePage })));
 const PortfolioPage = lazy(() => import('../features/stocks/components/PortfolioPage').then(m => ({ default: m.PortfolioPage })));
+const PortfolioAnalytics = lazy(() => import('../features/stocks/components/PortfolioAnalytics').then(m => ({ default: m.PortfolioAnalytics })));
 const TradeHistoryPage = lazy(() => import('../features/stocks/components/TradeHistoryPage').then(m => ({ default: m.TradeHistoryPage })));
 const TradeImportPage = lazy(() => import('../features/stocks/components/TradeImportPage').then(m => ({ default: m.TradeImportPage })));
+const SplitwisePage = lazy(() => import('../features/splitwise/components/SplitwisePage').then(m => ({ default: m.SplitwisePage })));
 
 function RouteLoader() {
   return (
@@ -53,6 +55,7 @@ export const router = createBrowserRouter([
       { path: 'reminders', element: <Suspense fallback={<RouteLoader />}><BillRemindersPage /></Suspense> },
       { path: 'add', element: <Suspense fallback={<RouteLoader />}><AddTransactionPage /></Suspense> },
       { path: 'analytics', element: <Suspense fallback={<RouteLoader />}><AnalyticsView /></Suspense> },
+      { path: 'portfolio-analytics', element: <Suspense fallback={<RouteLoader />}><PortfolioAnalytics /></Suspense> },
       { path: 'budgets', element: <Suspense fallback={<RouteLoader />}><BudgetsPage /></Suspense> },
       { path: 'reports', element: <Suspense fallback={<RouteLoader />}><MonthlyReport /></Suspense> },
       { path: 'health', element: <Suspense fallback={<RouteLoader />}><HealthScorePage /></Suspense> },
@@ -62,6 +65,7 @@ export const router = createBrowserRouter([
       { path: 'accounts', element: <Suspense fallback={<RouteLoader />}><AccountsPage /></Suspense> },
       { path: 'categories', element: <Suspense fallback={<RouteLoader />}><CategoriesPage /></Suspense> },
       { path: 'import', element: <Suspense fallback={<RouteLoader />}><StatementImportPage /></Suspense> },
+      { path: 'splitwise', element: <Suspense fallback={<RouteLoader />}><SplitwisePage /></Suspense> },
       { path: 'settings', element: <Suspense fallback={<RouteLoader />}><SettingsPage /></Suspense> },
     ],
   },
