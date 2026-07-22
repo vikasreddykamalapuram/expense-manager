@@ -11,7 +11,7 @@ interface Props {
   onMembersChanged: () => void;
 }
 
-const GROUP_CATEGORIES = ['trip', 'flat', 'office', 'couple', 'friends', 'family', 'other'];
+const DEFAULT_GROUP_CATEGORIES = ['trip', 'flat', 'office', 'couple', 'friends', 'family', 'other'];
 
 export function CreateGroupModal({ profileId, members, onClose, onCreated, onMembersChanged }: Props) {
   const [name, setName] = useState('');
@@ -21,6 +21,26 @@ export function CreateGroupModal({ profileId, members, onClose, onCreated, onMem
   const [showAddMember, setShowAddMember] = useState(false);
   const [newMemberName, setNewMemberName] = useState('');
   const [saving, setSaving] = useState(false);
+  const [showCustomCategory, setShowCustomCategory] = useState(false);
+  const [customCategoryInput, setCustomCategoryInput] = useState('');
+  const [customCategories, setCustomCategories] = useState<string[]>(() => {
+    try {
+      return JSON.parse(localStorage.getItem('expenseiq_custom_group_categories') || '[]');
+    } catch { return []; }
+  });
+
+  const allCategories = [...DEFAULT_GROUP_CATEGORIES, ...customCategories];
+
+  const handleAddCustomCategory = () => {
+    const trimmed = customCategoryInput.trim().toLowerCase();
+    if (!trimmed || allCategories.includes(trimmed)) return;
+    const updated = [...customCategories, trimmed];
+    setCustomCategories(updated);
+    localStorage.setItem('expenseiq_custom_group_categories', JSON.stringify(updated));
+    setCategory(trimmed);
+    setCustomCategoryInput('');
+    setShowCustomCategory(false);
+  };
 
   const toggleMember = (id: string) => {
     setSelectedMemberIds(prev =>
@@ -94,7 +114,7 @@ export function CreateGroupModal({ profileId, members, onClose, onCreated, onMem
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Category</label>
             <div className="flex flex-wrap gap-2">
-              {GROUP_CATEGORIES.map(cat => (
+              {allCategories.map(cat => (
                 <button
                   key={cat}
                   type="button"
@@ -108,7 +128,43 @@ export function CreateGroupModal({ profileId, members, onClose, onCreated, onMem
                   {cat}
                 </button>
               ))}
+              {!showCustomCategory && (
+                <button
+                  type="button"
+                  onClick={() => setShowCustomCategory(true)}
+                  className="px-3 py-1 rounded-full text-xs font-medium text-primary-600 dark:text-primary-400 border border-dashed border-primary-400 dark:border-primary-600 hover:bg-primary-50 dark:hover:bg-primary-900/30 transition-colors"
+                >
+                  + Custom
+                </button>
+              )}
             </div>
+            {showCustomCategory && (
+              <div className="flex gap-2 mt-2">
+                <input
+                  type="text"
+                  value={customCategoryInput}
+                  onChange={e => setCustomCategoryInput(e.target.value)}
+                  placeholder="e.g., gym, project, roommates"
+                  className="flex-1 px-3 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                  onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), handleAddCustomCategory())}
+                  autoFocus
+                />
+                <button
+                  type="button"
+                  onClick={handleAddCustomCategory}
+                  className="px-3 py-1.5 text-sm bg-primary-600 text-white rounded-lg hover:bg-primary-700"
+                >
+                  <Plus size={16} />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setShowCustomCategory(false); setCustomCategoryInput(''); }}
+                  className="px-2 py-1.5 text-sm text-gray-500 hover:text-gray-700"
+                >
+                  <X size={16} />
+                </button>
+              </div>
+            )}
           </div>
 
           {/* Members Selection */}
