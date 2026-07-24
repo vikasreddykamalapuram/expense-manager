@@ -3,7 +3,7 @@ import {
   LayoutDashboard, ArrowLeftRight, PlusCircle, CalendarDays,
   Settings, Wallet, Menu, X, Landmark, Tag, ChevronDown,
   Plus, LogIn, LogOut, Target, RefreshCw, FileUp, FileBarChart, Heart, TrendingUp, Bell,
-  Cloud, AlertCircle, Users, PanelLeftClose, PanelLeftOpen,
+  Cloud, AlertCircle, Users, PanelLeftClose, PanelLeftOpen, Sparkles,
 } from 'lucide-react';
 import { useState, useRef, useEffect, useMemo } from 'react';
 import { v4 as uuidv4 } from 'uuid';
@@ -26,6 +26,7 @@ const navItems = [
   { path: '/reminders', icon: Bell, label: 'Reminders' },
   { path: '/add', icon: PlusCircle, label: 'Add New' },
   { path: '/analytics', icon: CalendarDays, label: 'Analytics' },
+  { path: '/insights', icon: Sparkles, label: 'Insights' },
   { path: '/budgets', icon: Target, label: 'Budgets' },
   { path: '/reports', icon: FileBarChart, label: 'Reports' },
   { path: '/health', icon: Heart, label: 'Health Score' },
