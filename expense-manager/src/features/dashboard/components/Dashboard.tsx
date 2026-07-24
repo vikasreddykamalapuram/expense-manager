@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { TrendingUp, TrendingDown, Wallet, ArrowRight, PlusCircle, Heart, Bell } from 'lucide-react';
+import { TrendingUp, TrendingDown, Wallet, ArrowRight, PlusCircle, Heart, Bell, AlertTriangle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Cell, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 import { useAppContext } from '../../../context/AppContext';
@@ -52,6 +52,19 @@ export function Dashboard() {
   const dueSoonBillsList = useMemo(() => getDueSoonBills(billReminders, new Date(), 7), [billReminders]);
   const billsToShow = useMemo(() => [...overdueBillsList, ...dueSoonBillsList].slice(0, 5), [overdueBillsList, dueSoonBillsList]);
 
+  // Budget overspend check
+  const overspentBudgets = useMemo(() => {
+    if (!budgets.length || !currentMonthStats.byCategory.length) return [];
+    return budgets.filter((b) => {
+      const spent = currentMonthStats.byCategory.find((c) => c.categoryId === b.categoryId);
+      return spent && spent.amount > b.amount;
+    }).map((b) => {
+      const spent = currentMonthStats.byCategory.find((c) => c.categoryId === b.categoryId);
+      const cat = categories.find((c) => c.id === b.categoryId);
+      return { name: cat?.name || 'Unknown', spent: spent!.amount, limit: b.amount };
+    });
+  }, [budgets, currentMonthStats.byCategory, categories]);
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -94,6 +107,33 @@ export function Dashboard() {
           variant={currentMonthStats.balance >= 0 ? 'income' : 'expense'}
         />
       </div>
+
+      {/* Budget Overspend Warning */}
+      {overspentBudgets.length > 0 && (
+        <div className="rounded-xl border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-900/20 p-4">
+          <div className="flex items-start gap-3">
+            <AlertTriangle size={20} className="text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+            <div className="flex-1">
+              <h4 className="text-sm font-semibold text-amber-800 dark:text-amber-300">
+                {overspentBudgets.length} budget{overspentBudgets.length > 1 ? 's' : ''} exceeded
+              </h4>
+              <div className="mt-1 space-y-1">
+                {overspentBudgets.slice(0, 3).map((b) => (
+                  <p key={b.name} className="text-xs text-amber-700 dark:text-amber-400">
+                    <span className="font-medium">{b.name}</span>: {formatCurrency(b.spent, settings)} / {formatCurrency(b.limit, settings)}
+                  </p>
+                ))}
+              </div>
+              <button
+                onClick={() => navigate('/budgets')}
+                className="mt-2 text-xs font-medium text-amber-700 dark:text-amber-300 hover:underline"
+              >
+                View Budgets →
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {!hasData ? (
         <EmptyState

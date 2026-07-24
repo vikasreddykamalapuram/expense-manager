@@ -5,13 +5,14 @@ import {
   Plus, LogIn, LogOut, Target, RefreshCw, FileUp, FileBarChart, Heart, TrendingUp, Bell,
   Cloud, AlertCircle, Users, PanelLeftClose, PanelLeftOpen,
 } from 'lucide-react';
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useMemo } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import { classNames } from '../utils/helpers';
 import { useAppContext } from '../../context/AppContext';
 import { useAuth } from '../../context/AuthContext';
 import { useSync } from '../../context/SyncContext';
 import { useTheme } from '../hooks/useTheme';
+import { getOverdueBills } from '../services/billReminderService';
 import { FloatingAssistant } from '../../features/assistant/components/FloatingAssistant';
 import { FloatingActionButton } from './ui/FloatingActionButton';
 import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts';
@@ -43,7 +44,10 @@ export function Layout() {
   useTheme();
   useKeyboardShortcuts();
   const navigate = useNavigate();
-  const { profiles, activeProfileId } = state;
+  const { profiles, activeProfileId, billReminders } = state;
+
+  // Overdue bills badge count
+  const overdueBillsCount = useMemo(() => getOverdueBills(billReminders).length, [billReminders]);
   const [sidebarOpen, setSidebarOpen] = useState(false); // mobile drawer
   const [sidebarPinned, setSidebarPinned] = useState(() => {
     try { return localStorage.getItem('expenseiq_sidebar_pinned') === 'true'; } catch { return false; }
@@ -153,7 +157,9 @@ export function Layout() {
 
         {/* Navigation */}
         <nav className="flex-1 space-y-1 px-2 py-4 overflow-y-auto overflow-x-hidden">
-          {navItems.map(({ path, icon: Icon, label }) => (
+          {navItems.map(({ path, icon: Icon, label }) => {
+            const badgeCount = path === '/reminders' ? overdueBillsCount : 0;
+            return (
             <NavLink
               key={path}
               to={path}
@@ -170,7 +176,14 @@ export function Layout() {
               }
               end={path === '/'}
             >
-              <Icon size={20} className="shrink-0" />
+              <div className="relative shrink-0">
+                <Icon size={20} />
+                {badgeCount > 0 && (
+                  <span className="absolute -top-1.5 -right-1.5 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold text-white">
+                    {badgeCount > 9 ? '9+' : badgeCount}
+                  </span>
+                )}
+              </div>
               <span className={classNames(
                 'whitespace-nowrap transition-opacity duration-200',
                 sidebarExpanded ? 'opacity-100' : 'lg:hidden opacity-100'
@@ -181,10 +194,12 @@ export function Layout() {
               {!sidebarExpanded && (
                 <span className="absolute left-full ml-2 hidden lg:group-hover:block z-[60] rounded-lg bg-gray-900 dark:bg-gray-700 px-2.5 py-1.5 text-xs font-medium text-white shadow-lg whitespace-nowrap">
                   {label}
+                  {badgeCount > 0 && ` (${badgeCount} overdue)`}
                 </span>
               )}
             </NavLink>
-          ))}
+            );
+          })}
         </nav>
 
         {/* Footer */}

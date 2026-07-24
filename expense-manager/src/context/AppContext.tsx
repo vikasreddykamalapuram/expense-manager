@@ -8,6 +8,7 @@ import { schedulePush, registerVisibilitySync, pullDeltas, isSyncEnabled } from 
 import { scheduleBackendSync } from '../shared/services/supabaseSyncService';
 import { startRealtimeSync, stopRealtimeSync, setRealtimeDataChangedCallback } from '../shared/services/supabaseRealtimeService';
 import { onSupabaseAuthChange } from '../shared/services/supabaseAuthService';
+import { showToastGlobal } from '../shared/components/ui/Toast';
 
 // State
 interface AppState {
@@ -583,12 +584,15 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   // ─── Supabase Realtime: auto-start/stop on auth changes ──
   useEffect(() => {
-    // Register a callback so realtime events trigger a data reload
+    // Register a callback so realtime events trigger a data reload + toast
     const reloadData = () => {
       const profileId = profileIdRef.current;
       repository.loadProfileData(profileId).then((data) => {
         dispatch({ type: 'LOAD_PROFILE_DATA', payload: { profileId, ...data } });
       }).catch(console.error);
+
+      // Show toast for live update
+      showToastGlobal('info', 'Data updated from another device');
     };
 
     setRealtimeDataChangedCallback(reloadData);
