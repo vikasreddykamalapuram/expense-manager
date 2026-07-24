@@ -17,6 +17,7 @@ const AccountsPage = lazyWithRetry(() => import('../features/accounts/components
 const CategoriesPage = lazyWithRetry(() => import('../features/categories/components/CategoriesPage').then(m => ({ default: m.CategoriesPage })));
 const SettingsPage = lazyWithRetry(() => import('../features/settings/components/SettingsPage').then(m => ({ default: m.SettingsPage })));
 const SecuritySettingsPage = lazyWithRetry(() => import('../features/settings/components/SecuritySettingsPage').then(m => ({ default: m.SecuritySettingsPage })));
+const NotificationSettingsPage = lazyWithRetry(() => import('../features/settings/components/NotificationSettingsPage').then(m => ({ default: m.NotificationSettingsPage })));
 const BudgetsPage = lazyWithRetry(() => import('../features/budgets/components/BudgetsPage').then(m => ({ default: m.BudgetsPage })));
 const MonthlyReport = lazyWithRetry(() => import('../features/reports/components/MonthlyReport').then(m => ({ default: m.MonthlyReport })));
 const StatementImportPage = lazyWithRetry(() => import('../features/import/components/StatementImportPage').then(m => ({ default: m.StatementImportPage })));
@@ -96,6 +97,7 @@ export const router = createBrowserRouter([
       lazyRoute('benchmark', ExpenseBenchmark),
       lazyRoute('settings', SettingsPage),
       lazyRoute('settings/security', SecuritySettingsPage),
+      lazyRoute('settings/notifications', NotificationSettingsPage),
     ],
   },
 ], { basename });

@@ -22,6 +22,8 @@ import { BottomNav } from './BottomNav';
 import { usePullToRefresh } from '../hooks/usePullToRefresh';
 import { PullToRefreshIndicator } from './ui/PullToRefreshIndicator';
 import { clearPriceCache } from '../services/stockPriceService';
+import { notificationService } from '../services/notificationService';
+import { prefs } from '../services/preferences';
 import { useLocation } from 'react-router-dom';
 
 const navItems = [
@@ -45,6 +47,7 @@ const navItems = [
   { path: '/import', icon: FileUp, label: 'Import' },
   { path: '/settings', icon: Settings, label: 'Settings' },
   { path: '/settings/security', icon: ShieldCheck, label: 'Security' },
+  { path: '/settings/notifications', icon: Bell, label: 'Notifications' },
 ];
 
 export function Layout() {
@@ -67,6 +70,20 @@ export function Layout() {
 
   // Overdue bills badge count
   const overdueBillsCount = useMemo(() => getOverdueBills(billReminders).length, [billReminders]);
+
+  // Keep bill-reminder local notifications in sync with the store. Fires on mount
+  // and whenever the reminders list changes; the service handles permissions
+  // and no-ops on the web.
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const enabled = await prefs.getBool('notif.billsEnabled', true);
+      if (cancelled || !enabled) return;
+      notificationService.syncBillReminders(billReminders).catch(() => { /* ignore */ });
+    })();
+    return () => { cancelled = true; };
+  }, [billReminders]);
+
   const [sidebarOpen, setSidebarOpen] = useState(false); // mobile drawer
   const [sidebarPinned, setSidebarPinned] = useState(() => {
     try { return localStorage.getItem('expenseiq_sidebar_pinned') === 'true'; } catch { return false; }

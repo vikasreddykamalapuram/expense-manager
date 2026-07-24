@@ -19,6 +19,7 @@ import { StatusBar, Style } from '@capacitor/status-bar';
 import { PrivacyScreen } from '@capacitor-community/privacy-screen';
 import { isNativePlatform, isAndroid } from './platform';
 import { prefs } from './preferences';
+import { notificationService } from './notificationService';
 
 let bootstrapped = false;
 
@@ -62,6 +63,15 @@ export async function bootstrapNativeShell(): Promise<void> {
   try {
     const enabled = await prefs.getBool('privacy.screenshotBlur', true);
     if (enabled) await PrivacyScreen.enable();
+  } catch { /* ignore */ }
+
+  // Local notifications: register the daily-nudge quick-action + deep-link handler.
+  try {
+    await notificationService.registerHandlers((path) => {
+      window.location.hash = ''; // ensure hash router doesn't swallow it
+      window.history.pushState({}, '', path);
+      window.dispatchEvent(new PopStateEvent('popstate'));
+    });
   } catch { /* ignore */ }
 }
 
