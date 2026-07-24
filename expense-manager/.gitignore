@@ -27,3 +27,10 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Capacitor native projects — generated locally via `npx cap add android/ios`.
+# The web app + capacitor.config.ts are the source of truth; the native
+# folders contain per-machine Gradle/Xcode state and shouldn't be committed
+# until we're ready to publish a signed release from CI.
+/android
+/ios

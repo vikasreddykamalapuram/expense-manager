@@ -9,11 +9,20 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "cap:sync": "npm run build && cap sync",
+    "cap:android": "npm run build && cap sync android && cap open android",
+    "cap:run:android": "npm run build && cap sync android && cap run android"
   },
   "dependencies": {
     "@azure/msal-browser": "^4.30.0",
     "@azure/msal-react": "^3.0.29",
+    "@capacitor/app": "^8.1.1",
+    "@capacitor/core": "^8.4.2",
+    "@capacitor/haptics": "^8.0.2",
+    "@capacitor/preferences": "^8.0.1",
+    "@capacitor/splash-screen": "^8.0.2",
+    "@capacitor/status-bar": "^8.0.3",
     "@react-oauth/google": "^0.13.5",
     "@supabase/supabase-js": "^999.9.2-canary.0",
     "dexie": "^4.4.2",
@@ -29,6 +38,8 @@
     "xlsx": "^0.18.5"
   },
   "devDependencies": {
+    "@capacitor/android": "^8.4.2",
+    "@capacitor/cli": "^7.6.8",
     "@eslint/js": "^9.13.0",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",

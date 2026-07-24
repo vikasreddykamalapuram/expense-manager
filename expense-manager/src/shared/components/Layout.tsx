@@ -18,6 +18,7 @@ import { FloatingActionButton } from './ui/FloatingActionButton';
 import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts';
 import { PWAUpdatePrompt } from './PWAUpdatePrompt';
 import { PWAInstallPrompt } from './PWAInstallPrompt';
+import { BottomNav } from './BottomNav';
 
 const navItems = [
   { path: '/', icon: LayoutDashboard, label: 'Dashboard' },
@@ -386,8 +387,8 @@ export function Layout() {
           )}
         </header>
 
-        {/* Page Content */}
-        <main id="main-content" className="flex-1 overflow-y-auto p-4 lg:p-8" role="main">
+        {/* Page Content — extra bottom padding on mobile so BottomNav doesn't cover content */}
+        <main id="main-content" className="flex-1 overflow-y-auto p-4 pb-24 lg:p-8 lg:pb-8" role="main">
           <Outlet />
         </main>
       </div>
@@ -397,6 +398,9 @@ export function Layout() {
 
       {/* Mobile FAB */}
       <FloatingActionButton />
+
+      {/* Mobile bottom navigation */}
+      <BottomNav onOpenMore={() => setSidebarOpen(true)} />
 
       {/* PWA Prompts */}
       <PWAUpdatePrompt />

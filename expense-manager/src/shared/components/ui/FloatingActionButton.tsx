@@ -8,6 +8,7 @@ import { useState, useEffect, useRef } from 'react';
 import { Plus, TrendingDown, TrendingUp, ArrowLeftRight } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { classNames } from '../../utils/helpers';
+import { haptic } from '../../services/haptics';
 
 interface FABAction {
   label: string;
@@ -69,7 +70,7 @@ export function FloatingActionButton() {
   return (
     <div
       ref={fabRef}
-      className="fixed bottom-6 right-6 z-40 lg:hidden"
+      className="fixed bottom-24 right-6 z-40 lg:bottom-6 lg:hidden"
       aria-label="Quick add transaction"
     >
       {/* Backdrop blur when open */}
@@ -97,7 +98,7 @@ export function FloatingActionButton() {
               {action.label}
             </span>
             <button
-              onClick={action.onClick}
+              onClick={() => { haptic.light(); action.onClick(); }}
               className={classNames(
                 'flex h-12 w-12 items-center justify-center rounded-full text-white shadow-lg transition-all duration-200 hover:scale-110 active:scale-95',
                 action.color
@@ -116,7 +117,7 @@ export function FloatingActionButton() {
           <span className="absolute inset-0 rounded-full bg-primary-500 animate-ping opacity-20" />
         )}
         <button
-          onClick={() => setIsOpen(!isOpen)}
+          onClick={() => { haptic.medium(); setIsOpen(!isOpen); }}
           className={classNames(
             'relative flex h-14 w-14 items-center justify-center rounded-full shadow-xl transition-all duration-300 active:scale-90',
             isOpen

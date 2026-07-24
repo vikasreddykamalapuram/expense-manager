@@ -11,6 +11,7 @@ import { ToastProvider } from './shared/components/ui/Toast';
 import { AUTH_CONFIG } from './shared/config/auth';
 import { preloadSymbolMap } from './shared/services/symbolResolver';
 import { initSupabaseAuth } from './shared/services/supabaseAuthService';
+import { bootstrapNativeShell } from './shared/services/nativeShell';
 import { router } from './app/router';
 import './index.css';
 
@@ -19,6 +20,10 @@ preloadSymbolMap().catch(() => {});
 
 // Initialize Supabase auth — restores session if previously connected (non-blocking)
 initSupabaseAuth().catch(() => {});
+
+// Native shell (Capacitor) bootstrap — status bar, splash, back button.
+// No-op on web.
+bootstrapNativeShell().catch(() => {});
 
 // MSAL instance (singleton)
 const msalInstance = new PublicClientApplication({
