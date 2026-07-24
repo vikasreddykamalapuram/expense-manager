@@ -25,7 +25,7 @@ export function Button({ variant = 'primary', size = 'md', icon, children, class
   return (
     <button
       className={classNames(
-        'inline-flex items-center justify-center gap-2 rounded-lg font-medium transition-all focus:outline-none focus:ring-2 focus:ring-offset-2 dark:focus:ring-offset-gray-800 disabled:cursor-not-allowed disabled:opacity-50',
+        'inline-flex items-center justify-center gap-2 rounded-xl font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 dark:focus:ring-offset-gray-800 disabled:cursor-not-allowed disabled:opacity-50 active:scale-[0.97]',
         variantClasses[variant],
         sizeClasses[size],
         className

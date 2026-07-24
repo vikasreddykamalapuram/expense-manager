@@ -96,26 +96,32 @@ export function FeatureTips() {
   };
 
   return (
-    <div className="space-y-2">
-      {visibleTips.map((tip) => (
+    <div className="space-y-3">
+      {visibleTips.map((tip, index) => (
         <div
           key={tip.id}
-          className="flex items-start gap-3 rounded-xl border border-blue-100 dark:border-blue-900/50 bg-blue-50/50 dark:bg-blue-900/10 p-4"
+          className="group relative flex items-start gap-3 rounded-2xl border border-primary-100/60 dark:border-primary-900/30 bg-gradient-to-r from-primary-50/50 via-white/50 to-blue-50/50 dark:from-primary-900/10 dark:via-gray-800/50 dark:to-blue-900/10 backdrop-blur-sm p-4 shadow-sm hover:shadow-md transition-all duration-300 animate-fade-in-up"
+          style={{ animationDelay: `${index * 100}ms` }}
         >
-          <Lightbulb size={18} className="text-blue-500 dark:text-blue-400 shrink-0 mt-0.5" />
+          {/* Accent gradient line */}
+          <div className="absolute left-0 top-3 bottom-3 w-1 rounded-full bg-gradient-to-b from-primary-500 to-blue-500" />
+
+          <div className="ml-2 flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-primary-100 dark:bg-primary-900/30">
+            <Lightbulb size={16} className="text-primary-600 dark:text-primary-400" />
+          </div>
           <div className="flex-1 min-w-0">
             <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-100">{tip.title}</h4>
-            <p className="text-xs text-gray-600 dark:text-gray-400 mt-0.5">{tip.description}</p>
+            <p className="text-xs text-gray-600 dark:text-gray-400 mt-0.5 leading-relaxed">{tip.description}</p>
             <button
               onClick={() => navigate(tip.path)}
-              className="mt-2 inline-flex items-center gap-1 text-xs font-medium text-blue-600 dark:text-blue-400 hover:underline"
+              className="mt-2.5 inline-flex items-center gap-1.5 rounded-lg bg-primary-600 hover:bg-primary-700 dark:bg-primary-500 dark:hover:bg-primary-600 px-3 py-1.5 text-xs font-medium text-white shadow-sm transition-all duration-200 hover:shadow-md active:scale-95"
             >
               {tip.action} <ArrowRight size={12} />
             </button>
           </div>
           <button
             onClick={() => handleDismiss(tip.id)}
-            className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 shrink-0"
+            className="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 shrink-0 rounded-lg p-1 hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-200"
             aria-label={`Dismiss ${tip.title}`}
           >
             <X size={14} />

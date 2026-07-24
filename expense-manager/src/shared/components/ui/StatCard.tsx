@@ -28,7 +28,7 @@ export function StatCard({ title, value, icon, trend, variant = 'default', class
   return (
     <div
       className={classNames(
-        'rounded-xl border p-5 shadow-sm transition-shadow hover:shadow-md',
+        'rounded-2xl border p-5 shadow-sm transition-all duration-300 hover:shadow-md hover:-translate-y-0.5',
         variantStyles[variant],
         className
       )}

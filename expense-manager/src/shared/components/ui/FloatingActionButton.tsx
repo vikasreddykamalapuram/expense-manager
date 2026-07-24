@@ -1,11 +1,11 @@
 /**
  * Floating Action Button (FAB) — mobile quick-add for transactions.
  * Shows on mobile screens only (hidden on desktop where sidebar has "Add New").
- * Expands into a speed-dial menu: Add Expense, Add Income, Add Transfer.
+ * Expands into a speed-dial menu with staggered animations.
  */
 
 import { useState, useEffect, useRef } from 'react';
-import { Plus, X, TrendingDown, TrendingUp, ArrowLeftRight } from 'lucide-react';
+import { Plus, TrendingDown, TrendingUp, ArrowLeftRight } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { classNames } from '../../utils/helpers';
 
@@ -49,19 +49,19 @@ export function FloatingActionButton() {
     {
       label: 'Expense',
       icon: <TrendingDown size={20} />,
-      color: 'bg-red-500 hover:bg-red-600',
+      color: 'bg-red-500 hover:bg-red-600 shadow-red-500/30',
       onClick: () => navigate('/add', { state: { type: 'expense' } }),
     },
     {
       label: 'Income',
       icon: <TrendingUp size={20} />,
-      color: 'bg-green-500 hover:bg-green-600',
+      color: 'bg-green-500 hover:bg-green-600 shadow-green-500/30',
       onClick: () => navigate('/add', { state: { type: 'income' } }),
     },
     {
       label: 'Transfer',
       icon: <ArrowLeftRight size={20} />,
-      color: 'bg-blue-500 hover:bg-blue-600',
+      color: 'bg-blue-500 hover:bg-blue-600 shadow-blue-500/30',
       onClick: () => navigate('/add', { state: { type: 'transfer' } }),
     },
   ];
@@ -72,22 +72,34 @@ export function FloatingActionButton() {
       className="fixed bottom-6 right-6 z-40 lg:hidden"
       aria-label="Quick add transaction"
     >
-      {/* Speed-dial actions */}
+      {/* Backdrop blur when open */}
+      {isOpen && (
+        <div className="fixed inset-0 bg-black/20 backdrop-blur-[2px] -z-10 animate-fade-in" />
+      )}
+
+      {/* Speed-dial actions with staggered animation */}
       <div
         className={classNames(
-          'absolute bottom-16 right-0 flex flex-col-reverse gap-3 transition-all duration-200',
+          'absolute bottom-16 right-0 flex flex-col-reverse gap-3 transition-all duration-300',
           isOpen ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4 pointer-events-none'
         )}
       >
-        {actions.map((action) => (
-          <div key={action.label} className="flex items-center gap-2">
-            <span className="rounded-lg bg-gray-900/80 px-2.5 py-1 text-xs font-medium text-white shadow-lg backdrop-blur-sm">
+        {actions.map((action, index) => (
+          <div
+            key={action.label}
+            className={classNames(
+              'flex items-center gap-2 transition-all duration-300',
+              isOpen ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-4'
+            )}
+            style={{ transitionDelay: isOpen ? `${index * 60}ms` : '0ms' }}
+          >
+            <span className="rounded-lg bg-gray-900/80 px-2.5 py-1.5 text-xs font-medium text-white shadow-lg backdrop-blur-md">
               {action.label}
             </span>
             <button
               onClick={action.onClick}
               className={classNames(
-                'flex h-12 w-12 items-center justify-center rounded-full text-white shadow-lg transition-transform active:scale-95',
+                'flex h-12 w-12 items-center justify-center rounded-full text-white shadow-lg transition-all duration-200 hover:scale-110 active:scale-95',
                 action.color
               )}
               aria-label={`Add ${action.label}`}
@@ -98,24 +110,31 @@ export function FloatingActionButton() {
         ))}
       </div>
 
-      {/* Main FAB button */}
-      <button
-        onClick={() => setIsOpen(!isOpen)}
-        className={classNames(
-          'flex h-14 w-14 items-center justify-center rounded-full shadow-xl transition-all duration-200 active:scale-95',
-          isOpen
-            ? 'bg-gray-700 dark:bg-gray-600 rotate-45'
-            : 'bg-primary-600 hover:bg-primary-700 dark:bg-primary-500 dark:hover:bg-primary-600'
+      {/* Main FAB button with ring pulse */}
+      <div className="relative">
+        {!isOpen && (
+          <span className="absolute inset-0 rounded-full bg-primary-500 animate-ping opacity-20" />
         )}
-        aria-label={isOpen ? 'Close quick actions' : 'Open quick actions'}
-        aria-expanded={isOpen}
-      >
-        {isOpen ? (
-          <X size={24} className="text-white -rotate-45" />
-        ) : (
-          <Plus size={24} className="text-white" />
-        )}
-      </button>
+        <button
+          onClick={() => setIsOpen(!isOpen)}
+          className={classNames(
+            'relative flex h-14 w-14 items-center justify-center rounded-full shadow-xl transition-all duration-300 active:scale-90',
+            isOpen
+              ? 'bg-gray-700 dark:bg-gray-600 shadow-gray-700/30'
+              : 'bg-primary-600 hover:bg-primary-700 dark:bg-primary-500 dark:hover:bg-primary-600 hover:shadow-2xl hover:shadow-primary-500/30'
+          )}
+          aria-label={isOpen ? 'Close quick actions' : 'Open quick actions'}
+          aria-expanded={isOpen}
+        >
+          <Plus
+            size={24}
+            className={classNames(
+              'text-white transition-transform duration-300',
+              isOpen ? 'rotate-45' : 'rotate-0'
+            )}
+          />
+        </button>
+      </div>
     </div>
   );
 }
