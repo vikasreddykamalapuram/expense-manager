@@ -6,6 +6,8 @@
  *  - Hide the splash screen once the app has had a moment to render.
  *  - Wire the Android hardware back button to browser-style history nav,
  *    exiting the app only when there's nothing left to pop.
+ *  - Enable the privacy screen so the app content is blurred in the OS
+ *    recent-apps switcher (respects the user's Settings toggle).
  *
  * All calls are guarded behind isNativePlatform() so this file is safe to
  * import in the plain-web PWA build (the Capacitor plugins have web
@@ -14,7 +16,9 @@
 import { App } from '@capacitor/app';
 import { SplashScreen } from '@capacitor/splash-screen';
 import { StatusBar, Style } from '@capacitor/status-bar';
+import { PrivacyScreen } from '@capacitor-community/privacy-screen';
 import { isNativePlatform, isAndroid } from './platform';
+import { prefs } from './preferences';
 
 let bootstrapped = false;
 
@@ -50,5 +54,23 @@ export async function bootstrapNativeShell(): Promise<void> {
         App.minimizeApp().catch(() => { /* ignore */ });
       }
     });
+  } catch { /* ignore */ }
+
+  // Privacy screen: obscure app content in the OS recent-apps switcher and
+  // block screenshots of sensitive financial data. Default on; user can
+  // toggle off in Settings. Uses FLAG_SECURE on Android.
+  try {
+    const enabled = await prefs.getBool('privacy.screenshotBlur', true);
+    if (enabled) await PrivacyScreen.enable();
+  } catch { /* ignore */ }
+}
+
+/** Toggle the privacy screen at runtime (used by Settings). */
+export async function setPrivacyScreenEnabled(enabled: boolean): Promise<void> {
+  await prefs.setBool('privacy.screenshotBlur', enabled);
+  if (!isNativePlatform()) return;
+  try {
+    if (enabled) await PrivacyScreen.enable();
+    else await PrivacyScreen.disable();
   } catch { /* ignore */ }
 }

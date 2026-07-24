@@ -7,6 +7,7 @@ import { PublicClientApplication } from '@azure/msal-browser';
 import { AppProvider } from './context/AppContext';
 import { AuthProvider } from './context/AuthContext';
 import { SyncProviderWrapper } from './context/SyncProviderWrapper';
+import { AppLockProvider } from './context/AppLockContext';
 import { ToastProvider } from './shared/components/ui/Toast';
 import { AUTH_CONFIG } from './shared/config/auth';
 import { preloadSymbolMap } from './shared/services/symbolResolver';
@@ -46,7 +47,9 @@ createRoot(document.getElementById('root')!).render(
           <AppProvider>
             <SyncProviderWrapper>
               <ToastProvider>
-                <RouterProvider router={router} />
+                <AppLockProvider>
+                  <RouterProvider router={router} />
+                </AppLockProvider>
               </ToastProvider>
             </SyncProviderWrapper>
           </AppProvider>

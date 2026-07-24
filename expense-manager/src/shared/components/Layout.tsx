@@ -3,7 +3,7 @@ import {
   LayoutDashboard, ArrowLeftRight, PlusCircle, CalendarDays,
   Settings, Wallet, Menu, X, Landmark, Tag, ChevronDown,
   Plus, LogIn, LogOut, Target, RefreshCw, FileUp, FileBarChart, Heart, TrendingUp, Bell,
-  Cloud, AlertCircle, Users, PanelLeftClose, PanelLeftOpen, Sparkles, PiggyBank, CalendarRange, Scale,
+  Cloud, AlertCircle, Users, PanelLeftClose, PanelLeftOpen, Sparkles, PiggyBank, CalendarRange, Scale, ShieldCheck,
 } from 'lucide-react';
 import { useState, useRef, useEffect, useMemo } from 'react';
 import { v4 as uuidv4 } from 'uuid';
@@ -40,6 +40,7 @@ const navItems = [
   { path: '/categories', icon: Tag, label: 'Categories' },
   { path: '/import', icon: FileUp, label: 'Import' },
   { path: '/settings', icon: Settings, label: 'Settings' },
+  { path: '/settings/security', icon: ShieldCheck, label: 'Security' },
 ];
 
 export function Layout() {
