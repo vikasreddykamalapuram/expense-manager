@@ -1,5 +1,5 @@
 import Dexie, { Table } from 'dexie';
-import { Transaction, Category, Account, Budget, Settings, Profile, RecurringRule, StockTransaction, BillReminder, SplitGroup, SplitMember, SplitExpense, SplitSettlement } from '../types';
+import { Transaction, Category, Account, Budget, Settings, Profile, RecurringRule, StockTransaction, BillReminder, SplitGroup, SplitMember, SplitExpense, SplitSettlement, SavingsGoal } from '../types';
 import { loadMapSync, resolveSymbolSync } from './symbolResolver';
 
 // Sync metadata fields added to all syncable records
@@ -83,6 +83,10 @@ export interface DbSplitSettlement extends SplitSettlement, SyncFields {
   profileId: string;
 }
 
+export interface DbSavingsGoal extends SavingsGoal, SyncFields {
+  profileId: string;
+}
+
 export class ExpenseDatabase extends Dexie {
   transactions!: Table<DbTransaction, string>;
   categories!: Table<DbCategory, string>;
@@ -100,6 +104,7 @@ export class ExpenseDatabase extends Dexie {
   splitMembers!: Table<DbSplitMember, string>;
   splitExpenses!: Table<DbSplitExpense, string>;
   splitSettlements!: Table<DbSplitSettlement, string>;
+  savingsGoals!: Table<DbSavingsGoal, string>;
 
   constructor() {
     super('ExpenseIQDatabase');
@@ -217,6 +222,27 @@ export class ExpenseDatabase extends Dexie {
       splitMembers: 'id, profileId, [profileId+name], [profileId+updatedAt]',
       splitExpenses: 'id, profileId, groupId, [profileId+groupId], [profileId+createdAt], [profileId+updatedAt]',
       splitSettlements: 'id, profileId, groupId, [profileId+groupId], [profileId+updatedAt]',
+    });
+
+    // v8: Savings Goals
+    this.version(8).stores({
+      transactions: 'id, profileId, [profileId+date], [profileId+categoryId], [profileId+accountId], [profileId+type], [profileId+updatedAt]',
+      categories: 'id, profileId, [profileId+type], [profileId+parentId], [profileId+updatedAt]',
+      accounts: 'id, profileId, [profileId+type], [profileId+isActive], [profileId+updatedAt]',
+      budgets: 'id, profileId, [profileId+categoryId+month], [profileId+updatedAt]',
+      settings: 'profileId',
+      customInstitutions: 'profileId',
+      profiles: 'id',
+      migrations: 'key',
+      recurringRules: 'id, profileId, [profileId+isActive], [profileId+nextDueDate], [profileId+updatedAt]',
+      receipts: 'id, profileId, transactionId',
+      stockTransactions: 'id, profileId, [profileId+date], [profileId+symbol], [profileId+type], [profileId+broker], [profileId+updatedAt]',
+      billReminders: 'id, profileId, [profileId+dueDate], [profileId+category], [profileId+updatedAt]',
+      splitGroups: 'id, profileId, [profileId+createdAt], [profileId+updatedAt]',
+      splitMembers: 'id, profileId, [profileId+name], [profileId+updatedAt]',
+      splitExpenses: 'id, profileId, groupId, [profileId+groupId], [profileId+createdAt], [profileId+updatedAt]',
+      splitSettlements: 'id, profileId, groupId, [profileId+groupId], [profileId+updatedAt]',
+      savingsGoals: 'id, profileId, [profileId+updatedAt]',
     });
   }
 }

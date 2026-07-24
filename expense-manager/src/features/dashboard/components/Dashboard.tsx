@@ -13,6 +13,7 @@ import { computeAccountBalance } from '../../../shared/constants/accounts';
 import { calculateHealthScore } from '../../../shared/services/healthScore';
 import { getOverdueBills, getDueSoonBills, BILL_CATEGORY_ICONS } from '../../../shared/services/billReminderService';
 import { FeatureTips } from './FeatureTips';
+import { InsightsCard } from './InsightsCard';
 
 export function Dashboard() {
   const { state } = useAppContext();
@@ -153,6 +154,10 @@ export function Dashboard() {
         />
       ) : (
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+          {/* Smart Insights */}
+          <div className="lg:col-span-2">
+            <InsightsCard />
+          </div>
           {/* Health Score Widget */}
           <div
             onClick={() => navigate('/health')}
