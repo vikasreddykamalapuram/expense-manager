@@ -2,7 +2,7 @@ import { useMemo, useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   TrendingUp, TrendingDown, Briefcase, BarChart3, PieChart as PieChartIcon,
-  ArrowRight, RefreshCw, Clock, AlertTriangle, Scale,
+  ArrowRight, RefreshCw, Clock, AlertTriangle, Scale, Coins, Activity,
 } from 'lucide-react';
 import {
   PieChart as RePieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend,
@@ -55,7 +55,7 @@ export function PortfolioAnalytics() {
   const [pricesLoading, setPricesLoading] = useState(false);
   const [priceError, setPriceError] = useState(false);
   const [lastUpdated, setLastUpdated] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<'pl' | 'diversification' | 'sectors' | 'benchmark'>('pl');
+  const [activeTab, setActiveTab] = useState<'pl' | 'diversification' | 'sectors' | 'dividends' | 'performance' | 'benchmark'>('pl');
   const [indexPrices, setIndexPrices] = useState<IndexPrice[]>([]);
 
   // Calculate holdings with current prices
@@ -169,17 +169,19 @@ export function PortfolioAnalytics() {
       )}
 
       {/* Tab Navigation */}
-      <div className="flex gap-2 border-b border-gray-200 dark:border-gray-700">
+      <div className="flex gap-1 overflow-x-auto border-b border-gray-200 dark:border-gray-700 scrollbar-hide">
         {[
           { id: 'pl', label: 'P&L Summary', icon: <TrendingUp size={16} /> },
-          { id: 'diversification', label: 'Diversification', icon: <PieChartIcon size={16} /> },
-          { id: 'sectors', label: 'By Sector', icon: <BarChart3 size={16} /> },
+          { id: 'diversification', label: 'Allocation', icon: <PieChartIcon size={16} /> },
+          { id: 'sectors', label: 'Sectors', icon: <BarChart3 size={16} /> },
+          { id: 'dividends', label: 'Dividends', icon: <Coins size={16} /> },
+          { id: 'performance', label: 'Performance', icon: <Activity size={16} /> },
           { id: 'benchmark', label: 'Benchmark', icon: <Scale size={16} /> },
         ].map(tab => (
           <button
             key={tab.id}
-            onClick={() => setActiveTab(tab.id as 'pl' | 'diversification' | 'sectors' | 'benchmark')}
-            className={`flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
+            onClick={() => setActiveTab(tab.id as typeof activeTab)}
+            className={`flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${
               activeTab === tab.id
                 ? 'border-primary-500 text-primary-600 dark:text-primary-400'
                 : 'border-transparent text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-300'
@@ -457,6 +459,24 @@ export function PortfolioAnalytics() {
         />
       )}
 
+      {/* Dividends Tab */}
+      {activeTab === 'dividends' && (
+        <DividendsTab
+          stockTransactions={state.stockTransactions}
+          holdings={holdings}
+          settings={state.settings}
+        />
+      )}
+
+      {/* Performance Tab — Holdings Heatmap & Day Change */}
+      {activeTab === 'performance' && (
+        <PerformanceTab
+          holdings={holdings}
+          plMetrics={plMetrics}
+          settings={state.settings}
+        />
+      )}
+
       {/* Action button to portfolio */}
       <div className="flex gap-2">
         <button
@@ -474,7 +494,7 @@ export function PortfolioAnalytics() {
 
 // ─── Benchmark Comparison Tab ───────────────────────────
 
-import type { Settings, PortfolioHolding } from '../../../shared/types';
+import type { Settings, PortfolioHolding, StockTransaction } from '../../../shared/types';
 import type { PLMetrics } from '../../../shared/hooks/usePortfolioMetrics';
 
 function BenchmarkTab({ indexPrices, plMetrics, holdings, settings, hasLivePrices }: {
@@ -744,6 +764,313 @@ function ComparisonCard({ label, change, sublabel, highlight }: {
         {isPositive ? '+' : ''}{change.toFixed(2)}%
       </p>
       <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{sublabel}</p>
+    </div>
+  );
+}
+
+// ─── Dividends Tab ──────────────────────────────────────
+
+function DividendsTab({ stockTransactions, holdings, settings }: {
+  stockTransactions: StockTransaction[];
+  holdings: PortfolioHolding[];
+  settings: Settings;
+}) {
+  const dividendTxns = useMemo(
+    () => stockTransactions
+      .filter(t => t.type === 'dividend' && !t.isDeleted)
+      .sort((a, b) => b.date.localeCompare(a.date)),
+    [stockTransactions]
+  );
+
+  const totalDividends = useMemo(
+    () => dividendTxns.reduce((sum, t) => sum + t.totalValue, 0),
+    [dividendTxns]
+  );
+
+  // Dividends by stock
+  const byStock = useMemo(() => {
+    const map = new Map<string, { symbol: string; name: string; total: number; count: number }>();
+    for (const t of dividendTxns) {
+      const existing = map.get(t.symbol) || { symbol: t.symbol, name: t.name, total: 0, count: 0 };
+      existing.total += t.totalValue;
+      existing.count++;
+      map.set(t.symbol, existing);
+    }
+    return [...map.values()].sort((a, b) => b.total - a.total);
+  }, [dividendTxns]);
+
+  // Dividend yield per stock (annual dividend / current value)
+  const yieldData = useMemo(() => {
+    return byStock.map(s => {
+      const holding = holdings.find(h => h.symbol === s.symbol);
+      const currentValue = holding?.currentValue ?? holding?.totalInvested ?? 0;
+      const yieldPercent = currentValue > 0 ? (s.total / currentValue) * 100 : 0;
+      return { ...s, yieldPercent, currentValue };
+    });
+  }, [byStock, holdings]);
+
+  // Annual chart data
+  const annualData = useMemo(() => {
+    const yearMap = new Map<string, number>();
+    for (const t of dividendTxns) {
+      const year = t.date.substring(0, 4);
+      yearMap.set(year, (yearMap.get(year) || 0) + t.totalValue);
+    }
+    return [...yearMap.entries()]
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([year, amount]) => ({ year, amount }));
+  }, [dividendTxns]);
+
+  if (dividendTxns.length === 0) {
+    return (
+      <div className="text-center py-12 text-gray-400 dark:text-gray-500">
+        <Coins size={40} className="mx-auto mb-3 opacity-50" />
+        <p className="font-medium">No dividend records</p>
+        <p className="text-xs mt-1">Dividends from your holdings will appear here</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Summary Row */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="rounded-2xl bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 p-5">
+          <p className="text-sm text-emerald-700 dark:text-emerald-400">Total Dividend Income</p>
+          <p className="text-2xl font-bold text-emerald-800 dark:text-emerald-300 mt-1">
+            {formatCurrency(totalDividends, settings)}
+          </p>
+        </div>
+        <div className="rounded-2xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 p-5">
+          <p className="text-sm text-gray-500 dark:text-gray-400">Dividend Stocks</p>
+          <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">{byStock.length}</p>
+        </div>
+        <div className="rounded-2xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 p-5">
+          <p className="text-sm text-gray-500 dark:text-gray-400">Total Payouts</p>
+          <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">{dividendTxns.length}</p>
+        </div>
+      </div>
+
+      {/* Annual Dividend Chart */}
+      {annualData.length > 0 && (
+        <div className="rounded-2xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 p-6">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Annual Dividend Income</h3>
+          <ResponsiveContainer width="100%" height={250}>
+            <BarChart data={annualData}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#374151" opacity={0.3} />
+              <XAxis dataKey="year" tick={{ fill: '#9ca3af', fontSize: 12 }} />
+              <YAxis tick={{ fill: '#9ca3af', fontSize: 12 }} />
+              <Tooltip
+                formatter={(value) => formatCurrency(value as number, settings)}
+                contentStyle={{ backgroundColor: '#1f2937', border: '1px solid #374151', borderRadius: '8px' }}
+                labelStyle={{ color: '#fff' }}
+              />
+              <Bar dataKey="amount" fill="#10b981" radius={[6, 6, 0, 0]} name="Dividends" />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      )}
+
+      {/* Dividend Yield by Stock */}
+      <div className="rounded-2xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 p-6">
+        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Dividend Yield by Stock</h3>
+        <div className="space-y-3">
+          {yieldData.map(stock => (
+            <div key={stock.symbol} className="flex items-center justify-between p-3 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
+              <div>
+                <p className="font-semibold text-gray-900 dark:text-white">{stock.symbol}</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400">{stock.count} payout{stock.count > 1 ? 's' : ''}</p>
+              </div>
+              <div className="text-right">
+                <p className="font-semibold text-emerald-600 dark:text-emerald-400">
+                  {formatCurrency(stock.total, settings)}
+                </p>
+                <p className="text-xs text-gray-500">Yield: {stock.yieldPercent.toFixed(2)}%</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Dividend History */}
+      <div className="rounded-2xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 overflow-hidden">
+        <div className="p-4 border-b border-gray-200 dark:border-gray-700">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Dividend History</h3>
+        </div>
+        <div className="divide-y divide-gray-200 dark:divide-gray-700">
+          {dividendTxns.map(txn => (
+            <div key={txn.id} className="flex items-center justify-between px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
+              <div>
+                <p className="font-medium text-gray-900 dark:text-white">{txn.symbol}</p>
+                <p className="text-xs text-gray-500">{new Date(txn.date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}</p>
+              </div>
+              <p className="font-semibold text-emerald-600 dark:text-emerald-400">
+                +{formatCurrency(txn.totalValue, settings)}
+              </p>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Performance Tab ────────────────────────────────────
+
+function PerformanceTab({ holdings, plMetrics, settings }: {
+  holdings: PortfolioHolding[];
+  plMetrics: PLMetrics;
+  settings: Settings;
+}) {
+  const hasLivePrices = holdings.some(h => h.currentPrice != null);
+
+  // Portfolio day change
+  const dayChange = useMemo(() => {
+    let totalChange = 0;
+    let totalPrevValue = 0;
+    for (const h of holdings) {
+      if (h.currentPrice != null && h.dayChange != null) {
+        totalChange += h.dayChange * h.quantity;
+        totalPrevValue += (h.currentPrice - h.dayChange) * h.quantity;
+      }
+    }
+    return {
+      amount: totalChange,
+      percent: totalPrevValue > 0 ? (totalChange / totalPrevValue) * 100 : 0,
+    };
+  }, [holdings]);
+
+  // Sort holdings for heatmap by P&L%
+  const heatmapData = useMemo(() => {
+    return holdings
+      .filter(h => h.currentPrice != null)
+      .map(h => ({
+        symbol: h.symbol,
+        name: h.name,
+        plPercent: h.unrealizedPLPercent ?? 0,
+        pl: h.unrealizedPL ?? 0,
+        currentValue: h.currentValue ?? h.totalInvested,
+        dayChangePercent: h.dayChangePercent ?? 0,
+      }))
+      .sort((a, b) => b.plPercent - a.plPercent);
+  }, [holdings]);
+
+  // P&L bar chart data
+  const plBarData = useMemo(() => {
+    return holdings
+      .filter(h => h.unrealizedPL != null)
+      .map(h => ({
+        symbol: h.symbol,
+        pl: h.unrealizedPL!,
+        fill: (h.unrealizedPL ?? 0) >= 0 ? '#10b981' : '#ef4444',
+      }))
+      .sort((a, b) => b.pl - a.pl);
+  }, [holdings]);
+
+  if (!hasLivePrices) {
+    return (
+      <div className="text-center py-12 text-gray-400 dark:text-gray-500">
+        <Activity size={40} className="mx-auto mb-3 opacity-50" />
+        <p className="font-medium">Price data unavailable</p>
+        <p className="text-xs mt-1">Refresh prices to see performance metrics</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Day Change & Summary */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className={`rounded-2xl p-5 border ${
+          dayChange.amount >= 0
+            ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800'
+            : 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800'
+        }`}>
+          <p className="text-sm text-gray-600 dark:text-gray-400">Today's Change</p>
+          <p className={`text-2xl font-bold mt-1 ${
+            dayChange.amount >= 0 ? 'text-green-700 dark:text-green-400' : 'text-red-700 dark:text-red-400'
+          }`}>
+            {dayChange.amount >= 0 ? '+' : ''}{formatCurrency(dayChange.amount, settings)}
+          </p>
+          <p className={`text-sm font-medium ${
+            dayChange.percent >= 0 ? 'text-green-600 dark:text-green-500' : 'text-red-600 dark:text-red-500'
+          }`}>
+            {dayChange.percent >= 0 ? '↑' : '↓'} {Math.abs(dayChange.percent).toFixed(2)}%
+          </p>
+        </div>
+        <div className="rounded-2xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 p-5">
+          <p className="text-sm text-gray-500 dark:text-gray-400">Portfolio Value</p>
+          <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">
+            {formatCurrency(plMetrics.totalCurrentValue, settings)}
+          </p>
+        </div>
+        <div className="rounded-2xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 p-5">
+          <p className="text-sm text-gray-500 dark:text-gray-400">Winning Stocks</p>
+          <p className="text-2xl font-bold text-green-600 dark:text-green-400 mt-1">{plMetrics.profitableHoldings}</p>
+          <p className="text-xs text-gray-400">of {holdings.length} holdings</p>
+        </div>
+        <div className="rounded-2xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 p-5">
+          <p className="text-sm text-gray-500 dark:text-gray-400">Losing Stocks</p>
+          <p className="text-2xl font-bold text-red-600 dark:text-red-400 mt-1">{plMetrics.losingHoldings}</p>
+          <p className="text-xs text-gray-400">of {holdings.length} holdings</p>
+        </div>
+      </div>
+
+      {/* Holdings Heatmap */}
+      <div className="rounded-2xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 p-6">
+        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Holdings Heatmap</h3>
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+          {heatmapData.map(stock => {
+            const intensity = Math.min(Math.abs(stock.plPercent) / 50, 1);
+            const isPositive = stock.plPercent >= 0;
+            return (
+              <div
+                key={stock.symbol}
+                className="rounded-xl p-4 text-center transition-transform hover:scale-105"
+                style={{
+                  backgroundColor: isPositive
+                    ? `rgba(16, 185, 129, ${0.1 + intensity * 0.4})`
+                    : `rgba(239, 68, 68, ${0.1 + intensity * 0.4})`,
+                }}
+              >
+                <p className="font-bold text-sm text-gray-900 dark:text-white">{stock.symbol}</p>
+                <p className={`text-lg font-bold mt-1 ${
+                  isPositive ? 'text-green-700 dark:text-green-300' : 'text-red-700 dark:text-red-300'
+                }`}>
+                  {isPositive ? '+' : ''}{stock.plPercent.toFixed(1)}%
+                </p>
+                <p className="text-xs text-gray-600 dark:text-gray-400 mt-0.5">
+                  {formatCurrency(stock.pl, settings)}
+                </p>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* P&L Bar Chart */}
+      {plBarData.length > 0 && (
+        <div className="rounded-2xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 p-6">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">P&L by Stock</h3>
+          <ResponsiveContainer width="100%" height={300}>
+            <BarChart data={plBarData} layout="vertical">
+              <CartesianGrid strokeDasharray="3 3" stroke="#374151" opacity={0.3} />
+              <XAxis type="number" tick={{ fill: '#9ca3af', fontSize: 12 }} />
+              <YAxis type="category" dataKey="symbol" tick={{ fill: '#9ca3af', fontSize: 12 }} width={80} />
+              <Tooltip
+                formatter={(value) => formatCurrency(value as number, settings)}
+                contentStyle={{ backgroundColor: '#1f2937', border: '1px solid #374151', borderRadius: '8px' }}
+                labelStyle={{ color: '#fff' }}
+              />
+              <Bar dataKey="pl" name="P&L" radius={[0, 6, 6, 0]}>
+                {plBarData.map((entry, index) => (
+                  <Cell key={`bar-${index}`} fill={entry.fill} />
+                ))}
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      )}
     </div>
   );
 }
