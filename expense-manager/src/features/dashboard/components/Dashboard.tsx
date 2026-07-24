@@ -12,6 +12,7 @@ import { CHART_COLORS } from '../../../shared/constants/categories';
 import { computeAccountBalance } from '../../../shared/constants/accounts';
 import { calculateHealthScore } from '../../../shared/services/healthScore';
 import { getOverdueBills, getDueSoonBills, BILL_CATEGORY_ICONS } from '../../../shared/services/billReminderService';
+import { FeatureTips } from './FeatureTips';
 
 export function Dashboard() {
   const { state } = useAppContext();
@@ -135,6 +136,9 @@ export function Dashboard() {
           </div>
         </div>
       )}
+
+      {/* Feature Discovery Tips */}
+      <FeatureTips />
 
       {!hasData ? (
         <EmptyState

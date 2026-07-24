@@ -102,16 +102,27 @@ export function Layout() {
 
   return (
     <div className="flex h-screen bg-gray-50 dark:bg-gray-900">
+      {/* Skip to main content — accessibility */}
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-[100] focus:rounded-md focus:bg-primary-600 focus:px-4 focus:py-2 focus:text-white focus:outline-none"
+      >
+        Skip to main content
+      </a>
+
       {/* Mobile overlay */}
       {sidebarOpen && (
         <div
           className="fixed inset-0 z-40 bg-black/50 lg:hidden"
           onClick={() => setSidebarOpen(false)}
+          aria-hidden="true"
         />
       )}
 
       {/* Sidebar — Collapsible on desktop, slide-in on mobile */}
       <aside
+        role="navigation"
+        aria-label="Main navigation"
         onMouseEnter={() => setSidebarHovered(true)}
         onMouseLeave={() => setSidebarHovered(false)}
         className={classNames(
@@ -372,7 +383,7 @@ export function Layout() {
         </header>
 
         {/* Page Content */}
-        <main className="flex-1 overflow-y-auto p-4 lg:p-8">
+        <main id="main-content" className="flex-1 overflow-y-auto p-4 lg:p-8" role="main">
           <Outlet />
         </main>
       </div>
