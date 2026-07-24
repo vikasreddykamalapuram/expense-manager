@@ -4,7 +4,14 @@ import { useSavingsGoals } from '../../../shared/hooks/useSavingsGoals';
 import { useAppContext } from '../../../context/AppContext';
 import { formatCurrency } from '../../../shared/utils/helpers';
 
-const GOAL_ICONS = ['🏠', '🚗', '✈️', '💻', '📱', '🎓', '💍', '🏖️', '🎯', '💰', '🛡️', '🎁'];
+const GOAL_ICON_CATEGORIES: Record<string, string[]> = {
+  'Finance': ['💰', '🏦', '💵', '💳', '📈', '🪙', '💎', '🏧'],
+  'Home & Life': ['🏠', '🏡', '🛋️', '👶', '💍', '👨‍👩‍👧', '🐕', '🌱'],
+  'Transport': ['🚗', '🏍️', '🚲', '✈️', '🛳️', '🚀', '⛽', '🚕'],
+  'Tech & Education': ['💻', '📱', '🎓', '📚', '🎯', '🖥️', '⌚', '🤖'],
+  'Fun & Lifestyle': ['🏖️', '🎮', '🎵', '🏋️', '⚽', '🎨', '📸', '🎁'],
+  'Safety & Health': ['🛡️', '🏥', '💊', '🧘', '🔒', '☂️', '🩺', '❤️'],
+};
 const GOAL_COLORS = ['#6366f1', '#8b5cf6', '#ec4899', '#f43f5e', '#f97316', '#eab308', '#22c55e', '#14b8a6', '#06b6d4', '#3b82f6'];
 
 interface GoalFormData {
@@ -351,22 +358,30 @@ export function SavingsGoalsPage() {
                 />
               </div>
 
-              {/* Icon picker */}
+              {/* Icon picker — categorized */}
               <div>
                 <label className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-2 block">Icon</label>
-                <div className="flex flex-wrap gap-2">
-                  {GOAL_ICONS.map(icon => (
-                    <button
-                      key={icon}
-                      onClick={() => setFormData(prev => ({ ...prev, icon }))}
-                      className={`w-9 h-9 rounded-lg flex items-center justify-center text-lg transition-all ${
-                        formData.icon === icon
-                          ? 'bg-emerald-100 dark:bg-emerald-900/50 ring-2 ring-emerald-500 scale-110'
-                          : 'bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600'
-                      }`}
-                    >
-                      {icon}
-                    </button>
+                <div className="max-h-40 overflow-y-auto rounded-lg border border-gray-100 dark:border-gray-700 p-2 space-y-2">
+                  {Object.entries(GOAL_ICON_CATEGORIES).map(([category, icons]) => (
+                    <div key={category}>
+                      <p className="text-[10px] font-medium text-gray-400 dark:text-gray-500 uppercase tracking-wide mb-1">{category}</p>
+                      <div className="flex flex-wrap gap-1.5">
+                        {icons.map(icon => (
+                          <button
+                            key={icon}
+                            type="button"
+                            onClick={() => setFormData(prev => ({ ...prev, icon }))}
+                            className={`w-8 h-8 rounded-lg flex items-center justify-center text-base transition-all ${
+                              formData.icon === icon
+                                ? 'bg-emerald-100 dark:bg-emerald-900/50 ring-2 ring-emerald-500 scale-110'
+                                : 'bg-gray-50 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600'
+                            }`}
+                          >
+                            {icon}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
                   ))}
                 </div>
               </div>

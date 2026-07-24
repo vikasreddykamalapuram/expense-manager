@@ -25,6 +25,8 @@ const StockDetailPage = lazy(() => import('../features/stocks/components/StockDe
 const SplitwisePage = lazy(() => import('../features/splitwise/components/SplitwisePage').then(m => ({ default: m.SplitwisePage })));
 const SmartInsights = lazy(() => import('../features/insights/components/SmartInsights').then(m => ({ default: m.SmartInsights })));
 const SavingsGoalsPage = lazy(() => import('../features/savings/components/SavingsGoalsPage').then(m => ({ default: m.SavingsGoalsPage })));
+const FinancialCalendar = lazy(() => import('../features/insights/components/FinancialCalendar').then(m => ({ default: m.FinancialCalendar })));
+const ExpenseBenchmark = lazy(() => import('../features/insights/components/ExpenseBenchmark').then(m => ({ default: m.ExpenseBenchmark })));
 
 function RouteLoader() {
   return (
@@ -72,6 +74,8 @@ export const router = createBrowserRouter([
       { path: 'splitwise', element: <Suspense fallback={<RouteLoader />}><SplitwisePage /></Suspense> },
       { path: 'insights', element: <Suspense fallback={<RouteLoader />}><SmartInsights /></Suspense> },
       { path: 'savings', element: <Suspense fallback={<RouteLoader />}><SavingsGoalsPage /></Suspense> },
+      { path: 'calendar', element: <Suspense fallback={<RouteLoader />}><FinancialCalendar /></Suspense> },
+      { path: 'benchmark', element: <Suspense fallback={<RouteLoader />}><ExpenseBenchmark /></Suspense> },
       { path: 'settings', element: <Suspense fallback={<RouteLoader />}><SettingsPage /></Suspense> },
     ],
   },
