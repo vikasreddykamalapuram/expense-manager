@@ -13,8 +13,12 @@ import { AUTH_CONFIG } from './shared/config/auth';
 import { preloadSymbolMap } from './shared/services/symbolResolver';
 import { initSupabaseAuth } from './shared/services/supabaseAuthService';
 import { bootstrapNativeShell } from './shared/services/nativeShell';
+import { initSentry } from './shared/services/sentry';
 import { router } from './app/router';
 import './index.css';
+
+// Sentry (opt-in via VITE_SENTRY_DSN). Init first so it captures early errors.
+initSentry();
 
 // Pre-load NSE symbol map for ISIN→ticker resolution (non-blocking)
 preloadSymbolMap().catch(() => {});

@@ -925,7 +925,25 @@ export function SettingsPage() {
         <h3 className="mb-4 text-base font-semibold text-gray-900 dark:text-gray-100">About</h3>
         <div className="space-y-2 text-sm text-gray-600 dark:text-gray-400">
           <p><strong>ExpenseIQ</strong> — Personal Finance Manager</p>
-          <p>Version 3.0.0</p>
+          <p>
+            Version {import.meta.env.VITE_APP_VERSION || 'dev'}
+            {import.meta.env.VITE_BUILD_TIME && (
+              <span className="text-xs text-gray-400 ml-2">
+                (built {new Date(import.meta.env.VITE_BUILD_TIME as string).toLocaleString()})
+              </span>
+            )}
+            <button
+              type="button"
+              onClick={() => {
+                const info = `ExpenseIQ v${import.meta.env.VITE_APP_VERSION || 'dev'} · build ${import.meta.env.VITE_BUILD_TIME || 'n/a'} · ${navigator.userAgent}`;
+                navigator.clipboard?.writeText(info).catch(() => { /* ignore */ });
+              }}
+              className="ml-3 text-xs text-primary-600 hover:underline"
+              title="Copy version + user agent to clipboard"
+            >
+              Copy
+            </button>
+          </p>
           <p>Data is stored locally in your browser (IndexedDB) with optional encrypted cloud sync.</p>
           <p className="text-xs text-gray-400 dark:text-gray-500 mt-4">
             Total transactions: {state.transactions.length} · 

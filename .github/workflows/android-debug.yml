@@ -1,0 +1,70 @@
+name: Android Debug APK
+
+# Builds a debug APK for the Capacitor Android project on demand and on any
+# push to a `mobile/*` branch or PR against master. The APK is uploaded as a
+# workflow artifact for local install/testing (no Play Store publishing).
+#
+# Trigger locally by pushing to a mobile/* branch, opening a PR, or via the
+# "Run workflow" button in the Actions tab (workflow_dispatch).
+
+on:
+  push:
+    branches: ['mobile/*', 'v-vikaska-microsoft-mobile-app-capacitor']
+  pull_request:
+    branches: [master]
+    paths:
+      - 'expense-manager/**'
+      - '.github/workflows/android-debug.yml'
+  workflow_dispatch:
+
+jobs:
+  build-debug-apk:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    defaults:
+      run:
+        working-directory: expense-manager
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: expense-manager/package-lock.json
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Install npm dependencies
+        run: npm ci
+
+      - name: Build web bundle
+        run: npm run build
+
+      - name: Add Android platform (if missing)
+        run: |
+          if [ ! -d android ]; then
+            npx cap add android
+          fi
+
+      - name: Sync Capacitor
+        run: npx cap sync android
+
+      - name: Build debug APK
+        working-directory: expense-manager/android
+        run: ./gradlew assembleDebug --no-daemon
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: expenseiq-debug-apk-${{ github.sha }}
+          path: expense-manager/android/app/build/outputs/apk/debug/*.apk
+          if-no-files-found: error
+          retention-days: 14

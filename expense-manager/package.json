@@ -27,6 +27,8 @@
     "@capacitor/status-bar": "^8.0.3",
     "@capgo/capacitor-native-biometric": "^8.6.2",
     "@react-oauth/google": "^0.13.5",
+    "@sentry/capacitor": "^4.2.0",
+    "@sentry/react": "^10.60.0",
     "@supabase/supabase-js": "^999.9.2-canary.0",
     "dexie": "^4.4.2",
     "dexie-react-hooks": "^4.4.0",
