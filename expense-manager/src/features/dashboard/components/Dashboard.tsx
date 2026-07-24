@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { TrendingUp, TrendingDown, Wallet, ArrowRight, PlusCircle, Heart, Bell, AlertTriangle } from 'lucide-react';
+import { TrendingUp, TrendingDown, Wallet, ArrowRight, PlusCircle, Heart, Bell, AlertTriangle, Landmark, RefreshCw } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Cell, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 import { useAppContext } from '../../../context/AppContext';
@@ -9,6 +9,7 @@ import { Button } from '../../../shared/components/ui/Button';
 import { EmptyState } from '../../../shared/components/ui/EmptyState';
 import { formatCurrency, formatDate, formatMonth, getLast6Months, classNames } from '../../../shared/utils/helpers';
 import { CHART_COLORS } from '../../../shared/constants/categories';
+import { computeAccountBalance } from '../../../shared/constants/accounts';
 import { calculateHealthScore } from '../../../shared/services/healthScore';
 import { getOverdueBills, getDueSoonBills, BILL_CATEGORY_ICONS } from '../../../shared/services/billReminderService';
 
@@ -310,6 +311,83 @@ export function Dashboard() {
               );
             })()}
           </div>
+
+          {/* Accounts Overview */}
+          {accounts.length > 0 && (
+            <div
+              onClick={() => navigate('/accounts')}
+              className="cursor-pointer rounded-xl border border-gray-200 bg-white p-6 shadow-sm transition-shadow hover:shadow-md dark:border-gray-700 dark:bg-gray-800"
+            >
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-2">
+                  <Landmark size={18} className="text-primary-600 dark:text-primary-400" />
+                  <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100">Accounts</h3>
+                </div>
+                <span className="flex items-center gap-1 text-xs font-medium text-primary-600 dark:text-primary-400">
+                  View All <ArrowRight size={12} />
+                </span>
+              </div>
+              <div className="space-y-2">
+                {accounts.slice(0, 5).map((acc) => {
+                  const bal = computeAccountBalance(acc, allTxns);
+                  return (
+                  <div key={acc.id} className="flex items-center justify-between text-sm">
+                    <div className="flex items-center gap-2">
+                      <span className="text-base">{acc.type === 'bank' ? '🏦' : acc.type === 'credit_card' ? '💳' : acc.type === 'cash' ? '💵' : '📊'}</span>
+                      <span className="text-gray-700 dark:text-gray-300 truncate max-w-[140px]">{acc.name}</span>
+                    </div>
+                    <span className={classNames(
+                      'font-medium',
+                      bal >= 0 ? 'text-gray-900 dark:text-gray-100' : 'text-red-600 dark:text-red-400'
+                    )}>
+                      {formatCurrency(bal, settings)}
+                    </span>
+                  </div>
+                  );
+                })}
+                {accounts.length > 5 && (
+                  <p className="text-xs text-gray-400 dark:text-gray-500 pt-1">+{accounts.length - 5} more</p>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Upcoming Recurring */}
+          {state.recurringRules.length > 0 && (
+            <div
+              onClick={() => navigate('/recurring')}
+              className="cursor-pointer rounded-xl border border-gray-200 bg-white p-6 shadow-sm transition-shadow hover:shadow-md dark:border-gray-700 dark:bg-gray-800"
+            >
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-2">
+                  <RefreshCw size={18} className="text-primary-600 dark:text-primary-400" />
+                  <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100">Upcoming Recurring</h3>
+                </div>
+                <span className="flex items-center gap-1 text-xs font-medium text-primary-600 dark:text-primary-400">
+                  View All <ArrowRight size={12} />
+                </span>
+              </div>
+              <div className="space-y-2">
+                {state.recurringRules.filter((r) => r.isActive !== false).slice(0, 5).map((rule) => {
+                  const cat = categories.find((c) => c.id === rule.categoryId);
+                  return (
+                    <div key={rule.id} className="flex items-center justify-between text-sm">
+                      <div className="flex items-center gap-2">
+                        <div className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: cat?.color || '#94a3b8' }} />
+                        <span className="text-gray-700 dark:text-gray-300 truncate max-w-[140px]">{rule.name || cat?.name || 'Rule'}</span>
+                      </div>
+                      <span className={classNames(
+                        'font-medium',
+                        rule.type === 'income' ? 'text-success-600' : 'text-gray-900 dark:text-gray-100'
+                      )}>
+                        {rule.type === 'income' ? '+' : ''}{formatCurrency(rule.amount, settings)}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
 
           {/* Recent Transactions */}
           <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm lg:col-span-2 dark:border-gray-700 dark:bg-gray-800">
