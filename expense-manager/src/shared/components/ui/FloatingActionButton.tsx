@@ -69,7 +69,7 @@ export function FloatingActionButton() {
   return (
     <div
       ref={fabRef}
-      className="fixed bottom-6 right-6 z-40 lg:hidden"
+      className="fixed bottom-24 right-6 z-40 lg:bottom-6 lg:hidden"
       aria-label="Quick add transaction"
     >
       {/* Backdrop blur when open */}
