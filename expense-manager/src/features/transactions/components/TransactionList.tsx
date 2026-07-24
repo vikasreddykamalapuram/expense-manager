@@ -10,6 +10,8 @@ import { TransactionForm } from './TransactionForm';
 import { PAYMENT_METHODS } from '../../../shared/constants/accounts';
 import { formatCurrency, formatDate, classNames } from '../../../shared/utils/helpers';
 import { Transaction, TransactionFilters } from '../../../shared/types';
+import { SwipeableRow } from '../../../shared/components/ui/SwipeableRow';
+import { haptic } from '../../../shared/services/haptics';
 
 export function TransactionList() {
   const { state, actions } = useAppContext();
@@ -24,6 +26,7 @@ export function TransactionList() {
 
   const handleDelete = (id: string) => {
     actions.deleteTransaction(id);
+    haptic.success();
     setDeleteConfirm(null);
   };
 
@@ -131,10 +134,10 @@ export function TransactionList() {
                 ? `${parentCat.name} › ${category?.name}`
                 : category?.name || 'Unknown';
             return (
-              <div
-                key={tx.id}
-                className="group flex items-center gap-4 rounded-xl bg-white dark:bg-gray-800 p-4 shadow-sm border border-gray-100 dark:border-gray-700 transition-all hover:shadow-md"
-              >
+              <SwipeableRow key={tx.id} onDelete={() => setDeleteConfirm(tx.id)}>
+                <div
+                  className="group flex items-center gap-4 rounded-xl bg-white dark:bg-gray-800 p-4 shadow-sm border border-gray-100 dark:border-gray-700 transition-all hover:shadow-md"
+                >
                 <div
                   className="flex h-10 w-10 items-center justify-center rounded-xl"
                   style={{ backgroundColor: isTransfer ? '#3b82f615' : `${displayColor}15` }}
@@ -238,7 +241,8 @@ export function TransactionList() {
                     </button>
                   </div>
                 </div>
-              </div>
+                </div>
+              </SwipeableRow>
             );
           })}
         </div>

@@ -14,6 +14,7 @@ import { PAYMENT_METHODS } from '../../../shared/constants/accounts';
 import { getToday, classNames } from '../../../shared/utils/helpers';
 import { Transaction, Account, PaymentMethod } from '../../../shared/types';
 import { suggestCategories, type CategorySuggestion } from '../../../shared/services/autoCategorize';
+import { haptic } from '../../../shared/services/haptics';
 
 interface TransactionFormProps {
   editTransaction?: Transaction;
@@ -125,7 +126,7 @@ export function TransactionForm({ editTransaction, initialType, onClose }: Trans
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!validate()) return;
+    if (!validate()) { haptic.error(); return; }
 
     const now = new Date().toISOString();
     const txId = isEditing && editTransaction ? editTransaction.id : uuidv4();
@@ -148,6 +149,7 @@ export function TransactionForm({ editTransaction, initialType, onClose }: Trans
     } else {
       actions.addTransaction({ id: txId, ...txData, createdAt: now, updatedAt: now });
     }
+    haptic.success();
 
     // Save pending receipt file after transaction is persisted
     const fileToSave = pendingReceiptRef.current;

@@ -215,6 +215,8 @@ export interface AppActions {
   addBillReminder: (reminder: BillReminder) => Promise<void>;
   updateBillReminder: (id: string, updates: Partial<BillReminder>) => Promise<void>;
   deleteBillReminder: (id: string) => Promise<void>;
+  /** Re-hydrate all state from the local database. Used by pull-to-refresh. */
+  reloadProfileData: () => Promise<void>;
 }
 
 // Context
@@ -559,6 +561,16 @@ export function AppProvider({ children }: { children: ReactNode }) {
       await repository.deleteBillReminder(profileIdRef.current, id);
       dispatch({ type: 'DELETE_BILL_REMINDER', payload: id });
       scheduleAllSync(profileIdRef.current);
+    }, []),
+
+    reloadProfileData: useCallback(async () => {
+      const profileId = profileIdRef.current;
+      const [data, stockTxns] = await Promise.all([
+        repository.loadProfileData(profileId),
+        db.stockTransactions.where('profileId').equals(profileId).toArray(),
+      ]);
+      dispatch({ type: 'LOAD_PROFILE_DATA', payload: { profileId, ...data } });
+      dispatch({ type: 'SET_STOCK_TRANSACTIONS', payload: stockTxns });
     }, []),
   };
 

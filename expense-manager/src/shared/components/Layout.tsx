@@ -19,6 +19,10 @@ import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts';
 import { PWAUpdatePrompt } from './PWAUpdatePrompt';
 import { PWAInstallPrompt } from './PWAInstallPrompt';
 import { BottomNav } from './BottomNav';
+import { usePullToRefresh } from '../hooks/usePullToRefresh';
+import { PullToRefreshIndicator } from './ui/PullToRefreshIndicator';
+import { clearPriceCache } from '../services/stockPriceService';
+import { useLocation } from 'react-router-dom';
 
 const navItems = [
   { path: '/', icon: LayoutDashboard, label: 'Dashboard' },
@@ -50,7 +54,16 @@ export function Layout() {
   useTheme();
   useKeyboardShortcuts();
   const navigate = useNavigate();
+  const location = useLocation();
   const { profiles, activeProfileId, billReminders } = state;
+
+  // Pull-to-refresh: reload profile data + bust the stock price cache on the portfolio page.
+  const pull = usePullToRefresh({
+    onRefresh: async () => {
+      if (location.pathname.startsWith('/portfolio')) clearPriceCache();
+      await actions.reloadProfileData();
+    },
+  });
 
   // Overdue bills badge count
   const overdueBillsCount = useMemo(() => getOverdueBills(billReminders).length, [billReminders]);
@@ -389,7 +402,13 @@ export function Layout() {
         </header>
 
         {/* Page Content — extra bottom padding on mobile so BottomNav doesn't cover content */}
-        <main id="main-content" className="flex-1 overflow-y-auto p-4 pb-24 lg:p-8 lg:pb-8" role="main">
+        <main
+          id="main-content"
+          ref={pull.containerRef as React.RefObject<HTMLElement>}
+          className="flex-1 overflow-y-auto p-4 pb-24 lg:p-8 lg:pb-8"
+          role="main"
+        >
+          <PullToRefreshIndicator {...pull} />
           <Outlet />
         </main>
       </div>

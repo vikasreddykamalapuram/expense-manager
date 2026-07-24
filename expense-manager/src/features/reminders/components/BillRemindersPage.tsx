@@ -7,6 +7,8 @@ import { Modal } from '../../../shared/components/ui/Modal';
 import { Input } from '../../../shared/components/ui/Input';
 import { Button } from '../../../shared/components/ui/Button';
 import { EmptyState } from '../../../shared/components/ui/EmptyState';
+import { SwipeableRow } from '../../../shared/components/ui/SwipeableRow';
+import { haptic } from '../../../shared/services/haptics';
 import { formatCurrency, classNames } from '../../../shared/utils/helpers';
 import {
   getUpcomingBills,
@@ -123,16 +125,19 @@ export function BillRemindersPage() {
     } else {
       await actions.addBillReminder(reminder);
     }
+    haptic.success();
     setShowModal(false);
   };
 
   const handleMarkPaid = async (bill: BillWithDueInfo) => {
     const updated = markAsPaid(bill.reminder);
     await actions.updateBillReminder(updated.id, updated);
+    haptic.success();
   };
 
   const handleDelete = async (id: string) => {
     await actions.deleteBillReminder(id);
+    haptic.success();
     setDeleteConfirmId(null);
   };
 
@@ -173,13 +178,13 @@ export function BillRemindersPage() {
     }
 
     return (
-      <div
-        key={reminder.id}
-        className={classNames(
-          'flex items-center gap-4 rounded-xl border p-4 transition-colors hover:bg-gray-50 dark:hover:bg-gray-750',
-          borderColor,
-        )}
-      >
+      <SwipeableRow key={reminder.id} onDelete={() => setDeleteConfirmId(reminder.id)}>
+        <div
+          className={classNames(
+            'flex items-center gap-4 rounded-xl border p-4 transition-colors hover:bg-gray-50 dark:hover:bg-gray-750',
+            borderColor,
+          )}
+        >
         <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gray-100 text-lg dark:bg-gray-700">
           {icon}
         </div>
@@ -229,7 +234,8 @@ export function BillRemindersPage() {
             <Trash2 size={16} />
           </button>
         </div>
-      </div>
+        </div>
+      </SwipeableRow>
     );
   };
 
