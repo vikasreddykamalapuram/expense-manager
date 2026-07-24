@@ -13,6 +13,8 @@ import { useAuth } from '../../context/AuthContext';
 import { useSync } from '../../context/SyncContext';
 import { useTheme } from '../hooks/useTheme';
 import { FloatingAssistant } from '../../features/assistant/components/FloatingAssistant';
+import { FloatingActionButton } from './ui/FloatingActionButton';
+import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts';
 import { PWAUpdatePrompt } from './PWAUpdatePrompt';
 import { PWAInstallPrompt } from './PWAInstallPrompt';
 
@@ -39,6 +41,7 @@ export function Layout() {
   const { user, isAuthenticated, logout } = useAuth();
   const { syncStatus } = useSync();
   useTheme();
+  useKeyboardShortcuts();
   const navigate = useNavigate();
   const { profiles, activeProfileId } = state;
   const [sidebarOpen, setSidebarOpen] = useState(false); // mobile drawer
@@ -361,6 +364,9 @@ export function Layout() {
 
       {/* Floating AI Assistant */}
       <FloatingAssistant />
+
+      {/* Mobile FAB */}
+      <FloatingActionButton />
 
       {/* PWA Prompts */}
       <PWAUpdatePrompt />

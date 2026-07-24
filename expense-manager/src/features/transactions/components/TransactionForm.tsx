@@ -17,16 +17,17 @@ import { suggestCategories, type CategorySuggestion } from '../../../shared/serv
 
 interface TransactionFormProps {
   editTransaction?: Transaction;
+  initialType?: 'income' | 'expense' | 'transfer';
   onClose?: () => void;
 }
 
-export function TransactionForm({ editTransaction, onClose }: TransactionFormProps) {
+export function TransactionForm({ editTransaction, initialType, onClose }: TransactionFormProps) {
   const { state, actions } = useAppContext();
   const navigate = useNavigate();
   const isEditing = !!editTransaction;
   const { accounts, categories } = state;
 
-  const [type, setType] = useState<'income' | 'expense' | 'transfer'>(editTransaction?.type || 'expense');
+  const [type, setType] = useState<'income' | 'expense' | 'transfer'>(editTransaction?.type || initialType || 'expense');
   const [amount, setAmount] = useState(editTransaction?.amount.toString() || '');
   const [categoryId, setCategoryId] = useState(editTransaction?.categoryId || '');
   const [date, setDate] = useState(editTransaction?.date || getToday());
