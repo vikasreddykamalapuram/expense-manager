@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
-import { PortfolioHolding } from '../types';
+import { PortfolioHolding, StockTransaction } from '../types';
+import { calculateXIRR, buildPortfolioCashFlows } from '../utils/xirr';
 
 export interface SectorAllocation {
   sector: string;
@@ -23,6 +24,13 @@ export interface PLMetrics {
   breakEvenPrice?: number;
   profitableHoldings: number;
   losingHoldings: number;
+  xirr: number | null;
+  realizedPL: number;
+  unrealizedPL: number;
+  dividendIncome: number;
+  totalChargesPaid: number;
+  topGainers: Array<{ symbol: string; name: string; pl: number; plPercent: number }>;
+  topLosers: Array<{ symbol: string; name: string; pl: number; plPercent: number }>;
 }
 
 export interface PieChartData {
@@ -100,8 +108,8 @@ function getSectorForStock(symbol: string, name: string): string {
   return 'Other';
 }
 
-export function usePortfolioMetrics(holdings: PortfolioHolding[]) {
-  // P&L Metrics
+export function usePortfolioMetrics(holdings: PortfolioHolding[], stockTransactions?: StockTransaction[]) {
+  // P&L Metrics with XIRR, realized/unrealized split
   const plMetrics = useMemo<PLMetrics>(() => {
     if (holdings.length === 0) {
       return {
@@ -111,6 +119,13 @@ export function usePortfolioMetrics(holdings: PortfolioHolding[]) {
         totalGainLossPercent: 0,
         profitableHoldings: 0,
         losingHoldings: 0,
+        xirr: null,
+        realizedPL: 0,
+        unrealizedPL: 0,
+        dividendIncome: 0,
+        totalChargesPaid: 0,
+        topGainers: [],
+        topLosers: [],
       };
     }
 
@@ -118,19 +133,62 @@ export function usePortfolioMetrics(holdings: PortfolioHolding[]) {
     let totalCurrentValue = 0;
     let profitableCount = 0;
     let losingCount = 0;
+    let totalUnrealizedPL = 0;
+
+    const holdingPL: Array<{ symbol: string; name: string; pl: number; plPercent: number }> = [];
 
     for (const holding of holdings) {
       totalInvested += holding.totalInvested;
       const current = holding.currentValue ?? holding.totalInvested;
       totalCurrentValue += current;
 
-      if (holding.unrealizedPL !== null && holding.unrealizedPL !== undefined) {
-        if (holding.unrealizedPL > 0) {
-          profitableCount++;
-        } else if (holding.unrealizedPL < 0) {
-          losingCount++;
+      const pl = holding.unrealizedPL ?? 0;
+      totalUnrealizedPL += pl;
+
+      if (pl > 0) profitableCount++;
+      else if (pl < 0) losingCount++;
+
+      holdingPL.push({
+        symbol: holding.symbol,
+        name: holding.name,
+        pl,
+        plPercent: holding.unrealizedPLPercent ?? 0,
+      });
+    }
+
+    // Top gainers and losers
+    const sorted = [...holdingPL].sort((a, b) => b.pl - a.pl);
+    const topGainers = sorted.filter(h => h.pl > 0).slice(0, 5);
+    const topLosers = sorted.filter(h => h.pl < 0).sort((a, b) => a.pl - b.pl).slice(0, 5);
+
+    // Realized P&L from sell transactions
+    let realizedPL = 0;
+    let dividendIncome = 0;
+    let totalChargesPaid = 0;
+
+    if (stockTransactions) {
+      for (const txn of stockTransactions) {
+        totalChargesPaid += txn.charges?.total ?? 0;
+        if (txn.type === 'dividend') {
+          dividendIncome += txn.totalValue;
+        }
+        // Realized P&L approximation: sell proceeds - avg cost at time of sell
+        // (simplified: actual realized P&L requires FIFO/LIFO tracking)
+        if (txn.type === 'sell') {
+          // Find current holding's avg buy price for approximate realized P&L
+          const holding = holdings.find(h => h.symbol === txn.symbol);
+          if (holding) {
+            realizedPL += (txn.price - holding.avgBuyPrice) * txn.quantity;
+          }
         }
       }
+    }
+
+    // XIRR calculation
+    let xirr: number | null = null;
+    if (stockTransactions && stockTransactions.length > 0 && totalCurrentValue > 0) {
+      const cashFlows = buildPortfolioCashFlows(stockTransactions, totalCurrentValue);
+      xirr = calculateXIRR(cashFlows);
     }
 
     const gainLoss = totalCurrentValue - totalInvested;
@@ -143,8 +201,15 @@ export function usePortfolioMetrics(holdings: PortfolioHolding[]) {
       totalGainLossPercent: gainLossPercent,
       profitableHoldings: profitableCount,
       losingHoldings: losingCount,
+      xirr,
+      realizedPL,
+      unrealizedPL: totalUnrealizedPL,
+      dividendIncome,
+      totalChargesPaid,
+      topGainers,
+      topLosers,
     };
-  }, [holdings]);
+  }, [holdings, stockTransactions]);
 
   // Diversification Pie Data
   const diversificationData = useMemo<PieChartData[]>(() => {
@@ -215,9 +280,19 @@ export function usePortfolioMetrics(holdings: PortfolioHolding[]) {
     return sectorData;
   }, [holdings, plMetrics.totalCurrentValue]);
 
+  // Concentration risk: stocks with > 20% portfolio weight
+  const concentrationRisk = useMemo(() => {
+    if (diversificationData.length === 0) return [];
+    const total = diversificationData.reduce((s, d) => s + d.value, 0);
+    return diversificationData
+      .map(d => ({ symbol: d.symbol, percent: total > 0 ? (d.value / total) * 100 : 0 }))
+      .filter(d => d.percent > 20);
+  }, [diversificationData]);
+
   return {
     plMetrics,
     diversificationData,
     sectorBreakdown,
+    concentrationRisk,
   };
 }

@@ -65,7 +65,7 @@ export function PortfolioAnalytics() {
     [baseHoldings, priceMap]
   );
 
-  const { plMetrics, diversificationData, sectorBreakdown } = usePortfolioMetrics(holdings);
+  const { plMetrics, diversificationData, sectorBreakdown, concentrationRisk } = usePortfolioMetrics(holdings, state.stockTransactions);
 
   // Load cached prices on mount
   useEffect(() => {
@@ -218,13 +218,91 @@ export function PortfolioAnalytics() {
               trend={plMetrics.totalGainLoss >= 0 ? 'up' : 'down'}
             />
             <StatCard
-              label="Holdings"
-              value={`${plMetrics.profitableHoldings}/${holdings.length}`}
+              label="XIRR (Annual Return)"
+              value={plMetrics.xirr != null ? `${(plMetrics.xirr * 100).toFixed(1)}%` : '—'}
               icon={<BarChart3 size={20} className="text-white" />}
               color="bg-purple-500"
-              subtext={`${plMetrics.losingHoldings} losing`}
+              subtext={plMetrics.xirr != null ? 'True annualized return' : 'Need more data'}
+              trend={plMetrics.xirr != null && plMetrics.xirr > 0 ? 'up' : plMetrics.xirr != null && plMetrics.xirr < 0 ? 'down' : 'neutral'}
             />
           </div>
+
+          {/* Realized vs Unrealized P&L */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="rounded-2xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 p-5">
+              <p className="text-sm text-gray-500 dark:text-gray-400">Unrealized P&L</p>
+              <p className={`text-xl font-bold mt-1 ${plMetrics.unrealizedPL >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+                {plMetrics.unrealizedPL >= 0 ? '+' : ''}{formatCurrency(plMetrics.unrealizedPL, state.settings)}
+              </p>
+              <p className="text-xs text-gray-400 mt-1">Open positions</p>
+            </div>
+            <div className="rounded-2xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 p-5">
+              <p className="text-sm text-gray-500 dark:text-gray-400">Realized P&L</p>
+              <p className={`text-xl font-bold mt-1 ${plMetrics.realizedPL >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+                {plMetrics.realizedPL >= 0 ? '+' : ''}{formatCurrency(plMetrics.realizedPL, state.settings)}
+              </p>
+              <p className="text-xs text-gray-400 mt-1">Closed trades</p>
+            </div>
+            <div className="rounded-2xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 p-5">
+              <p className="text-sm text-gray-500 dark:text-gray-400">Dividend Income</p>
+              <p className="text-xl font-bold mt-1 text-emerald-600 dark:text-emerald-400">
+                +{formatCurrency(plMetrics.dividendIncome, state.settings)}
+              </p>
+              <p className="text-xs text-gray-400 mt-1">Total dividends received</p>
+            </div>
+          </div>
+
+          {/* Top Gainers & Losers */}
+          {(plMetrics.topGainers.length > 0 || plMetrics.topLosers.length > 0) && (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              {plMetrics.topGainers.length > 0 && (
+                <div className="rounded-2xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 p-5">
+                  <h4 className="text-sm font-semibold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
+                    <TrendingUp size={16} className="text-green-500" /> Top Gainers
+                  </h4>
+                  <div className="space-y-3">
+                    {plMetrics.topGainers.map(stock => (
+                      <div key={stock.symbol} className="flex items-center justify-between">
+                        <div>
+                          <p className="text-sm font-medium text-gray-900 dark:text-white">{stock.symbol}</p>
+                          <p className="text-xs text-gray-500 truncate max-w-[120px]">{stock.name}</p>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-sm font-semibold text-green-600 dark:text-green-400">
+                            +{formatCurrency(stock.pl, state.settings)}
+                          </p>
+                          <p className="text-xs text-green-500">+{stock.plPercent.toFixed(1)}%</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {plMetrics.topLosers.length > 0 && (
+                <div className="rounded-2xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 p-5">
+                  <h4 className="text-sm font-semibold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
+                    <TrendingDown size={16} className="text-red-500" /> Top Losers
+                  </h4>
+                  <div className="space-y-3">
+                    {plMetrics.topLosers.map(stock => (
+                      <div key={stock.symbol} className="flex items-center justify-between">
+                        <div>
+                          <p className="text-sm font-medium text-gray-900 dark:text-white">{stock.symbol}</p>
+                          <p className="text-xs text-gray-500 truncate max-w-[120px]">{stock.name}</p>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-sm font-semibold text-red-600 dark:text-red-400">
+                            {formatCurrency(stock.pl, state.settings)}
+                          </p>
+                          <p className="text-xs text-red-500">{stock.plPercent.toFixed(1)}%</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Holdings Table */}
           <div className="rounded-2xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 overflow-hidden">
@@ -241,7 +319,7 @@ export function PortfolioAnalytics() {
                 </thead>
                 <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
                   {holdings.map(holding => (
-                    <tr key={holding.symbol} className="hover:bg-gray-50 dark:hover:bg-gray-700">
+                    <tr key={holding.symbol} className="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
                       <td className="px-4 py-3">
                         <div>
                           <p className="font-semibold text-gray-900 dark:text-white">{holding.symbol}</p>
@@ -271,36 +349,52 @@ export function PortfolioAnalytics() {
 
       {/* Diversification Tab */}
       {activeTab === 'diversification' && (
-        <div className="rounded-2xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 p-6">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Allocation by Stock</h3>
-          {diversificationData.length > 0 ? (
-            <ResponsiveContainer width="100%" height={400}>
-              <RePieChart>
-                <Pie
-                  data={diversificationData}
-                  cx="50%"
-                  cy="50%"
-                  labelLine={false}
-                  outerRadius={120}
-                  fill="#8884d8"
-                  dataKey="value"
-                  label={({ name, percent }) => `${name}: ${((percent ?? 0) * 100).toFixed(1)}%`}
-                >
-                  {diversificationData.map((_entry, index) => (
-                    <Cell key={`cell-${index}`} fill={SECTOR_COLORS[index % SECTOR_COLORS.length]} />
-                  ))}
-                </Pie>
-                <Tooltip
-                  formatter={(value) => formatCurrency(value as number, state.settings)}
-                  contentStyle={{ backgroundColor: '#1f2937', border: '1px solid #374151', borderRadius: '8px' }}
-                  labelStyle={{ color: '#fff' }}
-                />
-                <Legend />
-              </RePieChart>
-            </ResponsiveContainer>
-          ) : (
-            <p className="text-gray-500 dark:text-gray-400">No data available</p>
+        <div className="space-y-4">
+          {/* Concentration Risk Alert */}
+          {concentrationRisk.length > 0 && (
+            <div className="rounded-xl bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 p-4 flex items-start gap-3">
+              <AlertTriangle size={18} className="text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+              <div>
+                <p className="text-sm font-semibold text-amber-800 dark:text-amber-300">Concentration Risk</p>
+                <p className="text-xs text-amber-700 dark:text-amber-400 mt-0.5">
+                  {concentrationRisk.map(r => `${r.symbol} (${r.percent.toFixed(1)}%)`).join(', ')}
+                  {' '}— Single stock exceeds 20% of portfolio. Consider diversifying.
+                </p>
+              </div>
+            </div>
           )}
+
+          <div className="rounded-2xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 p-6">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Allocation by Stock</h3>
+            {diversificationData.length > 0 ? (
+              <ResponsiveContainer width="100%" height={400}>
+                <RePieChart>
+                  <Pie
+                    data={diversificationData}
+                    cx="50%"
+                    cy="50%"
+                    labelLine={false}
+                    outerRadius={120}
+                    fill="#8884d8"
+                    dataKey="value"
+                    label={({ name, percent }) => `${name}: ${((percent ?? 0) * 100).toFixed(1)}%`}
+                  >
+                    {diversificationData.map((_entry, index) => (
+                      <Cell key={`cell-${index}`} fill={SECTOR_COLORS[index % SECTOR_COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip
+                    formatter={(value) => formatCurrency(value as number, state.settings)}
+                    contentStyle={{ backgroundColor: '#1f2937', border: '1px solid #374151', borderRadius: '8px' }}
+                    labelStyle={{ color: '#fff' }}
+                  />
+                  <Legend />
+                </RePieChart>
+              </ResponsiveContainer>
+            ) : (
+              <p className="text-gray-500 dark:text-gray-400">No data available</p>
+            )}
+          </div>
         </div>
       )}
 
