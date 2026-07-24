@@ -24,6 +24,7 @@ const TradeImportPage = lazy(() => import('../features/stocks/components/TradeIm
 const StockDetailPage = lazy(() => import('../features/stocks/components/StockDetailPage').then(m => ({ default: m.StockDetailPage })));
 const SplitwisePage = lazy(() => import('../features/splitwise/components/SplitwisePage').then(m => ({ default: m.SplitwisePage })));
 const SmartInsights = lazy(() => import('../features/insights/components/SmartInsights').then(m => ({ default: m.SmartInsights })));
+const SavingsGoalsPage = lazy(() => import('../features/savings/components/SavingsGoalsPage').then(m => ({ default: m.SavingsGoalsPage })));
 
 function RouteLoader() {
   return (
@@ -70,6 +71,7 @@ export const router = createBrowserRouter([
       { path: 'import', element: <Suspense fallback={<RouteLoader />}><StatementImportPage /></Suspense> },
       { path: 'splitwise', element: <Suspense fallback={<RouteLoader />}><SplitwisePage /></Suspense> },
       { path: 'insights', element: <Suspense fallback={<RouteLoader />}><SmartInsights /></Suspense> },
+      { path: 'savings', element: <Suspense fallback={<RouteLoader />}><SavingsGoalsPage /></Suspense> },
       { path: 'settings', element: <Suspense fallback={<RouteLoader />}><SettingsPage /></Suspense> },
     ],
   },

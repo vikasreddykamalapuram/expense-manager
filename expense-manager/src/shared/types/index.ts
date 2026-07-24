@@ -354,3 +354,18 @@ export interface SyncStatus {
   pendingChanges: number;
   provider?: AuthProvider;
 }
+
+export interface SavingsGoal {
+  id: string;
+  name: string;
+  targetAmount: number;
+  savedAmount: number;
+  deadline?: string;      // ISO date YYYY-MM-DD
+  icon: string;           // emoji or lucide icon name
+  color: string;          // hex color
+  createdAt: string;
+  updatedAt: string;
+  completedAt?: string;   // set when 100% reached
+  isDeleted?: boolean;
+  deletedAt?: string;
+}
