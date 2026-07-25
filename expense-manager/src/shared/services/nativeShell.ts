@@ -68,11 +68,32 @@ export async function bootstrapNativeShell(): Promise<void> {
   // Local notifications: register the daily-nudge quick-action + deep-link handler.
   try {
     await notificationService.registerHandlers((path) => {
-      window.location.hash = ''; // ensure hash router doesn't swallow it
-      window.history.pushState({}, '', path);
-      window.dispatchEvent(new PopStateEvent('popstate'));
+      navigateToDeepLink(path);
     });
   } catch { /* ignore */ }
+
+  // Deep-link handler: fires when the app is opened via https://.../expense-manager/*
+  // (App Link) or expenseiq://* (custom scheme). Strip the base URL and hand the
+  // path to the router.
+  try {
+    App.addListener('appUrlOpen', (event) => {
+      try {
+        const url = new URL(event.url);
+        // Strip the /expense-manager base path if present.
+        let path = url.pathname.replace(/^\/expense-manager/, '') || '/';
+        if (url.hash) path += url.hash;
+        else if (url.search) path += url.search;
+        navigateToDeepLink(path);
+      } catch { /* ignore malformed URLs */ }
+    });
+  } catch { /* ignore */ }
+}
+
+function navigateToDeepLink(path: string): void {
+  const base = (import.meta.env.BASE_URL || '/').replace(/\/$/, '');
+  const target = base + (path.startsWith('/') ? path : '/' + path);
+  window.history.pushState({}, '', target);
+  window.dispatchEvent(new PopStateEvent('popstate'));
 }
 
 /** Toggle the privacy screen at runtime (used by Settings). */

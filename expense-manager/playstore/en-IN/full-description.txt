@@ -1,0 +1,61 @@
+ExpenseIQ is a private, local-first personal-finance manager built for people who want to actually own their financial data.
+
+⚡ WHY EXPENSEIQ
+
+• 100% local storage — your transactions live on your device, not our servers
+• No ads, no subscription, no data mining, ever
+• Optional end-to-end encrypted sync via your own Google Drive or OneDrive
+• Works fully offline, forever
+
+💰 TRACK EVERYTHING
+
+• Income, expenses, and transfers across bank accounts, credit cards, and loans
+• Hierarchical categories with custom icons
+• Multi-account support with running balances
+• Bill reminders with local push notifications (fires at 9 AM on due date)
+• Recurring transactions with auto-scheduling
+
+📊 UNDERSTAND YOUR MONEY
+
+• Six-view analytics: overview, category breakdown, trends, income vs expense, budget comparison, period comparison
+• Monthly financial reports
+• Financial health score across savings rate, budget adherence, and debt ratio
+• Smart auto-categorization that learns from your history
+• AI chat assistant with support for English and Hindi
+
+📈 STOCK PORTFOLIO
+
+• Track NSE stock holdings with live prices (refreshed 5× daily during market hours)
+• Trade history with P&L calculations
+• Import trades from Geojit Excel statements
+• ISIN-based symbol resolution using official NSE data
+
+🔒 SECURITY YOU CAN VERIFY
+
+• Biometric app-lock (Face Unlock / Fingerprint) with PIN fallback
+• Screenshot protection (FLAG_SECURE) hides balances in the recent-apps switcher
+• Auto-lock on background after configurable idle timeout
+• PBKDF2 PIN hashing with 200,000 iterations
+• AES-256-GCM end-to-end encryption for cloud sync — the cloud provider only ever sees opaque ciphertext
+
+📥 EASY IMPORT
+
+• CSV import from other expense trackers
+• Bank statement PDF parser (including password-protected PDFs)
+• Excel trade statements from Geojit and other brokers
+
+🎯 BUILT FOR INDIA
+
+• Native ₹ / lakh / crore support
+• UPI payment method tracking
+• NSE stock coverage (2,130+ stocks)
+• Bill categories for Indian utilities
+
+📱 MODERN MOBILE UX
+
+• Pull-to-refresh · Swipe-to-delete · Haptic feedback throughout
+• Bottom navigation optimized for one-handed use
+• Dark mode + AMOLED black mode + 10 accent color themes
+• Progressive Web App — install to your home screen
+
+Made with care for people who want a finance app that respects them. No signup required — open the app and start tracking.

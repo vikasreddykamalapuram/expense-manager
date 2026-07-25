@@ -34,3 +34,10 @@ dist-ssr
 # until we're ready to publish a signed release from CI.
 /android
 /ios
+
+# Keystore + signing secrets — NEVER commit these
+*.keystore
+*.jks
+android/keystore.properties
+android/local.properties
+
