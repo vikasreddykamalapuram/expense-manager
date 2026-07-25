@@ -9,6 +9,7 @@ import { scheduleBackendSync } from '../shared/services/supabaseSyncService';
 import { startRealtimeSync, stopRealtimeSync, setRealtimeDataChangedCallback } from '../shared/services/supabaseRealtimeService';
 import { onSupabaseAuthChange } from '../shared/services/supabaseAuthService';
 import { showToastGlobal } from '../shared/components/ui/Toast';
+import { refreshWidget } from '../shared/services/widgetBridge';
 
 // State
 interface AppState {
@@ -624,6 +625,16 @@ export function AppProvider({ children }: { children: ReactNode }) {
       unsubscribe();
     };
   }, []);
+
+  // Keep the Android home-screen widget in sync with the current month's
+  // expense total. Debounced so bulk imports don't spam the bridge.
+  useEffect(() => {
+    const currency = state.settings?.currencySymbol || '₹';
+    const timer = setTimeout(() => {
+      refreshWidget(state.transactions, currency).catch(() => { /* ignore */ });
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [state.transactions, state.settings?.currencySymbol]);
 
   return (
     <AppContext.Provider value={{ state, dispatch, actions }}>

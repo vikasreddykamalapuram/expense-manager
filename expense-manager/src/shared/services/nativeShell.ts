@@ -17,9 +17,11 @@ import { App } from '@capacitor/app';
 import { SplashScreen } from '@capacitor/splash-screen';
 import { StatusBar, Style } from '@capacitor/status-bar';
 import { PrivacyScreen } from '@capacitor-community/privacy-screen';
+import { SendIntent } from 'send-intent';
 import { isNativePlatform, isAndroid } from './platform';
 import { prefs } from './preferences';
 import { notificationService } from './notificationService';
+import { parseSharedText, buildAddDeepLink } from './shareParser';
 
 let bootstrapped = false;
 
@@ -87,6 +89,34 @@ export async function bootstrapNativeShell(): Promise<void> {
       } catch { /* ignore malformed URLs */ }
     });
   } catch { /* ignore */ }
+
+  // Share-target handler: when the user shares text (bank SMS, receipt email,
+  // payment confirmation) into ExpenseIQ, parse it and prefill /add.
+  try {
+    await handlePendingShareIntent();
+    App.addListener('appStateChange', ({ isActive }) => {
+      // Android delivers the intent when the app is (re)launched; check on
+      // every resume so re-shares while backgrounded also work.
+      if (isActive) handlePendingShareIntent().catch(() => { /* ignore */ });
+    });
+  } catch { /* ignore */ }
+}
+
+async function handlePendingShareIntent(): Promise<void> {
+  if (!isNativePlatform()) return;
+  try {
+    const result = await SendIntent.checkSendIntentReceived();
+    // SendIntent returns an empty object when nothing is queued; guard for both
+    // `title`/`description` (text share) and `url` (link share) shapes.
+    const raw = (result as { title?: string; description?: string; url?: string; type?: string });
+    const text = raw.description || raw.title || raw.url;
+    if (!text) return;
+    const parsed = parseSharedText(text);
+    const path = buildAddDeepLink(parsed, '/');
+    navigateToDeepLink(path);
+    // Clear the queued intent so we don't re-fire on next resume.
+    try { SendIntent.finish(); } catch { /* ignore */ }
+  } catch { /* ignore — no pending intent */ }
 }
 
 function navigateToDeepLink(path: string): void {

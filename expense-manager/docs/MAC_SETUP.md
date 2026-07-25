@@ -594,6 +594,30 @@ The app should launch on your connected phone / emulator.
 
 ---
 
+### Testing Phase B features (shortcuts, share, widget)
+
+After first install, test each mobile-integration surface:
+
+**1. App Shortcuts (launcher long-press)**
+- Long-press the ExpenseIQ icon on your home screen / app drawer.
+- You should see: **Expense**, **Income**, **Analytics**, **Budgets**.
+- Tap **Expense** → app opens directly to the Add Transaction form with type=expense.
+
+**2. Share target (bank SMS → prefilled add)**
+- Open any bank-style SMS or note text like `"Rs. 500 debited at Uber on 25-Jul"`.
+- Long-press → **Share** → pick **ExpenseIQ**.
+- App opens with amount `500` and note `Uber` prefilled.
+
+**3. Home-screen widget**
+- Long-press an empty area on your home screen → **Widgets** → find **ExpenseIQ**.
+- Drag it to the home screen. It shows this month's expense total.
+- Tap the "Add expense" button → deep-links into the app.
+- The widget refreshes automatically whenever you add/edit/delete a transaction.
+
+If the widget shows "—" indefinitely, add one transaction — the JS bridge fires on any transactions change and populates SharedPreferences.
+
+---
+
 ### Using this guide in Antigravity
 
 Open the workspace in Antigravity, then chat with the agent:
