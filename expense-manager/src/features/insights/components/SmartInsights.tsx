@@ -9,6 +9,8 @@ import { generateInsights, Insight } from '../../../shared/services/insightsEngi
 import { detectAnomalies } from '../../../shared/services/anomalyDetection';
 import { forecastSpending, forecastCategoryBudgets } from '../../../shared/services/spendingPredictions';
 import { formatCurrency } from '../../../shared/utils/helpers';
+import { CashflowProjectionCard } from './CashflowProjectionCard';
+import { HiddenSubscriptionsCard } from './HiddenSubscriptionsCard';
 
 const INSIGHT_ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
   TrendingUp, TrendingDown, ArrowUpRight, ArrowDownRight,
@@ -237,6 +239,12 @@ export function SmartInsights() {
               </div>
             </div>
           )}
+
+          {/* Cashflow projection */}
+          <CashflowProjectionCard />
+
+          {/* Hidden subscriptions */}
+          <HiddenSubscriptionsCard />
 
           {/* No anomalies - positive message */}
           {anomalies.length === 0 && insights.length > 0 && (

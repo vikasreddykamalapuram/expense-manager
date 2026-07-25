@@ -10,6 +10,8 @@ import { startRealtimeSync, stopRealtimeSync, setRealtimeDataChangedCallback } f
 import { onSupabaseAuthChange } from '../shared/services/supabaseAuthService';
 import { showToastGlobal } from '../shared/components/ui/Toast';
 import { refreshWidget } from '../shared/services/widgetBridge';
+import { detectAnomalies } from '../shared/services/anomalyDetection';
+import { notificationService } from '../shared/services/notificationService';
 
 // State
 interface AppState {
@@ -635,6 +637,33 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }, 500);
     return () => clearTimeout(timer);
   }, [state.transactions, state.settings?.currencySymbol]);
+
+  // Fresh-anomaly local notifications. Opt-in via localStorage flag
+  // `expenseiq.notifyAnomalies` (default off). Debounced + de-duped
+  // against a persisted last-seen-id set so we notify each anomaly once.
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    if (window.localStorage.getItem('expenseiq.notifyAnomalies') !== 'true') return;
+    const timer = setTimeout(() => {
+      try {
+        const anomalies = detectAnomalies(state.transactions, state.categories);
+        if (anomalies.length === 0) return;
+        const seenKey = 'expenseiq.seenAnomalyIds';
+        const seen = new Set<string>(JSON.parse(window.localStorage.getItem(seenKey) || '[]'));
+        const fresh = anomalies.filter((a) => !seen.has(a.id));
+        if (fresh.length === 0) return;
+        // Cap to 2 notifications per burst to avoid spam.
+        fresh.slice(0, 2).forEach((a) => {
+          notificationService
+            .notifyAnomaly({ id: a.id, title: a.title, description: a.description })
+            .catch(() => { /* ignore */ });
+        });
+        const next = Array.from(new Set([...seen, ...anomalies.map((a) => a.id)])).slice(-200);
+        window.localStorage.setItem(seenKey, JSON.stringify(next));
+      } catch { /* ignore */ }
+    }, 1500);
+    return () => clearTimeout(timer);
+  }, [state.transactions, state.categories]);
 
   return (
     <AppContext.Provider value={{ state, dispatch, actions }}>

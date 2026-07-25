@@ -96,6 +96,25 @@ export const notificationService = {
   },
 
   /**
+   * Fire a one-shot notification for a freshly detected spending anomaly.
+   * Called at most once per anomaly ID (dedup handled by caller).
+   */
+  async notifyAnomaly(anomaly: { id: string; title: string; description: string }): Promise<void> {
+    if (!(await ensurePermission())) return;
+    await LocalNotifications.schedule({
+      notifications: [
+        {
+          id: hashId(`anomaly-${anomaly.id}`),
+          title: `⚡ ${anomaly.title}`,
+          body: anomaly.description,
+          schedule: { at: new Date(Date.now() + 5_000), allowWhileIdle: true },
+          extra: { deepLink: '/insights' },
+        },
+      ],
+    });
+  },
+
+  /**
    * Wire tap-to-deep-link. Call once at app boot.
    */
   async registerHandlers(onDeepLink: (path: string) => void): Promise<void> {

@@ -14,6 +14,7 @@ import { calculateHealthScore } from '../../../shared/services/healthScore';
 import { getOverdueBills, getDueSoonBills, BILL_CATEGORY_ICONS } from '../../../shared/services/billReminderService';
 import { FeatureTips } from './FeatureTips';
 import { InsightsCard } from './InsightsCard';
+import { MonthEndForecastTile } from './MonthEndForecastTile';
 
 export function Dashboard() {
   const { state } = useAppContext();
@@ -157,6 +158,10 @@ export function Dashboard() {
           {/* Smart Insights */}
           <div className="lg:col-span-2">
             <InsightsCard />
+          </div>
+          {/* Month-end forecast */}
+          <div className="lg:col-span-2">
+            <MonthEndForecastTile />
           </div>
           {/* Health Score Widget */}
           <div

@@ -4,7 +4,7 @@
  * a disabled panel with an explanatory hint (the API only works on native).
  */
 import { useEffect, useState } from 'react';
-import { Bell, BellOff, Clock, CalendarClock } from 'lucide-react';
+import { Bell, BellOff, Clock, CalendarClock, Zap } from 'lucide-react';
 import { notificationService } from '../../../shared/services/notificationService';
 import { prefs } from '../../../shared/services/preferences';
 import { haptic } from '../../../shared/services/haptics';
@@ -16,6 +16,7 @@ interface NotifState {
   dailyHour: number;
   dailyMinute: number;
   billsEnabled: boolean;
+  anomalyEnabled: boolean;
 }
 
 const DEFAULT_STATE: NotifState = {
@@ -23,6 +24,7 @@ const DEFAULT_STATE: NotifState = {
   dailyHour: 20,
   dailyMinute: 0,
   billsEnabled: true,
+  anomalyEnabled: false,
 };
 
 export function NotificationSettingsPage() {
@@ -40,7 +42,10 @@ export function NotificationSettingsPage() {
         prefs.getNumber('notif.dailyMinute', 0),
         prefs.getBool('notif.billsEnabled', true),
       ]);
-      setCfg({ dailyEnabled, dailyHour: hour, dailyMinute: minute, billsEnabled });
+      const anomalyEnabled =
+        typeof window !== 'undefined' &&
+        window.localStorage.getItem('expenseiq.notifyAnomalies') === 'true';
+      setCfg({ dailyEnabled, dailyHour: hour, dailyMinute: minute, billsEnabled, anomalyEnabled });
     })();
   }, []);
 
@@ -100,6 +105,19 @@ export function NotificationSettingsPage() {
     const next = { ...cfg, billsEnabled: !cfg.billsEnabled };
     await persist(next);
     await applyBills(next);
+  };
+
+  const toggleAnomaly = async () => {
+    haptic.selection();
+    const next = { ...cfg, anomalyEnabled: !cfg.anomalyEnabled };
+    setCfg(next);
+    if (typeof window !== 'undefined') {
+      window.localStorage.setItem('expenseiq.notifyAnomalies', String(next.anomalyEnabled));
+      // Reset seen set when turning on so the user sees existing anomalies once.
+      if (next.anomalyEnabled) {
+        window.localStorage.removeItem('expenseiq.seenAnomalyIds');
+      }
+    }
   };
 
   const changeTime = async (hour: number, minute: number) => {
@@ -164,6 +182,14 @@ export function NotificationSettingsPage() {
           hint="Fires at 9am on each bill's due date."
           checked={cfg.billsEnabled}
           onToggle={toggleBills}
+          disabled={busy || !native}
+        />
+        <Row
+          icon={<Zap size={18} />}
+          title="Unusual-spend alerts"
+          hint="Get notified when a transaction is a statistical outlier vs your history."
+          checked={cfg.anomalyEnabled}
+          onToggle={toggleAnomaly}
           disabled={busy || !native}
         />
       </section>
