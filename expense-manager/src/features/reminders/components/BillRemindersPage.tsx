@@ -181,7 +181,7 @@ export function BillRemindersPage() {
       <SwipeableRow key={reminder.id} onDelete={() => setDeleteConfirmId(reminder.id)}>
         <div
           className={classNames(
-            'flex items-center gap-4 rounded-xl border p-4 transition-colors hover:bg-gray-50 dark:hover:bg-gray-750',
+            'flex items-center gap-4 rounded-xl border p-4 transition-colors hover:bg-gray-50 dark:hover:bg-gray-700',
             borderColor,
           )}
         >

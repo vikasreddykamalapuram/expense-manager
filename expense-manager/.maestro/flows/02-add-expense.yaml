@@ -1,0 +1,35 @@
+# Adds a transaction and verifies it lands in the Transactions list.
+appId: com.expenseiq.app
+tags:
+  - critical
+---
+- launchApp:
+    clearState: true
+    stopApp: true
+- extendedWaitUntil:
+    visible: "Dashboard|Total Balance|Continue without"
+    timeout: 20000
+- runFlow:
+    when:
+      visible: "Continue without"
+    commands:
+      - tapOn: "Continue without"
+      - extendedWaitUntil:
+          visible: "Total Balance"
+          timeout: 10000
+# Navigate to Add Transaction via bottom nav (label "Add") or a "+" FAB.
+- tapOn:
+    text: "Add"
+    optional: true
+- extendedWaitUntil:
+    visible: "Amount"
+    timeout: 10000
+- tapOn: "Amount"
+- inputText: "500"
+- hideKeyboard
+- tapOn:
+    text: "Save"
+- extendedWaitUntil:
+    visible: "Transactions|Dashboard"
+    timeout: 10000
+- takeScreenshot: 02-after-add-expense

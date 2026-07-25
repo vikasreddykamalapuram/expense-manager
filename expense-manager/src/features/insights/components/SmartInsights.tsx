@@ -283,17 +283,17 @@ export function SmartInsights() {
                 </div>
 
                 <div className="grid grid-cols-3 gap-3 text-center">
-                  <div className="rounded-lg bg-gray-50 dark:bg-gray-750 p-2.5">
+                  <div className="rounded-lg bg-gray-50 dark:bg-gray-700 p-2.5">
                     <p className="text-lg font-bold text-gray-900 dark:text-white">
                       {formatCurrency(forecast.currentPace, settings)}
                     </p>
                     <p className="text-[10px] text-gray-500 dark:text-gray-400">Daily avg</p>
                   </div>
-                  <div className="rounded-lg bg-gray-50 dark:bg-gray-750 p-2.5">
+                  <div className="rounded-lg bg-gray-50 dark:bg-gray-700 p-2.5">
                     <p className="text-lg font-bold text-gray-900 dark:text-white">{forecast.daysElapsed}</p>
                     <p className="text-[10px] text-gray-500 dark:text-gray-400">Days elapsed</p>
                   </div>
-                  <div className="rounded-lg bg-gray-50 dark:bg-gray-750 p-2.5">
+                  <div className="rounded-lg bg-gray-50 dark:bg-gray-700 p-2.5">
                     <p className="text-lg font-bold text-gray-900 dark:text-white">{forecast.daysRemaining}</p>
                     <p className="text-[10px] text-gray-500 dark:text-gray-400">Days left</p>
                   </div>

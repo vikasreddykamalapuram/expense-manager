@@ -625,3 +625,81 @@ Open the workspace in Antigravity, then chat with the agent:
 > "Follow docs/MAC_SETUP.md step by step. Run each command and confirm success. Stop and ask me if any step fails."
 
 The agent will execute the shell commands in the built-in terminal and validate outputs against the expected results in this guide. If something errors, paste the error and it'll consult section 10 (Common issues) automatically.
+
+---
+
+## 12. Automated e2e tests with Maestro
+
+We use [Maestro](https://maestro.mobile.dev/) for end-to-end UI flows against the installed Android app. Flows live in `.maestro/flows/` as declarative YAML and run against either a local emulator/device or in CI on an Android emulator runner.
+
+### 12.1 Install Maestro locally (Mac)
+
+```bash
+# One-time install
+curl -Ls "https://get.maestro.mobile.dev" | bash
+
+# Add to PATH (add to ~/.zshrc if you want it permanent)
+export PATH="$PATH:$HOME/.maestro/bin"
+
+# Verify
+maestro --version
+```
+
+### 12.2 Run flows against a local emulator
+
+```bash
+# 1. Boot an emulator (any AVD you have — Pixel 6 API 33 recommended)
+$ANDROID_HOME/emulator/emulator -avd Pixel_6_API_33 -no-snapshot &
+
+# 2. Build & install the debug APK
+cd expense-manager
+npm run build
+npx cap sync android
+node scripts/patch-android-manifest.mjs
+(cd android && ./gradlew installDebug)
+
+# 3. Run all flows
+maestro test .maestro/flows
+
+# Or run a single flow
+maestro test .maestro/flows/01-smoke.yaml
+
+# Or filter by tag (see the `tags:` block at the top of each flow)
+maestro test .maestro/flows --include-tags=smoke
+```
+
+Maestro prints a live report and writes screenshots + logs to `~/.maestro/tests/<timestamp>/`. Failed flows keep a screenshot of the last state.
+
+### 12.3 What each flow does
+
+| Flow | What it validates |
+| --- | --- |
+| `01-smoke.yaml` | Cold launch reaches the Dashboard within 20s. Auth-wall dismissed via "Continue without". |
+| `02-add-expense.yaml` | Adding a ₹500 transaction navigates back to the list. |
+| `03-recurring-rule.yaml` | Recurring-rule form opens without regression (guards the earlier UX bug). |
+| `04-insights.yaml` | Insights page renders Cashflow Projection + Spending Forecast (Phase C). |
+
+### 12.4 Run flows in CI
+
+The `E2E Maestro Flows` workflow (`.github/workflows/e2e-maestro.yml`) runs on:
+- PRs to `master` that touch app source, flows, capacitor config, or the manifest patcher
+- Manual dispatch from the Actions tab (with an optional single-flow filter)
+
+CI boots a fresh Android 33 emulator, installs the debug APK, and runs every flow. Screenshots + JUnit report are uploaded as the `maestro-artifacts-<sha>` artifact — download it from the workflow run to inspect failures without needing a local Android setup.
+
+### 12.5 Adding new flows
+
+1. Copy an existing flow file as a template — e.g. `cp .maestro/flows/01-smoke.yaml .maestro/flows/05-my-flow.yaml`.
+2. Update the `tags:` block and steps. Prefer text selectors — Maestro walks the accessibility tree so any user-facing string works.
+3. Add `- takeScreenshot: 05-checkpoint-name` at meaningful checkpoints so CI artifacts tell a story.
+4. Run locally: `maestro test .maestro/flows/05-my-flow.yaml`.
+5. Commit — CI will pick it up automatically on the next PR.
+
+### 12.6 Common Maestro issues
+
+| Symptom | Fix |
+| --- | --- |
+| `Element not found: "Total Balance"` | The app hasn't finished bootstrapping. Bump the `timeout` on the preceding `extendedWaitUntil`, or add a text alternative separated by `\|`. |
+| `Failed to connect to device` | Ensure an emulator is booted (`adb devices`). If empty, restart the emulator. |
+| Flow passes locally, fails in CI | Emulator is slower in CI — widen timeouts and prefer `extendedWaitUntil` over plain `waitFor`. |
+| Screenshots not uploaded from CI | Check that the flow actually ran (Maestro must have executed at least one `takeScreenshot`). |

@@ -1,0 +1,32 @@
+# Verifies that the recurring-rule flow opens without regression.
+# Guards the "recurring rule" issue the user flagged earlier.
+appId: com.expenseiq.app
+tags:
+  - regression
+---
+- launchApp:
+    clearState: true
+    stopApp: true
+- extendedWaitUntil:
+    visible: "Dashboard|Total Balance|Continue without"
+    timeout: 20000
+- runFlow:
+    when:
+      visible: "Continue without"
+    commands:
+      - tapOn: "Continue without"
+      - extendedWaitUntil:
+          visible: "Total Balance"
+          timeout: 10000
+- tapOn:
+    text: "Recurring|More"
+- extendedWaitUntil:
+    visible: "Recurring|Add rule|New rule"
+    timeout: 8000
+- takeScreenshot: 03-recurring-list
+- tapOn:
+    text: "Add rule|New rule|Add"
+- extendedWaitUntil:
+    visible: "Name|Amount"
+    timeout: 8000
+- takeScreenshot: 03-recurring-form
