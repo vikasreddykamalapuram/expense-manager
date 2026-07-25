@@ -84,22 +84,22 @@ node --version   # → v20.x
 npm --version
 ```
 
-### 1e. JDK 17 (Temurin)
+### 1e. JDK 21 (Temurin)
 
-Capacitor and Android Gradle Plugin require JDK 17.
+Capacitor 7 + Android Gradle Plugin now require **JDK 21** (older Capacitor plugins were fine with 17, but newer plugin releases target Java 21).
 
 ```bash
-brew install --cask temurin@17
+brew install --cask temurin@21
 ```
 
 Verify:
 
 ```bash
 /usr/libexec/java_home -V
-# You should see "Eclipse Temurin 17..."
+# You should see "Eclipse Temurin 21..."
 
-/usr/libexec/java_home -v 17
-# → /Library/Java/JavaVirtualMachines/temurin-17.jdk/Contents/Home
+/usr/libexec/java_home -v 21
+# → /Library/Java/JavaVirtualMachines/temurin-21.jdk/Contents/Home
 ```
 
 Add to `~/.zshrc` so it's the default:
@@ -575,7 +575,7 @@ Then in Android Studio, **Device Manager** → delete unused emulators.
 
 ## Summary — the 10-command "happy path" on a fresh Mac
 
-Once prerequisites (Homebrew, JDK 17, Android Studio) are done:
+Once prerequisites (Homebrew, JDK 21, Android Studio) are done:
 
 ```bash
 gh repo clone vikasreddykamalapuram/expense-manager && cd expense-manager
