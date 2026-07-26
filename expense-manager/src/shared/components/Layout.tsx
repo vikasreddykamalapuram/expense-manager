@@ -1,9 +1,9 @@
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import {
-  LayoutDashboard, ArrowLeftRight, PlusCircle, CalendarDays,
+  LayoutDashboard, ArrowLeftRight, CalendarDays,
   Settings, Wallet, Menu, X, Landmark, Tag, ChevronDown,
-  Plus, LogIn, LogOut, Target, RefreshCw, FileUp, FileBarChart, Heart, TrendingUp, Bell,
-  Cloud, AlertCircle, Users, PanelLeftClose, PanelLeftOpen, Sparkles, PiggyBank, CalendarRange, Scale, ShieldCheck,
+  Plus, LogIn, LogOut, Target, RefreshCw, FileBarChart, TrendingUp, Bell,
+  Cloud, AlertCircle, Users, PanelLeftClose, PanelLeftOpen, Sparkles, PiggyBank, CalendarRange,
 } from 'lucide-react';
 import { useState, useRef, useEffect, useMemo } from 'react';
 import { v4 as uuidv4 } from 'uuid';
@@ -32,23 +32,17 @@ const navItems = [
   { path: '/transactions', icon: ArrowLeftRight, label: 'Transactions' },
   { path: '/recurring', icon: RefreshCw, label: 'Recurring' },
   { path: '/reminders', icon: Bell, label: 'Reminders' },
-  { path: '/add', icon: PlusCircle, label: 'Add New' },
   { path: '/analytics', icon: CalendarDays, label: 'Analytics' },
   { path: '/insights', icon: Sparkles, label: 'Insights' },
   { path: '/calendar', icon: CalendarRange, label: 'Calendar' },
-  { path: '/benchmark', icon: Scale, label: 'Benchmark' },
   { path: '/budgets', icon: Target, label: 'Budgets' },
   { path: '/savings', icon: PiggyBank, label: 'Savings' },
   { path: '/reports', icon: FileBarChart, label: 'Reports' },
-  { path: '/health', icon: Heart, label: 'Health Score' },
   { path: '/portfolio', icon: TrendingUp, label: 'Portfolio' },
   { path: '/splitwise', icon: Users, label: 'Splitwise' },
   { path: '/accounts', icon: Landmark, label: 'Accounts' },
   { path: '/categories', icon: Tag, label: 'Categories' },
-  { path: '/import', icon: FileUp, label: 'Import' },
   { path: '/settings', icon: Settings, label: 'Settings' },
-  { path: '/settings/security', icon: ShieldCheck, label: 'Security' },
-  { path: '/settings/notifications', icon: Bell, label: 'Notifications' },
 ];
 
 export function Layout() {

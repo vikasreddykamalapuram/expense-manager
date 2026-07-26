@@ -5,9 +5,9 @@
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  PlusCircle, RefreshCw, Bell, Sparkles, CalendarRange, Scale, Target,
-  PiggyBank, FileBarChart, Heart, Users, Landmark, Tag, FileUp,
-  Settings, ShieldCheck, X,
+  RefreshCw, Bell, Sparkles, CalendarRange, Target,
+  PiggyBank, FileBarChart, Users, Landmark, Tag,
+  Settings, X, PlusCircle,
 } from 'lucide-react';
 import { classNames } from '../utils/helpers';
 import { haptic } from '../services/haptics';
@@ -18,22 +18,16 @@ interface MoreSheetProps {
 }
 
 const items: ReadonlyArray<{ path: string; icon: typeof PlusCircle; label: string }> = [
-  { path: '/add', icon: PlusCircle, label: 'Add New' },
   { path: '/recurring', icon: RefreshCw, label: 'Recurring' },
   { path: '/reminders', icon: Bell, label: 'Reminders' },
   { path: '/insights', icon: Sparkles, label: 'Insights' },
   { path: '/calendar', icon: CalendarRange, label: 'Calendar' },
-  { path: '/benchmark', icon: Scale, label: 'Benchmark' },
   { path: '/budgets', icon: Target, label: 'Budgets' },
   { path: '/savings', icon: PiggyBank, label: 'Savings' },
   { path: '/reports', icon: FileBarChart, label: 'Reports' },
-  { path: '/health', icon: Heart, label: 'Health' },
   { path: '/splitwise', icon: Users, label: 'Splitwise' },
   { path: '/accounts', icon: Landmark, label: 'Accounts' },
   { path: '/categories', icon: Tag, label: 'Categories' },
-  { path: '/import', icon: FileUp, label: 'Import' },
-  { path: '/settings/notifications', icon: Bell, label: 'Notify' },
-  { path: '/settings/security', icon: ShieldCheck, label: 'Security' },
   { path: '/settings', icon: Settings, label: 'Settings' },
 ];
 
