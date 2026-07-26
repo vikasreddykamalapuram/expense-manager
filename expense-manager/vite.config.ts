@@ -5,7 +5,7 @@ import { VitePWA } from 'vite-plugin-pwa'
 import pkg from './package.json' with { type: 'json' }
 
 // https://vite.dev/config/
-export default defineConfig({
+export default defineConfig(() => ({
   define: {
     // Exposed to the app as import.meta.env.VITE_APP_VERSION.
     'import.meta.env.VITE_APP_VERSION': JSON.stringify(pkg.version),
@@ -55,7 +55,11 @@ export default defineConfig({
       injectRegister: 'auto',
     }),
   ],
-  base: '/expense-manager/',
+  // GitHub Pages ships under /expense-manager/, but Capacitor loads from
+  // https://localhost/ inside the WebView — assets must resolve relatively
+  // there or the app renders a blank white screen. Set CAPACITOR_BUILD=1 in
+  // the env when building for the mobile shell.
+  base: process.env.CAPACITOR_BUILD ? './' : '/expense-manager/',
   build: {
     rollupOptions: {
       output: {
@@ -76,4 +80,4 @@ export default defineConfig({
     setupFiles: ['./src/test/setup.ts'],
     css: false,
   },
-})
+}))
