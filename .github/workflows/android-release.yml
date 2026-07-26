@@ -62,6 +62,7 @@ jobs:
         run: |
           npx cap sync android
           node scripts/patch-android-manifest.mjs
+          node scripts/patch-android-build.mjs
 
       - name: Decode keystore
         run: |
