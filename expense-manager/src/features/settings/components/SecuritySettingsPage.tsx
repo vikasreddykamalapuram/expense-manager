@@ -253,14 +253,14 @@ function Toggle({
       disabled={disabled}
       onClick={onChange}
       className={classNames(
-        'relative h-6 w-11 shrink-0 rounded-full transition-colors',
+        'relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors',
         checked ? 'bg-primary-600' : 'bg-gray-300 dark:bg-gray-600',
         disabled ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer',
       )}
     >
       <span
         className={classNames(
-          'absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform',
+          'inline-block h-5 w-5 transform rounded-full bg-white shadow transition',
           checked ? 'translate-x-5' : 'translate-x-0.5',
         )}
       />

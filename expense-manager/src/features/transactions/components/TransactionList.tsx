@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Edit2, Trash2, Search, Filter, ArrowUpDown, Receipt, ArrowLeftRight, Camera } from 'lucide-react';
+import { useState, useMemo } from 'react';
+import { Edit2, Trash2, Search, Filter, ArrowUpDown, Receipt, ArrowLeftRight, Camera, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useAppContext } from '../../../context/AppContext';
 import { useTransactions } from '../../../shared/hooks/useTransactions';
 import { Button } from '../../../shared/components/ui/Button';
@@ -21,6 +21,57 @@ export function TransactionList() {
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
   const [showFilters, setShowFilters] = useState(false);
   const [viewingReceiptId, setViewingReceiptId] = useState<string | null>(null);
+  const [monthCursor, setMonthCursor] = useState(() => {
+    const d = new Date();
+    return { y: d.getFullYear(), m: d.getMonth() };
+  });
+
+  const monthLabel = useMemo(() => {
+    return new Date(monthCursor.y, monthCursor.m, 1).toLocaleDateString(undefined, { month: 'short', year: 'numeric' });
+  }, [monthCursor]);
+
+  const shiftMonth = (delta: number) => {
+    setMonthCursor((c) => {
+      const d = new Date(c.y, c.m + delta, 1);
+      return { y: d.getFullYear(), m: d.getMonth() };
+    });
+    haptic.selection();
+  };
+
+  // Filter transactions to the selected month, then group by day (desc).
+  const monthTx = useMemo(
+    () => transactions.filter((tx) => {
+      const d = new Date(tx.date);
+      return d.getFullYear() === monthCursor.y && d.getMonth() === monthCursor.m;
+    }),
+    [transactions, monthCursor],
+  );
+
+  const monthTotals = useMemo(() => {
+    let income = 0, expense = 0;
+    for (const tx of monthTx) {
+      if (tx.type === 'income') income += tx.amount;
+      else if (tx.type === 'expense') expense += tx.amount;
+    }
+    return { income, expense, total: income - expense };
+  }, [monthTx]);
+
+  const groupedByDay = useMemo(() => {
+    const map = new Map<string, { date: Date; items: Transaction[]; income: number; expense: number }>();
+    for (const tx of monthTx) {
+      const d = new Date(tx.date);
+      const key = `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
+      let g = map.get(key);
+      if (!g) {
+        g = { date: new Date(d.getFullYear(), d.getMonth(), d.getDate()), items: [], income: 0, expense: 0 };
+        map.set(key, g);
+      }
+      g.items.push(tx);
+      if (tx.type === 'income') g.income += tx.amount;
+      else if (tx.type === 'expense') g.expense += tx.amount;
+    }
+    return Array.from(map.values()).sort((a, b) => b.date.getTime() - a.date.getTime());
+  }, [monthTx]);
 
   const getCategoryById = (id: string) => categories.find((c) => c.id === id);
 
@@ -36,6 +87,45 @@ export function TransactionList() {
 
   return (
     <div className="space-y-4">
+      {/* Month navigator + summary strip */}
+      <div className="rounded-xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-sm">
+        <div className="flex items-center justify-between px-4 py-3">
+          <button
+            type="button"
+            onClick={() => shiftMonth(-1)}
+            className="rounded-lg p-1.5 text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700"
+            aria-label="Previous month"
+          >
+            <ChevronLeft size={18} />
+          </button>
+          <div className="text-sm font-semibold text-gray-900 dark:text-gray-100">{monthLabel}</div>
+          <button
+            type="button"
+            onClick={() => shiftMonth(1)}
+            className="rounded-lg p-1.5 text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700"
+            aria-label="Next month"
+          >
+            <ChevronRight size={18} />
+          </button>
+        </div>
+        <div className="grid grid-cols-3 border-t border-gray-100 dark:border-gray-700 text-center">
+          <div className="py-2.5">
+            <div className="text-[10px] font-medium uppercase tracking-wider text-gray-400 dark:text-gray-500">Income</div>
+            <div className="text-sm font-bold text-success-600">{formatCurrency(monthTotals.income, settings)}</div>
+          </div>
+          <div className="py-2.5 border-x border-gray-100 dark:border-gray-700">
+            <div className="text-[10px] font-medium uppercase tracking-wider text-gray-400 dark:text-gray-500">Expense</div>
+            <div className="text-sm font-bold text-danger-600">{formatCurrency(monthTotals.expense, settings)}</div>
+          </div>
+          <div className="py-2.5">
+            <div className="text-[10px] font-medium uppercase tracking-wider text-gray-400 dark:text-gray-500">Total</div>
+            <div className={classNames('text-sm font-bold', monthTotals.total >= 0 ? 'text-gray-900 dark:text-gray-100' : 'text-danger-600')}>
+              {formatCurrency(monthTotals.total, settings)}
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* Search & Filter Bar */}
       <div className="flex flex-col gap-3 sm:flex-row">
         <div className="relative flex-1">
@@ -112,16 +202,41 @@ export function TransactionList() {
         </div>
       )}
 
-      {/* Transaction List */}
-      {transactions.length === 0 ? (
+      {/* Transaction List — grouped by day within the selected month */}
+      {groupedByDay.length === 0 ? (
         <EmptyState
           icon={<Receipt size={32} />}
-          title="No transactions found"
-          description="Start tracking your finances by adding your first transaction."
+          title={monthTx.length === 0 && transactions.length > 0 ? `No transactions in ${monthLabel}` : 'No transactions found'}
+          description={monthTx.length === 0 && transactions.length > 0
+            ? 'Try a different month or clear active filters.'
+            : 'Start tracking your finances by adding your first transaction.'}
         />
       ) : (
-        <div className="space-y-2">
-          {transactions.map((tx) => {
+        <div className="space-y-4">
+          {groupedByDay.map((group) => {
+            const dayKey = `${group.date.getFullYear()}-${group.date.getMonth()}-${group.date.getDate()}`;
+            const dayNum = group.date.getDate();
+            const weekday = group.date.toLocaleDateString(undefined, { weekday: 'short' });
+            return (
+              <section key={dayKey} className="space-y-2">
+                {/* Day header */}
+                <div className="flex items-center justify-between px-1">
+                  <div className="flex items-baseline gap-2">
+                    <span className="text-lg font-bold text-gray-900 dark:text-gray-100">{dayNum}</span>
+                    <span className="text-xs font-medium uppercase tracking-wider text-gray-400 dark:text-gray-500">{weekday}</span>
+                  </div>
+                  <div className="flex items-center gap-3 text-xs font-semibold">
+                    {group.income > 0 && (
+                      <span className="text-success-600">+{formatCurrency(group.income, settings)}</span>
+                    )}
+                    {group.expense > 0 && (
+                      <span className="text-danger-600">-{formatCurrency(group.expense, settings)}</span>
+                    )}
+                  </div>
+                </div>
+                {/* Day items */}
+                <div className="space-y-2">
+                  {group.items.map((tx) => {
             const category = getCategoryById(tx.categoryId);
             const parentCat = category?.parentId ? getCategoryById(category.parentId) : null;
             const account = tx.accountId ? state.accounts.find((a) => a.id === tx.accountId) : null;
@@ -243,6 +358,10 @@ export function TransactionList() {
                 </div>
                 </div>
               </SwipeableRow>
+            );
+          })}
+                </div>
+              </section>
             );
           })}
         </div>

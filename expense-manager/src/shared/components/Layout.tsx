@@ -19,6 +19,7 @@ import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts';
 import { PWAUpdatePrompt } from './PWAUpdatePrompt';
 import { PWAInstallPrompt } from './PWAInstallPrompt';
 import { BottomNav } from './BottomNav';
+import { MoreSheet } from './MoreSheet';
 import { usePullToRefresh } from '../hooks/usePullToRefresh';
 import { PullToRefreshIndicator } from './ui/PullToRefreshIndicator';
 import { clearPriceCache } from '../services/stockPriceService';
@@ -85,6 +86,7 @@ export function Layout() {
   }, [billReminders]);
 
   const [sidebarOpen, setSidebarOpen] = useState(false); // mobile drawer
+  const [moreSheetOpen, setMoreSheetOpen] = useState(false); // mobile bottom sheet
   const [sidebarPinned, setSidebarPinned] = useState(() => {
     try { return localStorage.getItem('expenseiq_sidebar_pinned') === 'true'; } catch { return false; }
   });
@@ -163,8 +165,9 @@ export function Layout() {
         onMouseLeave={() => setSidebarHovered(false)}
         className={classNames(
           'fixed inset-y-0 left-0 z-50 flex flex-col bg-white dark:bg-gray-800 shadow-xl transition-all duration-300 ease-in-out',
+          'pt-[env(safe-area-inset-top)]',
           // Mobile: slide in/out
-          'lg:static lg:translate-x-0',
+          'lg:static lg:translate-x-0 lg:pt-0',
           sidebarOpen ? 'translate-x-0' : '-translate-x-full',
           // Desktop: width transition
           sidebarExpanded ? 'w-64' : 'lg:w-[68px] w-64'
@@ -271,7 +274,7 @@ export function Layout() {
       {/* Main Content */}
       <div className="flex flex-1 flex-col overflow-hidden">
         {/* Top Bar */}
-        <header className="flex h-16 items-center gap-4 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-4 lg:px-8">
+        <header className="flex h-16 items-center gap-4 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-4 lg:px-8 pt-[env(safe-area-inset-top)] lg:pt-0 box-content lg:box-border">
           <button
             className="rounded-lg p-2 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 lg:hidden"
             onClick={() => setSidebarOpen(true)}
@@ -437,7 +440,8 @@ export function Layout() {
       <FloatingActionButton />
 
       {/* Mobile bottom navigation */}
-      <BottomNav onOpenMore={() => setSidebarOpen(true)} />
+      <BottomNav onOpenMore={() => setMoreSheetOpen(true)} />
+      <MoreSheet open={moreSheetOpen} onClose={() => setMoreSheetOpen(false)} />
 
       {/* PWA Prompts */}
       <PWAUpdatePrompt />
