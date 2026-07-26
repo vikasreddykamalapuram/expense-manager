@@ -22,6 +22,7 @@ import { isNativePlatform, isAndroid } from './platform';
 import { prefs } from './preferences';
 import { notificationService } from './notificationService';
 import { parseSharedText, buildAddDeepLink } from './shareParser';
+import { handleOAuthCallback } from './mobileOAuth';
 
 let bootstrapped = false;
 
@@ -80,6 +81,11 @@ export async function bootstrapNativeShell(): Promise<void> {
   try {
     App.addListener('appUrlOpen', (event) => {
       try {
+        // OAuth callbacks arrive as `expenseiq://oauth/callback#id_token=…&state=…`.
+        // Route them to the mobile OAuth handler so we don't try to navigate the
+        // router to a non-existent /oauth/callback page.
+        if (handleOAuthCallback(event.url)) return;
+
         const url = new URL(event.url);
         // Strip the /expense-manager base path if present.
         let path = url.pathname.replace(/^\/expense-manager/, '') || '/';
