@@ -10,15 +10,16 @@ import {
 import { useAppContext } from '../../../context/AppContext';
 import { Transaction, Category, Account, Budget, Settings } from '../../../shared/types';
 import {
-  formatCurrency, classNames, getCurrentMonth, formatMonth,
-  getPreviousMonth, getNextMonth, getMonthRange,
+  formatCurrency, classNames,
+  type Period, type PeriodKind,
+  currentPeriod, buildPeriod, shiftPeriod, previousPeriod, monthsInPeriod,
 } from '../../../shared/utils/helpers';
 import { EmptyState } from '../../../shared/components/ui/EmptyState';
 
 // ─── Helpers ──────────────────────────────────────────
 
-function txInMonth(transactions: Transaction[], month: string): Transaction[] {
-  return transactions.filter((t) => t.date.slice(0, 7) === month);
+function txInRange(transactions: Transaction[], p: Period): Transaction[] {
+  return transactions.filter((t) => t.date >= p.start && t.date <= p.end);
 }
 
 function sumByType(txs: Transaction[], type: 'income' | 'expense'): number {
@@ -49,34 +50,29 @@ function topCategories(
 ): CategoryTotal[] {
   const catMap = new Map<string, Category>();
   categories.forEach((c) => catMap.set(c.id, c));
-
   const totals = new Map<string, number>();
-  const prevTotals = new Map<string, number>();
+  const prev = new Map<string, number>();
 
   txs.filter((t) => t.type === type).forEach((t) => {
-    const cat = catMap.get(t.categoryId);
-    const parentId = cat?.parentId || t.categoryId;
+    const parentId = catMap.get(t.categoryId)?.parentId || t.categoryId;
     totals.set(parentId, (totals.get(parentId) || 0) + t.amount);
   });
-
   prevTxs.filter((t) => t.type === type).forEach((t) => {
-    const cat = catMap.get(t.categoryId);
-    const parentId = cat?.parentId || t.categoryId;
-    prevTotals.set(parentId, (prevTotals.get(parentId) || 0) + t.amount);
+    const parentId = catMap.get(t.categoryId)?.parentId || t.categoryId;
+    prev.set(parentId, (prev.get(parentId) || 0) + t.amount);
   });
 
-  const total = Array.from(totals.values()).reduce((s, v) => s + v, 0);
-
+  const grand = Array.from(totals.values()).reduce((s, v) => s + v, 0);
   return Array.from(totals.entries())
-    .map(([id, amount]) => {
-      const cat = catMap.get(id);
-      const prevAmount = prevTotals.get(id) || 0;
+    .map(([categoryId, amount]) => {
+      const cat = catMap.get(categoryId);
+      const prevAmount = prev.get(categoryId) || 0;
       return {
-        categoryId: id,
+        categoryId,
         name: cat?.name || 'Unknown',
         color: cat?.color || '#6b7280',
         amount,
-        percentage: total > 0 ? (amount / total) * 100 : 0,
+        percentage: grand > 0 ? (amount / grand) * 100 : 0,
         prevAmount,
         change: pctChange(amount, prevAmount),
       };
@@ -96,36 +92,47 @@ interface BudgetPerf {
   over: boolean;
 }
 
+/**
+ * Budget performance for a period. Budgets are monthly, so for Quarter/Year
+ * we sum the budgeted amounts across all months in the period and compare
+ * against actual spend in the same range.
+ */
 function budgetPerformance(
   budgets: Budget[],
   transactions: Transaction[],
   categories: Category[],
-  month: string,
+  period: Period,
 ): BudgetPerf[] {
   const catMap = new Map<string, Category>();
   categories.forEach((c) => catMap.set(c.id, c));
-  const monthBudgets = budgets.filter((b) => b.month === month);
+  const months = new Set(monthsInPeriod(period));
+  const periodBudgets = budgets.filter((b) => months.has(b.month));
+  if (periodBudgets.length === 0) return [];
 
-  return monthBudgets.map((b) => {
-    const cat = catMap.get(b.categoryId);
-    const subcategoryIds = categories
-      .filter((c) => c.parentId === b.categoryId)
-      .map((c) => c.id);
-    const allIds = [b.categoryId, ...subcategoryIds];
+  // Sum budgeted amount per categoryId across months in range.
+  const summed = new Map<string, number>();
+  periodBudgets.forEach((b) => {
+    summed.set(b.categoryId, (summed.get(b.categoryId) || 0) + b.amount);
+  });
+
+  return Array.from(summed.entries()).map(([categoryId, budgetAmount]) => {
+    const cat = catMap.get(categoryId);
+    const subcategoryIds = categories.filter((c) => c.parentId === categoryId).map((c) => c.id);
+    const allIds = [categoryId, ...subcategoryIds];
     const actual = transactions
-      .filter((t) => t.type === 'expense' && t.date.slice(0, 7) === month && allIds.includes(t.categoryId))
+      .filter((t) => t.type === 'expense' && t.date >= period.start && t.date <= period.end && allIds.includes(t.categoryId))
       .reduce((s, t) => s + t.amount, 0);
-    const remaining = b.amount - actual;
-    const pct = b.amount > 0 ? (actual / b.amount) * 100 : 0;
+    const remaining = budgetAmount - actual;
+    const pct = budgetAmount > 0 ? (actual / budgetAmount) * 100 : 0;
     return {
-      categoryId: b.categoryId,
+      categoryId,
       name: cat?.name || 'Unknown',
       color: cat?.color || '#6b7280',
-      budgetAmount: b.amount,
+      budgetAmount,
       actual,
       remaining,
       pct,
-      over: actual > b.amount,
+      over: actual > budgetAmount,
     };
   });
 }
@@ -140,10 +147,7 @@ interface AccountSummary {
   netChange: number;
 }
 
-function accountSummaries(
-  accounts: Account[],
-  txs: Transaction[],
-): AccountSummary[] {
+function accountSummaries(accounts: Account[], txs: Transaction[]): AccountSummary[] {
   return accounts
     .filter((a) => a.isActive)
     .map((a) => {
@@ -172,29 +176,85 @@ function accountSummaries(
     .filter((a) => a.deposits > 0 || a.withdrawals > 0);
 }
 
-interface DailySpend {
-  day: number;
+// ─── Spending series (adapts granularity to period) ───
+
+interface SpendBucket {
+  key: string;
+  /** Short axis label (e.g. "12", "Wk 3", "Mar") */
   label: string;
+  /** Long label used in tooltip */
+  fullLabel: string;
   amount: number;
 }
 
-function dailySpending(txs: Transaction[], month: string): DailySpend[] {
-  const [year, mon] = month.split('-').map(Number);
-  const daysInMonth = new Date(year, mon, 0).getDate();
-  const map = new Map<number, number>();
+function spendingSeries(txs: Transaction[], period: Period): SpendBucket[] {
+  const expenses = txs.filter((t) => t.type === 'expense');
+  const start = new Date(period.start);
+  const end = new Date(period.end);
 
-  txs
-    .filter((t) => t.type === 'expense')
-    .forEach((t) => {
-      const day = parseInt(t.date.slice(8, 10), 10);
-      map.set(day, (map.get(day) || 0) + t.amount);
+  if (period.kind === 'month' || (period.kind === 'custom' && daysBetween(start, end) <= 45)) {
+    // Daily buckets
+    const days = daysBetween(start, end) + 1;
+    const buckets: SpendBucket[] = [];
+    for (let i = 0; i < days; i++) {
+      const d = new Date(start);
+      d.setDate(start.getDate() + i);
+      const iso = d.toISOString().slice(0, 10);
+      buckets.push({ key: iso, label: String(d.getDate()), fullLabel: d.toDateString(), amount: 0 });
+    }
+    const idx = new Map(buckets.map((b, i) => [b.key, i]));
+    expenses.forEach((t) => {
+      const i = idx.get(t.date);
+      if (i !== undefined) buckets[i].amount += t.amount;
     });
-
-  const result: DailySpend[] = [];
-  for (let d = 1; d <= daysInMonth; d++) {
-    result.push({ day: d, label: String(d), amount: map.get(d) || 0 });
+    return buckets;
   }
-  return result;
+
+  if (period.kind === 'quarter' || (period.kind === 'custom' && daysBetween(start, end) <= 200)) {
+    // Weekly buckets
+    const buckets: SpendBucket[] = [];
+    const cursor = new Date(start);
+    let wk = 1;
+    while (cursor <= end) {
+      const wkStart = new Date(cursor);
+      const wkEnd = new Date(cursor);
+      wkEnd.setDate(wkEnd.getDate() + 6);
+      if (wkEnd > end) wkEnd.setTime(end.getTime());
+      buckets.push({
+        key: `${wkStart.toISOString().slice(0, 10)}_${wkEnd.toISOString().slice(0, 10)}`,
+        label: `W${wk}`,
+        fullLabel: `${wkStart.toDateString()} – ${wkEnd.toDateString()}`,
+        amount: 0,
+      });
+      cursor.setDate(cursor.getDate() + 7);
+      wk++;
+    }
+    expenses.forEach((t) => {
+      const d = new Date(t.date);
+      const daysSinceStart = Math.floor((d.getTime() - start.getTime()) / 86400000);
+      const bIdx = Math.floor(daysSinceStart / 7);
+      if (bIdx >= 0 && bIdx < buckets.length) buckets[bIdx].amount += t.amount;
+    });
+    return buckets;
+  }
+
+  // Year or long custom → monthly buckets
+  const months = monthsInPeriod(period);
+  const monthLabels = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const buckets: SpendBucket[] = months.map((m) => {
+    const [, mm] = m.split('-').map(Number);
+    return { key: m, label: monthLabels[mm - 1], fullLabel: m, amount: 0 };
+  });
+  const idx = new Map(buckets.map((b, i) => [b.key, i]));
+  expenses.forEach((t) => {
+    const i = idx.get(t.date.slice(0, 7));
+    if (i !== undefined) buckets[i].amount += t.amount;
+  });
+  return buckets;
+}
+
+function daysBetween(a: Date, b: Date): number {
+  return Math.round((b.getTime() - a.getTime()) / 86400000);
 }
 
 function generateInsights(
@@ -205,6 +265,8 @@ function generateInsights(
   topExp: CategoryTotal[],
   budgetPerfs: BudgetPerf[],
   settings: Settings,
+  periodNoun: string,
+  prevPeriodNoun: string,
 ): string[] {
   const insights: string[] = [];
 
@@ -218,7 +280,7 @@ function generateInsights(
   if (income > 0) {
     const savingsRate = (savings / income) * 100;
     if (savings >= 0) {
-      insights.push(`You saved ${savingsRate.toFixed(1)}% of your income this month.`);
+      insights.push(`You saved ${savingsRate.toFixed(1)}% of your income this ${periodNoun}.`);
     } else {
       insights.push(`You overspent by ${formatCurrency(Math.abs(savings), settings)}.`);
     }
@@ -228,16 +290,16 @@ function generateInsights(
     const expChange = pctChange(expenses, prevExpenses);
     if (prevExpenses > 0 && Math.abs(expChange) >= 1) {
       insights.push(
-        `Compared to last month, spending ${expChange > 0 ? 'increased' : 'decreased'} by ${Math.abs(expChange).toFixed(1)}%.`,
+        `Compared to ${prevPeriodNoun}, spending ${expChange > 0 ? 'increased' : 'decreased'} by ${Math.abs(expChange).toFixed(1)}%.`,
       );
     } else if (prevExpenses > 0) {
-      insights.push('Spending remained roughly the same as last month.');
+      insights.push(`Spending remained roughly the same as ${prevPeriodNoun}.`);
     }
     if (prevIncome > 0) {
       const incChange = pctChange(income, prevIncome);
       if (Math.abs(incChange) >= 1) {
         insights.push(
-          `Income ${incChange > 0 ? 'increased' : 'decreased'} by ${Math.abs(incChange).toFixed(1)}% compared to last month.`,
+          `Income ${incChange > 0 ? 'increased' : 'decreased'} by ${Math.abs(incChange).toFixed(1)}% compared to ${prevPeriodNoun}.`,
         );
       }
     }
@@ -245,9 +307,7 @@ function generateInsights(
 
   if (budgetPerfs.length > 0) {
     const withinBudget = budgetPerfs.filter((b) => !b.over).length;
-    insights.push(
-      `You stayed within budget on ${withinBudget} out of ${budgetPerfs.length} categories.`,
-    );
+    insights.push(`You stayed within budget on ${withinBudget} out of ${budgetPerfs.length} categories.`);
   }
 
   if (topExp.length > 1) {
@@ -256,7 +316,7 @@ function generateInsights(
       .sort((a, b) => b.change - a.change)[0];
     if (biggestIncrease && biggestIncrease.change > 0) {
       insights.push(
-        `${biggestIncrease.name} spending increased the most (${biggestIncrease.change.toFixed(1)}% more than last month).`,
+        `${biggestIncrease.name} spending increased the most (${biggestIncrease.change.toFixed(1)}% more than ${prevPeriodNoun}).`,
       );
     }
   }
@@ -264,7 +324,7 @@ function generateInsights(
   return insights;
 }
 
-// ─── Change Indicator ─────────────────────────────────
+// ─── UI atoms ─────────────────────────────────────────
 
 function ChangeIndicator({ value, suffix = '%' }: { value: number; suffix?: string }) {
   if (Math.abs(value) < 0.1) {
@@ -279,8 +339,6 @@ function ChangeIndicator({ value, suffix = '%' }: { value: number; suffix?: stri
   );
 }
 
-// ─── Card Wrapper ─────────────────────────────────────
-
 function Card({ title, children, className }: { title: string; children: React.ReactNode; className?: string }) {
   return (
     <div className={classNames('rounded-xl border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800', className)}>
@@ -290,49 +348,76 @@ function Card({ title, children, className }: { title: string; children: React.R
   );
 }
 
-// ─── Custom Tooltip ───────────────────────────────────
-
 function ChartTooltip({ active, payload, label, settings }: {
   active?: boolean;
-  payload?: Array<{ value: number }>;
+  payload?: Array<{ value: number; payload?: { fullLabel?: string } }>;
   label?: string;
   settings: Settings;
 }) {
   if (!active || !payload?.length) return null;
+  const p = payload[0];
   return (
     <div className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs shadow-lg dark:border-gray-600 dark:bg-gray-700">
-      <p className="font-medium text-gray-700 dark:text-gray-200">Day {label}</p>
-      <p className="text-gray-500 dark:text-gray-400">{formatCurrency(payload[0].value, settings)}</p>
+      <p className="font-medium text-gray-700 dark:text-gray-200">{p.payload?.fullLabel || label}</p>
+      <p className="text-gray-500 dark:text-gray-400">{formatCurrency(p.value, settings)}</p>
     </div>
   );
 }
 
+// ─── Period noun helpers ──────────────────────────────
+
+function periodNoun(kind: PeriodKind): string {
+  if (kind === 'month') return 'month';
+  if (kind === 'quarter') return 'quarter';
+  if (kind === 'year') return 'year';
+  return 'period';
+}
+
+function prevPeriodNoun(kind: PeriodKind): string {
+  if (kind === 'month') return 'last month';
+  if (kind === 'quarter') return 'last quarter';
+  if (kind === 'year') return 'last year';
+  return 'the previous period';
+}
+
 // ─── Main Component ───────────────────────────────────
 
-export function MonthlyReport() {
+const PERIOD_TABS: Array<{ kind: PeriodKind; label: string }> = [
+  { kind: 'month',   label: 'Month' },
+  { kind: 'quarter', label: 'Quarter' },
+  { kind: 'year',    label: 'Year' },
+  { kind: 'custom',  label: 'Custom' },
+];
+
+export function ReportsPage() {
   const { state } = useAppContext();
   const { transactions, categories, accounts, budgets, settings } = state;
-  const [currentMonth, setCurrentMonth] = useState(getCurrentMonth);
+  const [period, setPeriod] = useState<Period>(() => currentPeriod('month'));
+  const [customDraft, setCustomDraft] = useState<{ start: string; end: string }>(() => ({
+    start: currentPeriod('month').start,
+    end: currentPeriod('month').end,
+  }));
 
-  const prevMonth = getPreviousMonth(currentMonth);
-  const monthRange = getMonthRange(currentMonth);
+  const prev = useMemo(() => previousPeriod(period), [period]);
+  const periodTxs = useMemo(() => txInRange(transactions, period), [transactions, period]);
+  const prevTxs = useMemo(() => txInRange(transactions, prev), [transactions, prev]);
 
-  const monthTxs = useMemo(() => txInMonth(transactions, currentMonth), [transactions, currentMonth]);
-  const prevMonthTxs = useMemo(() => txInMonth(transactions, prevMonth), [transactions, prevMonth]);
-
-  const income = useMemo(() => sumByType(monthTxs, 'income'), [monthTxs]);
-  const expenses = useMemo(() => sumByType(monthTxs, 'expense'), [monthTxs]);
-  const prevIncome = useMemo(() => sumByType(prevMonthTxs, 'income'), [prevMonthTxs]);
-  const prevExpenses = useMemo(() => sumByType(prevMonthTxs, 'expense'), [prevMonthTxs]);
+  const income = useMemo(() => sumByType(periodTxs, 'income'), [periodTxs]);
+  const expenses = useMemo(() => sumByType(periodTxs, 'expense'), [periodTxs]);
+  const prevIncome = useMemo(() => sumByType(prevTxs, 'income'), [prevTxs]);
+  const prevExpenses = useMemo(() => sumByType(prevTxs, 'expense'), [prevTxs]);
   const savings = income - expenses;
   const savingsRate = income > 0 ? (savings / income) * 100 : 0;
 
-  const topExp = useMemo(() => topCategories(monthTxs, prevMonthTxs, categories, 'expense'), [monthTxs, prevMonthTxs, categories]);
-  const topInc = useMemo(() => topCategories(monthTxs, prevMonthTxs, categories, 'income'), [monthTxs, prevMonthTxs, categories]);
-  const budgetPerfs = useMemo(() => budgetPerformance(budgets, transactions, categories, currentMonth), [budgets, transactions, categories, currentMonth]);
-  const acctSummaries = useMemo(() => accountSummaries(accounts, monthTxs), [accounts, monthTxs]);
-  const daily = useMemo(() => dailySpending(monthTxs, currentMonth), [monthTxs, currentMonth]);
-  const insights = useMemo(() => generateInsights(income, expenses, prevIncome, prevExpenses, topExp, budgetPerfs, settings), [income, expenses, prevIncome, prevExpenses, topExp, budgetPerfs, settings]);
+  const topExp = useMemo(() => topCategories(periodTxs, prevTxs, categories, 'expense'), [periodTxs, prevTxs, categories]);
+  const topInc = useMemo(() => topCategories(periodTxs, prevTxs, categories, 'income'), [periodTxs, prevTxs, categories]);
+  const budgetPerfs = useMemo(() => budgetPerformance(budgets, transactions, categories, period), [budgets, transactions, categories, period]);
+  const acctSummaries = useMemo(() => accountSummaries(accounts, periodTxs), [accounts, periodTxs]);
+  const series = useMemo(() => spendingSeries(periodTxs, period), [periodTxs, period]);
+  const insights = useMemo(
+    () => generateInsights(income, expenses, prevIncome, prevExpenses, topExp, budgetPerfs, settings, periodNoun(period.kind), prevPeriodNoun(period.kind)),
+    [income, expenses, prevIncome, prevExpenses, topExp, budgetPerfs, settings, period.kind],
+  );
 
   const overallBudgetUtil = useMemo(() => {
     const totalBudget = budgetPerfs.reduce((s, b) => s + b.budgetAmount, 0);
@@ -340,18 +425,33 @@ export function MonthlyReport() {
     return totalBudget > 0 ? (totalActual / totalBudget) * 100 : 0;
   }, [budgetPerfs]);
 
-  const highestDay = useMemo(() => daily.reduce((max, d) => d.amount > max.amount ? d : max, daily[0]), [daily]);
-  const lowestSpendDay = useMemo(() => {
-    const spending = daily.filter((d) => d.amount > 0);
+  const highest = useMemo(() => series.reduce((max, d) => d.amount > max.amount ? d : max, series[0]), [series]);
+  const lowestSpend = useMemo(() => {
+    const spending = series.filter((d) => d.amount > 0);
     if (spending.length === 0) return null;
     return spending.reduce((min, d) => d.amount < min.amount ? d : min, spending[0]);
-  }, [daily]);
+  }, [series]);
 
-  const hasData = monthTxs.length > 0;
+  const hasData = periodTxs.length > 0;
+  const compareLabel = `vs ${prevPeriodNoun(period.kind)}`;
 
-  const handlePrint = () => {
-    window.print();
+  const handlePrint = () => window.print();
+
+  const switchKind = (kind: PeriodKind) => {
+    setPeriod(kind === 'custom'
+      ? buildPeriod('custom', customDraft.start, customDraft.end)
+      : currentPeriod(kind));
   };
+
+  const applyCustom = () => {
+    if (customDraft.start && customDraft.end && customDraft.start <= customDraft.end) {
+      setPeriod(buildPeriod('custom', customDraft.start, customDraft.end));
+    }
+  };
+
+  const reportTitle = period.kind === 'custom'
+    ? 'Custom Report'
+    : `${period.kind[0].toUpperCase() + period.kind.slice(1)}ly Report`;
 
   return (
     <>
@@ -373,46 +473,100 @@ export function MonthlyReport() {
       `}</style>
 
       <div className="print-report mx-auto max-w-5xl space-y-6">
-        {/* Month Selector */}
+        {/* Header + Period tabs */}
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-2">
             <FileBarChart className="h-6 w-6 text-primary-600 dark:text-primary-400" />
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Monthly Report</h1>
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">{reportTitle}</h1>
           </div>
-          <div className="no-print flex items-center gap-2">
-            <button
-              onClick={() => setCurrentMonth(getPreviousMonth(currentMonth))}
-              className="rounded-lg border border-gray-200 p-2 text-gray-600 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700"
-            >
-              <ChevronLeft size={18} />
-            </button>
-            <div className="flex items-center gap-2 rounded-lg border border-gray-200 px-4 py-2 dark:border-gray-700">
-              <CalendarDays size={16} className="text-gray-400" />
-              <span className="min-w-[140px] text-center text-sm font-semibold text-gray-900 dark:text-gray-100">
-                {formatMonth(currentMonth)}
-              </span>
+          <div className="no-print inline-flex rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-1">
+            {PERIOD_TABS.map((t) => (
+              <button
+                key={t.kind}
+                onClick={() => switchKind(t.kind)}
+                className={classNames(
+                  'rounded-md px-3 py-1.5 text-xs font-medium transition-colors',
+                  period.kind === t.kind
+                    ? 'bg-primary-600 text-white'
+                    : 'text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700',
+                )}
+              >
+                {t.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Period navigator */}
+        <div className="no-print flex flex-col gap-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-3 sm:flex-row sm:items-center sm:justify-between">
+          {period.kind !== 'custom' ? (
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setPeriod(shiftPeriod(period, -1))}
+                aria-label="Previous period"
+                className="rounded-lg border border-gray-200 p-2 text-gray-600 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700"
+              >
+                <ChevronLeft size={18} />
+              </button>
+              <div className="flex items-center gap-2 rounded-lg border border-gray-200 px-4 py-2 dark:border-gray-700">
+                <CalendarDays size={16} className="text-gray-400" />
+                <span className="min-w-[140px] text-center text-sm font-semibold text-gray-900 dark:text-gray-100">
+                  {period.label}
+                </span>
+              </div>
+              <button
+                onClick={() => setPeriod(shiftPeriod(period, 1))}
+                aria-label="Next period"
+                className="rounded-lg border border-gray-200 p-2 text-gray-600 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700"
+              >
+                <ChevronRight size={18} />
+              </button>
+              <button
+                onClick={() => setPeriod(currentPeriod(period.kind))}
+                className="rounded-lg border border-gray-200 px-3 py-2 text-xs font-medium text-gray-600 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700"
+              >
+                Today
+              </button>
             </div>
-            <button
-              onClick={() => setCurrentMonth(getNextMonth(currentMonth))}
-              className="rounded-lg border border-gray-200 p-2 text-gray-600 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700"
-            >
-              <ChevronRight size={18} />
-            </button>
-            <button
-              onClick={() => setCurrentMonth(getCurrentMonth())}
-              className="rounded-lg border border-gray-200 px-3 py-2 text-xs font-medium text-gray-600 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700"
-            >
-              Today
-            </button>
+          ) : (
+            <div className="flex flex-wrap items-end gap-2">
+              <label className="flex flex-col text-xs">
+                <span className="mb-1 text-gray-500 dark:text-gray-400">From</span>
+                <input
+                  type="date"
+                  value={customDraft.start}
+                  onChange={(e) => setCustomDraft((d) => ({ ...d, start: e.target.value }))}
+                  className="rounded-lg border border-gray-200 px-3 py-1.5 text-sm dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
+                />
+              </label>
+              <label className="flex flex-col text-xs">
+                <span className="mb-1 text-gray-500 dark:text-gray-400">To</span>
+                <input
+                  type="date"
+                  value={customDraft.end}
+                  onChange={(e) => setCustomDraft((d) => ({ ...d, end: e.target.value }))}
+                  className="rounded-lg border border-gray-200 px-3 py-1.5 text-sm dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
+                />
+              </label>
+              <button
+                onClick={applyCustom}
+                className="rounded-lg bg-primary-600 px-4 py-2 text-sm font-medium text-white hover:bg-primary-700"
+              >
+                Apply
+              </button>
+            </div>
+          )}
+          <div className="text-xs text-gray-500 dark:text-gray-400">
+            {period.start} — {period.end}
           </div>
         </div>
 
         {/* Report Header */}
         <div className="flex items-center justify-between rounded-xl border border-gray-200 bg-gradient-to-r from-primary-50 to-primary-100 p-6 dark:border-gray-700 dark:from-primary-900/20 dark:to-primary-800/20">
           <div>
-            <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">{formatMonth(currentMonth)}</h2>
+            <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">{period.label}</h2>
             <p className="text-sm text-gray-500 dark:text-gray-400">
-              {monthRange.start} — {monthRange.end}
+              {period.start} — {period.end}
             </p>
           </div>
           <button
@@ -428,33 +582,15 @@ export function MonthlyReport() {
           <EmptyState
             icon="receipt"
             title="No transactions"
-            description={`No transactions found for ${formatMonth(currentMonth)}.`}
+            description={`No transactions found for ${period.label}.`}
           />
         ) : (
           <>
             {/* Summary Section */}
             <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-              <SummaryCard
-                label="Total Income"
-                amount={income}
-                prevAmount={prevIncome}
-                settings={settings}
-                color="text-emerald-600 dark:text-emerald-400"
-              />
-              <SummaryCard
-                label="Total Expenses"
-                amount={expenses}
-                prevAmount={prevExpenses}
-                settings={settings}
-                color="text-red-500 dark:text-red-400"
-              />
-              <SummaryCard
-                label="Net Savings"
-                amount={savings}
-                prevAmount={prevIncome - prevExpenses}
-                settings={settings}
-                color={savings >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-500 dark:text-red-400'}
-              />
+              <SummaryCard label="Total Income"   amount={income}   prevAmount={prevIncome}   settings={settings} color="text-emerald-600 dark:text-emerald-400" compareLabel={compareLabel} />
+              <SummaryCard label="Total Expenses" amount={expenses} prevAmount={prevExpenses} settings={settings} color="text-red-500 dark:text-red-400" compareLabel={compareLabel} />
+              <SummaryCard label="Net Savings"    amount={savings}  prevAmount={prevIncome - prevExpenses} settings={settings} color={savings >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-500 dark:text-red-400'} compareLabel={compareLabel} />
               <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-700 dark:bg-gray-800">
                 <p className="text-xs font-medium text-gray-500 dark:text-gray-400">Savings Rate</p>
                 <p className={classNames('mt-1 text-2xl font-bold', savingsRate >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-500 dark:text-red-400')}>
@@ -492,7 +628,7 @@ export function MonthlyReport() {
 
             {/* Budget Performance */}
             {budgetPerfs.length > 0 && (
-              <Card title="Budget Performance">
+              <Card title={period.kind === 'month' ? 'Budget Performance' : `Budget Performance (${period.label})`}>
                 <div className="mb-4 flex items-center gap-3">
                   <div className="flex-1">
                     <div className="h-3 rounded-full bg-gray-100 dark:bg-gray-700">
@@ -586,30 +722,31 @@ export function MonthlyReport() {
               </Card>
             )}
 
-            {/* Daily Spending Pattern */}
-            <Card title="Daily Spending Pattern" className="print-break">
-              {daily.some((d) => d.amount > 0) ? (
+            {/* Spending Pattern (adapts to period granularity) */}
+            <Card title={
+              period.kind === 'year'    ? 'Monthly Spending'
+              : period.kind === 'quarter' ? 'Weekly Spending'
+              : period.kind === 'month'   ? 'Daily Spending Pattern'
+              : 'Spending Over Time'
+            } className="print-break">
+              {series.some((d) => d.amount > 0) ? (
                 <>
                   <div className="mb-3 flex flex-wrap gap-4 text-xs text-gray-500 dark:text-gray-400">
-                    {highestDay && highestDay.amount > 0 && (
-                      <span>
-                        📈 Highest: Day {highestDay.day} ({formatCurrency(highestDay.amount, settings)})
-                      </span>
+                    {highest && highest.amount > 0 && (
+                      <span>📈 Highest: {highest.label} ({formatCurrency(highest.amount, settings)})</span>
                     )}
-                    {lowestSpendDay && (
-                      <span>
-                        📉 Lowest: Day {lowestSpendDay.day} ({formatCurrency(lowestSpendDay.amount, settings)})
-                      </span>
+                    {lowestSpend && (
+                      <span>📉 Lowest: {lowestSpend.label} ({formatCurrency(lowestSpend.amount, settings)})</span>
                     )}
                   </div>
                   <div className="h-64">
                     <ResponsiveContainer width="100%" height="100%">
-                      <BarChart data={daily} margin={{ top: 5, right: 5, bottom: 5, left: 5 }}>
+                      <BarChart data={series} margin={{ top: 5, right: 5, bottom: 5, left: 5 }}>
                         <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
                         <XAxis
                           dataKey="label"
                           tick={{ fontSize: 10, fill: '#9ca3af' }}
-                          interval={1}
+                          interval={series.length > 20 ? Math.floor(series.length / 15) : 0}
                         />
                         <YAxis
                           tick={{ fontSize: 10, fill: '#9ca3af' }}
@@ -618,13 +755,13 @@ export function MonthlyReport() {
                         />
                         <Tooltip content={<ChartTooltip settings={settings} />} />
                         <Bar dataKey="amount" radius={[2, 2, 0, 0]}>
-                          {daily.map((entry) => (
+                          {series.map((entry) => (
                             <Cell
-                              key={entry.day}
+                              key={entry.key}
                               fill={
-                                highestDay && entry.day === highestDay.day
+                                highest && entry.key === highest.key
                                   ? '#ef4444'
-                                  : lowestSpendDay && entry.day === lowestSpendDay.day
+                                  : lowestSpend && entry.key === lowestSpend.key
                                     ? '#10b981'
                                     : '#6366f1'
                               }
@@ -636,7 +773,7 @@ export function MonthlyReport() {
                   </div>
                 </>
               ) : (
-                <p className="text-center text-sm text-gray-400 dark:text-gray-500">No spending data for this month.</p>
+                <p className="text-center text-sm text-gray-400 dark:text-gray-500">No spending data for this {periodNoun(period.kind)}.</p>
               )}
             </Card>
 
@@ -665,13 +802,14 @@ export function MonthlyReport() {
 // ─── Sub-components ───────────────────────────────────
 
 function SummaryCard({
-  label, amount, prevAmount, settings, color,
+  label, amount, prevAmount, settings, color, compareLabel,
 }: {
   label: string;
   amount: number;
   prevAmount: number;
   settings: Settings;
   color: string;
+  compareLabel: string;
 }) {
   return (
     <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-700 dark:bg-gray-800">
@@ -681,7 +819,7 @@ function SummaryCard({
       </p>
       <div className="mt-1">
         <ChangeIndicator value={pctChange(amount, prevAmount)} />
-        <span className="ml-1 text-xs text-gray-400">vs last month</span>
+        <span className="ml-1 text-xs text-gray-400">{compareLabel}</span>
       </div>
     </div>
   );

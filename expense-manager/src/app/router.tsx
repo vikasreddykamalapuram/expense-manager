@@ -19,7 +19,7 @@ const SettingsPage = lazyWithRetry(() => import('../features/settings/components
 const SecuritySettingsPage = lazyWithRetry(() => import('../features/settings/components/SecuritySettingsPage').then(m => ({ default: m.SecuritySettingsPage })));
 const NotificationSettingsPage = lazyWithRetry(() => import('../features/settings/components/NotificationSettingsPage').then(m => ({ default: m.NotificationSettingsPage })));
 const BudgetsPage = lazyWithRetry(() => import('../features/budgets/components/BudgetsPage').then(m => ({ default: m.BudgetsPage })));
-const MonthlyReport = lazyWithRetry(() => import('../features/reports/components/MonthlyReport').then(m => ({ default: m.MonthlyReport })));
+const ReportsPage = lazyWithRetry(() => import('../features/reports/components/ReportsPage').then(m => ({ default: m.ReportsPage })));
 const StatementImportPage = lazyWithRetry(() => import('../features/import/components/StatementImportPage').then(m => ({ default: m.StatementImportPage })));
 const RecurringPage = lazyWithRetry(() => import('../features/recurring/components/RecurringPage').then(m => ({ default: m.RecurringPage })));
 const BillRemindersPage = lazyWithRetry(() => import('../features/reminders/components/BillRemindersPage').then(m => ({ default: m.BillRemindersPage })));
@@ -81,7 +81,7 @@ export const router = createBrowserRouter([
       lazyRoute('analytics', AnalyticsView),
       lazyRoute('portfolio-analytics', PortfolioAnalytics),
       lazyRoute('budgets', BudgetsPage),
-      lazyRoute('reports', MonthlyReport),
+      lazyRoute('reports', ReportsPage),
       lazyRoute('health', HealthScorePage),
       lazyRoute('portfolio', PortfolioPage),
       lazyRoute('portfolio/:symbol', StockDetailPage),
