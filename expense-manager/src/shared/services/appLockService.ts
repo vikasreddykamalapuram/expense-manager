@@ -25,7 +25,7 @@ const K = {
   idle: 'lock.idleTimeoutMs',
 };
 
-const DEFAULT_IDLE_MS = 60_000; // 1 minute in the background → re-lock
+const DEFAULT_IDLE_MS = 5 * 60_000; // 5 minutes in the background → re-lock (short enough for security, long enough for file pickers, quick calls, and app-switch flows)
 const PBKDF2_ITERS = 200_000;
 const PIN_LENGTH = 6;
 

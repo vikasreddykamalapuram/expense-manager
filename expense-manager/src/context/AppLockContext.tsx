@@ -23,6 +23,8 @@ interface AppLockContextValue {
   isConfigured: boolean;
   refresh: () => Promise<void>;
   lockNow: () => void;
+  /** Skip the next background→foreground lock check (e.g. before opening a native file picker). Automatically clears after use or after 2 minutes. */
+  suppressNextBackground: () => void;
 }
 
 const AppLockContext = createContext<AppLockContextValue | undefined>(undefined);
@@ -42,6 +44,12 @@ export function AppLockProvider({ children }: { children: React.ReactNode }) {
   const [isLocked, setIsLocked] = useState(false);
   const idleTimeoutMsRef = useRef<number>(appLock.DEFAULT_IDLE_MS);
   const lastBackgroundedAtRef = useRef<number | null>(null);
+  const suppressUntilRef = useRef<number>(0);
+
+  const suppressNextBackground = useCallback(() => {
+    // Suppress lock for the next 2 minutes — long enough for a file picker or a quick app switch.
+    suppressUntilRef.current = Date.now() + 2 * 60_000;
+  }, []);
 
   const refresh = useCallback(async () => {
     const status = await appLock.status();
@@ -76,6 +84,11 @@ export function AppLockProvider({ children }: { children: React.ReactNode }) {
       if (bg === null) return;
       const elapsed = Date.now() - bg;
       lastBackgroundedAtRef.current = null;
+      // If a component signalled that a native-picker-style background is expected, skip this lock check.
+      if (Date.now() < suppressUntilRef.current) {
+        suppressUntilRef.current = 0;
+        return;
+      }
       if (elapsed >= idleTimeoutMsRef.current) setIsLocked(true);
     };
 
@@ -94,11 +107,31 @@ export function AppLockProvider({ children }: { children: React.ReactNode }) {
     return () => document.removeEventListener('visibilitychange', onVis);
   }, [isConfigured]);
 
+  // File pickers and other native chooser dialogs briefly move the WebView to the
+  // background on Android. Suppress the next lock check whenever the user opens
+  // a file input so their pick doesn't get lost behind the lock screen.
+  useEffect(() => {
+    if (!isConfigured) return;
+    const onPointerDown = (e: Event) => {
+      const t = e.target as HTMLElement | null;
+      if (t && t instanceof HTMLInputElement && t.type === 'file') {
+        suppressUntilRef.current = Date.now() + 2 * 60_000;
+      }
+    };
+    document.addEventListener('pointerdown', onPointerDown, true);
+    document.addEventListener('touchstart', onPointerDown, true);
+    return () => {
+      document.removeEventListener('pointerdown', onPointerDown, true);
+      document.removeEventListener('touchstart', onPointerDown, true);
+    };
+  }, [isConfigured]);
+
   const value: AppLockContextValue = {
     isLocked,
     isConfigured,
     refresh,
     lockNow: () => { if (isConfigured) setIsLocked(true); },
+    suppressNextBackground,
   };
 
   if (initializing) return null;

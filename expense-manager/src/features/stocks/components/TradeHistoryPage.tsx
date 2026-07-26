@@ -1,10 +1,11 @@
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Trash2, Search, Filter, TrendingUp, TrendingDown, DollarSign } from 'lucide-react';
+import { ArrowLeft, Trash2, Search, Filter, TrendingUp, TrendingDown, DollarSign, Plus } from 'lucide-react';
 import { useAppContext } from '../../../context/AppContext';
 import { formatCurrency, formatDate } from '../../../shared/utils/helpers';
 import { StockTransaction, TradeType, Settings } from '../../../shared/types';
 import { EmptyState } from '../../../shared/components/ui/EmptyState';
+import { AddTradeModal } from './AddTradeModal';
 
 type SortKey = 'date' | 'totalValue' | 'symbol';
 type SortDir = 'asc' | 'desc';
@@ -30,6 +31,7 @@ export function TradeHistoryPage() {
   const [sortKey, setSortKey] = useState<SortKey>('date');
   const [sortDir, setSortDir] = useState<SortDir>('desc');
   const [showFilters, setShowFilters] = useState(false);
+  const [showAddTrade, setShowAddTrade] = useState(false);
 
   const brokers = useMemo(() => {
     const set = new Set(state.stockTransactions.map(t => t.broker));
@@ -103,11 +105,17 @@ export function TradeHistoryPage() {
           title="No Trades Yet"
           description="Import your trade data to see your trading history"
           action={
-            <button onClick={() => navigate('/trade-import')} className="rounded-xl bg-primary-600 px-4 py-2 text-sm font-medium text-white hover:bg-primary-700 transition-colors">
-              Import Trades
-            </button>
+            <div className="flex flex-wrap items-center justify-center gap-2">
+              <button onClick={() => setShowAddTrade(true)} className="inline-flex items-center gap-1.5 rounded-xl bg-primary-600 px-4 py-2 text-sm font-medium text-white hover:bg-primary-700 transition-colors">
+                <Plus size={16} /> Add Trade
+              </button>
+              <button onClick={() => navigate('/trade-import')} className="rounded-xl border border-primary-600 px-4 py-2 text-sm font-medium text-primary-700 dark:text-primary-300 hover:bg-primary-50 dark:hover:bg-primary-900/30 transition-colors">
+                Import Trades
+              </button>
+            </div>
           }
         />
+        <AddTradeModal open={showAddTrade} onClose={() => setShowAddTrade(false)} />
       </div>
     );
   }
@@ -122,12 +130,20 @@ export function TradeHistoryPage() {
           </button>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Trade History</h1>
         </div>
-        <button
-          onClick={() => navigate('/trade-import')}
-          className="rounded-xl bg-primary-600 px-4 py-2 text-sm font-medium text-white hover:bg-primary-700 transition-colors"
-        >
-          Import More
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={() => setShowAddTrade(true)}
+            className="inline-flex items-center gap-1.5 rounded-xl bg-primary-600 px-4 py-2 text-sm font-medium text-white hover:bg-primary-700 transition-colors"
+          >
+            <Plus size={16} /> Add Trade
+          </button>
+          <button
+            onClick={() => navigate('/trade-import')}
+            className="rounded-xl border border-gray-300 dark:border-gray-600 px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+          >
+            Import
+          </button>
+        </div>
       </div>
 
       {/* Summary Bar */}
@@ -244,6 +260,8 @@ export function TradeHistoryPage() {
           <div className="p-8 text-center text-sm text-gray-400 dark:text-gray-500">No trades match your filters</div>
         )}
       </div>
+
+      <AddTradeModal open={showAddTrade} onClose={() => setShowAddTrade(false)} />
     </div>
   );
 }

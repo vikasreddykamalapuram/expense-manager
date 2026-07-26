@@ -2,7 +2,7 @@ import { useMemo, useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   TrendingUp, TrendingDown, Upload, History, IndianRupee, BarChart3,
-  Briefcase, PieChart, RefreshCw, AlertTriangle, CheckCircle2, Clock,
+  Briefcase, PieChart, RefreshCw, AlertTriangle, CheckCircle2, Clock, Plus,
 } from 'lucide-react';
 import {
   PieChart as RePieChart, Pie, Cell, ResponsiveContainer, Tooltip,
@@ -17,6 +17,7 @@ import {
 import { fetchBatchPrices, getAllCachedPrices } from '../../../shared/services/stockPriceService';
 import { EmptyState } from '../../../shared/components/ui/EmptyState';
 import { PortfolioHolding, Settings } from '../../../shared/types';
+import { AddTradeModal } from './AddTradeModal';
 
 const CHART_COLORS = [
   '#6366f1', '#f59e0b', '#10b981', '#ef4444', '#8b5cf6',
@@ -36,6 +37,7 @@ export function PortfolioPage() {
   const [analyticsTab, setAnalyticsTab] = useState<AnalyticsTab>('diversification');
   const [pricesLoading, setPricesLoading] = useState(false);
   const [priceError, setPriceError] = useState(false);
+  const [showAddTrade, setShowAddTrade] = useState(false);
   const [lastUpdated, setLastUpdated] = useState<string | null>(null);
   const [priceMap, setPriceMap] = useState<Map<string, import('../../../shared/services/stockPriceService').StockPrice>>(new Map());
 
@@ -127,16 +129,25 @@ export function PortfolioPage() {
         <EmptyState
           icon={<TrendingUp size={32} />}
           title="No Portfolio Data"
-          description="Start by importing your trade data from your broker"
+          description="Add trades manually or import them from your broker"
           action={
-            <button
-              onClick={() => navigate('/trade-import')}
-              className="rounded-xl bg-primary-600 px-4 py-2 text-sm font-medium text-white hover:bg-primary-700 transition-colors"
-            >
-              Import Trades
-            </button>
+            <div className="flex flex-wrap items-center justify-center gap-2">
+              <button
+                onClick={() => setShowAddTrade(true)}
+                className="inline-flex items-center gap-1.5 rounded-xl bg-primary-600 px-4 py-2 text-sm font-medium text-white hover:bg-primary-700 transition-colors"
+              >
+                <Plus size={16} /> Add Trade
+              </button>
+              <button
+                onClick={() => navigate('/trade-import')}
+                className="rounded-xl border border-primary-600 px-4 py-2 text-sm font-medium text-primary-700 dark:text-primary-300 hover:bg-primary-50 dark:hover:bg-primary-900/30 transition-colors"
+              >
+                Import Trades
+              </button>
+            </div>
           }
         />
+        <AddTradeModal open={showAddTrade} onClose={() => setShowAddTrade(false)} />
       </div>
     );
   }
@@ -162,11 +173,18 @@ export function PortfolioPage() {
             {pricesLoading ? 'Fetching...' : 'Refresh Prices'}
           </button>
           <button
-            onClick={() => navigate('/trade-import')}
+            onClick={() => setShowAddTrade(true)}
             className="flex items-center gap-2 rounded-xl bg-primary-600 px-4 py-2 text-sm font-medium text-white hover:bg-primary-700 transition-colors"
           >
+            <Plus size={16} />
+            Add Trade
+          </button>
+          <button
+            onClick={() => navigate('/trade-import')}
+            className="flex items-center gap-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+          >
             <Upload size={16} />
-            Import Trades
+            Import
           </button>
           <button
             onClick={() => navigate('/trades')}
@@ -286,6 +304,8 @@ export function PortfolioPage() {
           )}
         </div>
       </div>
+
+      <AddTradeModal open={showAddTrade} onClose={() => setShowAddTrade(false)} />
     </div>
   );
 }
