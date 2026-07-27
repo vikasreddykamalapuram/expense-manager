@@ -55,7 +55,12 @@ function OnboardingGuard({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
-const basename = import.meta.env.BASE_URL.replace(/\/$/, '') || '/';
+// BASE_URL is absolute ('/expense-manager/') on GitHub Pages but relative
+// ('./') in the Capacitor build. React Router's basename must be absolute
+// — passing '.' silently renders a blank screen. Collapse any relative
+// value to '/' so mobile routes match correctly.
+const rawBase = import.meta.env.BASE_URL;
+const basename = rawBase.startsWith('/') ? (rawBase.replace(/\/$/, '') || '/') : '/';
 
 export const router = createBrowserRouter([
   {
