@@ -80,6 +80,22 @@ export async function bootstrapNativeShell(): Promise<void> {
   try {
     App.addListener('appUrlOpen', (event) => {
       try {
+        // OAuth callbacks arrive as expenseiq://oauth/callback#id_token=…&state=…
+        // Route them through the mobile OAuth handler instead of the generic
+        // router, otherwise React Router tries to navigate to a non-existent
+        // /oauth/callback page. Use a dynamic import so @capacitor/browser
+        // stays out of the web bundle and only loads when a real OAuth
+        // callback URL arrives on native.
+        const isOAuthCallback =
+          event.url.startsWith('expenseiq://oauth') ||
+          event.url.startsWith('expenseiq:/oauth') ||
+          event.url.includes('/oauth/callback');
+        if (isOAuthCallback) {
+          import('./mobileOAuth')
+            .then(({ handleOAuthCallback }) => handleOAuthCallback(event.url))
+            .catch(() => { /* module load failed — swallow to avoid crashing app */ });
+          return;
+        }
         const url = new URL(event.url);
         // Strip the /expense-manager base path if present.
         let path = url.pathname.replace(/^\/expense-manager/, '') || '/';
