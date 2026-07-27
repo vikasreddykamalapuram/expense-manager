@@ -34,3 +34,16 @@ dist-ssr
 # until we're ready to publish a signed release from CI.
 /android
 /ios
+
+# Keystore + signing secrets — NEVER commit these
+*.keystore
+*.jks
+android/keystore.properties
+android/local.properties
+
+# Exception: the DEBUG keystore is non-secret by convention (Android's own
+# default uses the exact same "android" credentials). Committing it keeps
+# every CI-built debug APK on the same signing cert so users can upgrade
+# in place instead of hitting "package conflicts with existing package".
+!android-templates/debug.keystore
+

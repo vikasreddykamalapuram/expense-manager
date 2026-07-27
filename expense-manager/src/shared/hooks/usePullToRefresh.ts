@@ -24,7 +24,7 @@ interface UsePullToRefreshOptions {
 
 export interface UsePullToRefreshResult {
   /** Attach to the scrollable container. */
-  containerRef: React.RefObject<HTMLDivElement>;
+  containerRef: React.RefObject<HTMLElement>;
   /** Current pull distance in px (0 when idle). Drive the indicator UI with this. */
   pullDistance: number;
   /** True while onRefresh() is awaiting. */
@@ -39,7 +39,7 @@ export function usePullToRefresh({
   maxPull = 100,
   disabled,
 }: UsePullToRefreshOptions): UsePullToRefreshResult {
-  const containerRef = useRef<HTMLDivElement>(null);
+  const containerRef = useRef<HTMLElement>(null);
   const startY = useRef<number | null>(null);
   const pulling = useRef(false);
   const triggeredHapticRef = useRef(false);

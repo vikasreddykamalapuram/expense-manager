@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Static App Shortcuts — shown when the user long-presses the launcher icon.
+  Each shortcut fires a VIEW intent with an expenseiq:// URL that
+  nativeShell.ts routes through appUrlOpen → navigateToDeepLink.
+
+  Package name below must stay in sync with capacitor.config.ts appId.
+-->
+<shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <shortcut
+        android:shortcutId="add_expense"
+        android:enabled="true"
+        android:icon="@mipmap/ic_launcher"
+        android:shortcutShortLabel="@string/shortcut_add_expense_short"
+        android:shortcutLongLabel="@string/shortcut_add_expense_long">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:targetPackage="com.expenseiq.app"
+            android:targetClass="com.expenseiq.app.MainActivity"
+            android:data="expenseiq://add?type=expense" />
+        <categories android:name="android.shortcut.conversation" />
+    </shortcut>
+
+    <shortcut
+        android:shortcutId="add_income"
+        android:enabled="true"
+        android:icon="@mipmap/ic_launcher"
+        android:shortcutShortLabel="@string/shortcut_add_income_short"
+        android:shortcutLongLabel="@string/shortcut_add_income_long">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:targetPackage="com.expenseiq.app"
+            android:targetClass="com.expenseiq.app.MainActivity"
+            android:data="expenseiq://add?type=income" />
+    </shortcut>
+
+    <shortcut
+        android:shortcutId="analytics"
+        android:enabled="true"
+        android:icon="@mipmap/ic_launcher"
+        android:shortcutShortLabel="@string/shortcut_analytics_short"
+        android:shortcutLongLabel="@string/shortcut_analytics_long">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:targetPackage="com.expenseiq.app"
+            android:targetClass="com.expenseiq.app.MainActivity"
+            android:data="expenseiq://analytics" />
+    </shortcut>
+
+    <shortcut
+        android:shortcutId="budgets"
+        android:enabled="true"
+        android:icon="@mipmap/ic_launcher"
+        android:shortcutShortLabel="@string/shortcut_budgets_short"
+        android:shortcutLongLabel="@string/shortcut_budgets_long">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:targetPackage="com.expenseiq.app"
+            android:targetClass="com.expenseiq.app.MainActivity"
+            android:data="expenseiq://budgets" />
+    </shortcut>
+
+</shortcuts>

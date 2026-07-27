@@ -9,6 +9,8 @@ import { generateInsights, Insight } from '../../../shared/services/insightsEngi
 import { detectAnomalies } from '../../../shared/services/anomalyDetection';
 import { forecastSpending, forecastCategoryBudgets } from '../../../shared/services/spendingPredictions';
 import { formatCurrency } from '../../../shared/utils/helpers';
+import { CashflowProjectionCard } from './CashflowProjectionCard';
+import { HiddenSubscriptionsCard } from './HiddenSubscriptionsCard';
 
 const INSIGHT_ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
   TrendingUp, TrendingDown, ArrowUpRight, ArrowDownRight,
@@ -238,6 +240,12 @@ export function SmartInsights() {
             </div>
           )}
 
+          {/* Cashflow projection */}
+          <CashflowProjectionCard />
+
+          {/* Hidden subscriptions */}
+          <HiddenSubscriptionsCard />
+
           {/* No anomalies - positive message */}
           {anomalies.length === 0 && insights.length > 0 && (
             <div className="rounded-xl bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-800 p-6 text-center">
@@ -275,17 +283,17 @@ export function SmartInsights() {
                 </div>
 
                 <div className="grid grid-cols-3 gap-3 text-center">
-                  <div className="rounded-lg bg-gray-50 dark:bg-gray-750 p-2.5">
+                  <div className="rounded-lg bg-gray-50 dark:bg-gray-700 p-2.5">
                     <p className="text-lg font-bold text-gray-900 dark:text-white">
                       {formatCurrency(forecast.currentPace, settings)}
                     </p>
                     <p className="text-[10px] text-gray-500 dark:text-gray-400">Daily avg</p>
                   </div>
-                  <div className="rounded-lg bg-gray-50 dark:bg-gray-750 p-2.5">
+                  <div className="rounded-lg bg-gray-50 dark:bg-gray-700 p-2.5">
                     <p className="text-lg font-bold text-gray-900 dark:text-white">{forecast.daysElapsed}</p>
                     <p className="text-[10px] text-gray-500 dark:text-gray-400">Days elapsed</p>
                   </div>
-                  <div className="rounded-lg bg-gray-50 dark:bg-gray-750 p-2.5">
+                  <div className="rounded-lg bg-gray-50 dark:bg-gray-700 p-2.5">
                     <p className="text-lg font-bold text-gray-900 dark:text-white">{forecast.daysRemaining}</p>
                     <p className="text-[10px] text-gray-500 dark:text-gray-400">Days left</p>
                   </div>

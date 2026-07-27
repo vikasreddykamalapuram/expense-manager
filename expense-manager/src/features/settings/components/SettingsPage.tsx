@@ -1,5 +1,6 @@
-import { useState, useRef, useEffect } from 'react';
-import { Download, Upload, Trash2, AlertTriangle, FileSpreadsheet, Cloud, CloudOff, LogOut, RefreshCw, CheckCircle2, XCircle, Sun, Moon, Monitor, Palette, Check, RefreshCcw, Smartphone, Shield, Database, Unplug, ArrowUpDown, Wifi, WifiOff } from 'lucide-react';
+import { useState, useRef, useEffect, useMemo } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { Download, Upload, Trash2, AlertTriangle, FileSpreadsheet, Cloud, CloudOff, LogOut, RefreshCw, CheckCircle2, XCircle, Sun, Moon, Monitor, Palette, Check, RefreshCcw, Smartphone, Shield, Database, Unplug, ArrowUpDown, Wifi, WifiOff, ShieldCheck, Bell, Sliders, HardDrive, Info, FileText, ChevronDown, ChevronUp } from 'lucide-react';
 import type { AccentColor, DarkMode } from '../../../shared/types';
 import { useAppContext } from '../../../context/AppContext';
 import { useAuth } from '../../../context/AuthContext';
@@ -15,8 +16,35 @@ import { CURRENCIES } from '../../../shared/constants/categories';
 import { CSVImportModal } from './CSVImportModal';
 import { backupService, BackupMetadata } from '../../../shared/services/backupService';
 import { backendSync, backendFullPush, clearBackendSyncState } from '../../../shared/services/supabaseSyncService';
+import { SecuritySettingsPage } from './SecuritySettingsPage';
+import { NotificationSettingsPage } from './NotificationSettingsPage';
+
+// ─── Tab definitions ─────────────────────────────────
+
+type SettingsTab = 'general' | 'appearance' | 'data' | 'cloud' | 'notifications' | 'security' | 'about';
+
+const TABS: Array<{ id: SettingsTab; label: string; icon: typeof Sliders; path: string }> = [
+  { id: 'general',       label: 'General',       icon: Sliders,      path: '/settings' },
+  { id: 'appearance',    label: 'Appearance',    icon: Palette,      path: '/settings/appearance' },
+  { id: 'data',          label: 'Data',          icon: HardDrive,    path: '/settings/data' },
+  { id: 'cloud',         label: 'Cloud & Sync',  icon: Cloud,        path: '/settings/cloud' },
+  { id: 'notifications', label: 'Notifications', icon: Bell,         path: '/settings/notifications' },
+  { id: 'security',      label: 'Security',      icon: ShieldCheck,  path: '/settings/security' },
+  { id: 'about',         label: 'About',         icon: Info,         path: '/settings/about' },
+];
+
+function tabFromPath(pathname: string): SettingsTab {
+  const seg = pathname.split('/').filter(Boolean); // ['settings'] or ['settings','security']
+  const sub = seg[1] as SettingsTab | undefined;
+  const known: SettingsTab[] = ['general','appearance','data','cloud','notifications','security','about'];
+  return sub && known.includes(sub) ? sub : 'general';
+}
 
 export function SettingsPage() {
+  const location = useLocation();
+  const navigate = useNavigate();
+  const activeTab = useMemo(() => tabFromPath(location.pathname), [location.pathname]);
+  const [showAdvancedCloud, setShowAdvancedCloud] = useState(false);
   const { state, actions } = useAppContext();
   const { user, isAuthenticated, logout } = useAuth();
   const { syncStatus, enableSyncForUser, disableSyncForUser, syncNow, deleteCloudData, deviceName } = useSync();
@@ -147,7 +175,36 @@ export function SettingsPage() {
         <p className="text-sm text-gray-500 dark:text-gray-400">Customize your experience</p>
       </div>
 
+      {/* Tab bar */}
+      <div className="-mx-4 overflow-x-auto sm:mx-0">
+        <div className="flex min-w-max gap-1 border-b border-gray-200 dark:border-gray-700 px-4 sm:px-0">
+          {TABS.map(({ id, label, icon: Icon, path }) => (
+            <button
+              key={id}
+              onClick={() => navigate(path, { replace: true })}
+              className={classNames(
+                'flex items-center gap-1.5 border-b-2 px-3 py-2 text-sm font-medium whitespace-nowrap transition-colors',
+                activeTab === id
+                  ? 'border-primary-600 text-primary-700 dark:text-primary-400'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200',
+              )}
+              aria-current={activeTab === id ? 'page' : undefined}
+            >
+              <Icon size={14} />
+              {label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Notifications tab */}
+      {activeTab === 'notifications' && <NotificationSettingsPage />}
+
+      {/* Security tab */}
+      {activeTab === 'security' && <SecuritySettingsPage />}
+
       {/* Preferences */}
+      {activeTab === 'general' && (
       <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-6 shadow-sm">
         <h3 className="mb-4 text-base font-semibold text-gray-900 dark:text-gray-100">Preferences</h3>
         <div className="space-y-4">
@@ -173,8 +230,10 @@ export function SettingsPage() {
           />
         </div>
       </div>
+      )}
 
       {/* Style */}
+      {activeTab === 'appearance' && (
       <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-6 shadow-sm">
         <div className="mb-4 flex items-center gap-2">
           <Palette size={18} className="text-primary-500" />
@@ -292,8 +351,10 @@ export function SettingsPage() {
           </div>
         </div>
       </div>
+      )}
 
       {/* Profiles */}
+      {activeTab === 'general' && (
       <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-6 shadow-sm">
         <h3 className="mb-4 text-base font-semibold text-gray-900 dark:text-gray-100">Profiles</h3>
         <p className="text-xs text-gray-500 dark:text-gray-400 mb-3">
@@ -340,8 +401,10 @@ export function SettingsPage() {
           })}
         </div>
       </div>
+      )}
 
       {/* Data Management */}
+      {activeTab === 'data' && (
       <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-6 shadow-sm">
         <h3 className="mb-4 text-base font-semibold text-gray-900 dark:text-gray-100">Data Management</h3>
         <div className="space-y-4">
@@ -379,6 +442,13 @@ export function SettingsPage() {
               >
                 Restore JSON Backup
               </Button>
+              <Button
+                variant="secondary"
+                icon={<FileText size={16} />}
+                onClick={() => navigate('/import')}
+              >
+                Bank Statement (PDF)
+              </Button>
               <input
                 ref={fileInputRef}
                 type="file"
@@ -388,7 +458,7 @@ export function SettingsPage() {
               />
             </div>
             <p className="mt-1 text-xs text-gray-400 dark:text-gray-500">
-              CSV: Import from other expense tracker apps · JSON: Restore a previous backup
+              CSV: Import from other expense tracker apps · JSON: Restore a previous backup · PDF: Parse a bank statement
             </p>
           </div>
 
@@ -431,8 +501,200 @@ export function SettingsPage() {
           </div>
         </div>
       </div>
+      )}
 
-      {/* Account */}
+      {/* ─── Cloud & Sync (Phase 3 — unified) ─────────────
+          Presents ONE narrative: sign in → toggle sync → status.
+          Backups + backend DB are grouped as "Advanced" beneath. */}
+      {/* Cloud Overview — the single, unified surface */}
+      {activeTab === 'cloud' && (
+      <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-gradient-to-br from-primary-50 to-white dark:from-primary-900/20 dark:to-gray-800 p-6 shadow-sm">
+        <div className="flex items-center gap-2 mb-4">
+          <Cloud size={20} className="text-primary-500" />
+          <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100">Cloud &amp; Sync</h3>
+        </div>
+
+        {!isAuthenticated || !user ? (
+          <div className="space-y-3">
+            <p className="text-sm text-gray-600 dark:text-gray-400">
+              Sign in once with Google or Microsoft to unlock automatic cross-device sync, cloud backup,
+              and (when configured) real-time updates. Everything is end-to-end encrypted with AES-256-GCM
+              — even Google or Microsoft cannot read your finances.
+            </p>
+            <Button variant="primary" icon={<Cloud size={16} />} onClick={() => (window.location.href = '/login')}>
+              Sign in to enable cloud
+            </Button>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {/* Identity chip */}
+            <div className="flex items-center gap-3 rounded-lg bg-white dark:bg-gray-700 p-3">
+              {user.avatar ? (
+                <img src={user.avatar} alt={user.name} className="h-10 w-10 rounded-full" referrerPolicy="no-referrer" />
+              ) : (
+                <div className="h-10 w-10 rounded-full bg-gradient-to-br from-primary-400 to-primary-600 flex items-center justify-center text-white text-sm font-bold">
+                  {user.name.charAt(0).toUpperCase()}
+                </div>
+              )}
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 truncate">{user.name}</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                  {user.email} · {user.provider === 'google' ? 'Google' : 'Microsoft'}
+                </p>
+              </div>
+              <Button variant="secondary" icon={<LogOut size={14} />} onClick={logout} className="!py-1.5 !px-2 text-xs">
+                Sign out
+              </Button>
+            </div>
+
+            {/* Master sync toggle + status */}
+            <div className="rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 p-4">
+              <div className="flex items-center justify-between mb-2">
+                <div>
+                  <p className="text-sm font-medium text-gray-900 dark:text-gray-100">Sync this device</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                    {syncStatus.state === 'disabled'
+                      ? 'Off — your data stays on this device only'
+                      : syncStatus.state === 'syncing'
+                        ? 'Syncing…'
+                        : syncStatus.state === 'error'
+                          ? 'Sync error'
+                          : 'On — encrypted delta sync via ' + (user.provider === 'google' ? 'Google Drive' : 'OneDrive')}
+                  </p>
+                </div>
+                {syncStatus.state === 'disabled' ? (
+                  <Button
+                    variant="primary"
+                    icon={syncActionStatus === 'enabling' ? <RefreshCw size={14} className="animate-spin" /> : <RefreshCcw size={14} />}
+                    disabled={syncActionStatus !== 'idle'}
+                    onClick={async () => {
+                      setSyncActionStatus('enabling');
+                      setSyncMessage('');
+                      const ok = await enableSyncForUser();
+                      setSyncMessage(ok ? 'Sync enabled!' : 'Failed to enable sync.');
+                      setSyncActionStatus('idle');
+                      if (ok) setTimeout(() => setSyncMessage(''), 5000);
+                    }}
+                    className="!py-1.5"
+                  >
+                    Turn on
+                  </Button>
+                ) : (
+                  <Button
+                    variant="secondary"
+                    onClick={async () => {
+                      await disableSyncForUser();
+                      setSyncMessage('Sync disabled.');
+                      setTimeout(() => setSyncMessage(''), 3000);
+                    }}
+                    className="!py-1.5"
+                  >
+                    Turn off
+                  </Button>
+                )}
+              </div>
+
+              {syncStatus.lastSyncAt && (
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                  Last synced: {new Date(syncStatus.lastSyncAt).toLocaleString()}
+                </p>
+              )}
+              {syncStatus.state !== 'disabled' && (
+                <div className="mt-3 flex flex-wrap items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
+                  <Smartphone size={12} />
+                  <span>{deviceName}</span>
+                  {backupInfo && (
+                    <>
+                      <span>·</span>
+                      <span>Backup {(backupInfo.size / 1024).toFixed(1)} KB · {new Date(backupInfo.modifiedTime).toLocaleDateString()}</span>
+                    </>
+                  )}
+                </div>
+              )}
+
+              {syncStatus.state !== 'disabled' && (
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <Button
+                    variant="secondary"
+                    icon={syncActionStatus === 'syncing' ? <RefreshCw size={14} className="animate-spin" /> : <RefreshCcw size={14} />}
+                    disabled={syncActionStatus !== 'idle' || syncStatus.state === 'syncing'}
+                    onClick={async () => {
+                      setSyncActionStatus('syncing');
+                      setSyncMessage('');
+                      const ok = await syncNow();
+                      setSyncMessage(ok ? 'Sync complete!' : 'Sync failed. Check your connection.');
+                      setSyncActionStatus('idle');
+                      setTimeout(() => setSyncMessage(''), 5000);
+                    }}
+                    className="!py-1.5 text-xs"
+                  >
+                    Sync now
+                  </Button>
+                  <Button
+                    variant="secondary"
+                    icon={backupStatus === 'backing-up' ? <RefreshCw size={14} className="animate-spin" /> : <Cloud size={14} />}
+                    disabled={backupStatus === 'backing-up' || backupStatus === 'restoring'}
+                    onClick={handleCloudBackup}
+                    className="!py-1.5 text-xs"
+                  >
+                    Manual backup
+                  </Button>
+                </div>
+              )}
+
+              {syncStatus.lastError && (
+                <p className="text-xs text-danger-500 mt-2">{syncStatus.lastError}</p>
+              )}
+
+              {syncMessage && (
+                <p className={classNames(
+                  'text-xs mt-2 flex items-center gap-1',
+                  syncMessage.toLowerCase().includes('fail') ? 'text-danger-600' : 'text-success-600',
+                )}>
+                  {syncMessage.toLowerCase().includes('fail') ? <XCircle size={12} /> : <CheckCircle2 size={12} />}
+                  {syncMessage}
+                </p>
+              )}
+              {backupStatus === 'success' && (
+                <p className="text-xs mt-2 text-success-600 flex items-center gap-1">
+                  <CheckCircle2 size={12} /> {backupMessage}
+                </p>
+              )}
+              {backupStatus === 'error' && (
+                <p className="text-xs mt-2 text-danger-600 flex items-center gap-1">
+                  <XCircle size={12} /> {backupMessage}
+                </p>
+              )}
+            </div>
+
+            {/* Realtime badge — only if backend already connected */}
+            {supabase.isConnected && (
+              <div className="flex items-center gap-2 text-xs text-blue-700 dark:text-blue-400">
+                {realtime.status === 'connected' ? <Wifi size={14} /> : <WifiOff size={14} />}
+                <span>
+                  {realtime.status === 'connected'
+                    ? `Live sync active — updates from other devices appear instantly (${realtime.eventsReceived} received)`
+                    : 'Realtime disconnected'}
+                </span>
+              </div>
+            )}
+
+            {/* Advanced toggle */}
+            <button
+              type="button"
+              onClick={() => setShowAdvancedCloud((v) => !v)}
+              className="flex items-center gap-1 text-xs font-medium text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+            >
+              {showAdvancedCloud ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
+              Advanced (backup details, backend database, delete cloud data)
+            </button>
+          </div>
+        )}
+      </div>
+      )}
+
+      {/* Account — legacy card, now shown only under Advanced */}
+      {activeTab === 'cloud' && showAdvancedCloud && (
       <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-6 shadow-sm">
         <h3 className="mb-4 text-base font-semibold text-gray-900 dark:text-gray-100">Account</h3>
         {isAuthenticated && user ? (
@@ -469,8 +731,10 @@ export function SettingsPage() {
           </div>
         )}
       </div>
+      )}
 
       {/* Cloud Backup */}
+      {activeTab === 'cloud' && showAdvancedCloud && (
       <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-6 shadow-sm">
         <h3 className="mb-4 text-base font-semibold text-gray-900 dark:text-gray-100">Cloud Backup</h3>
         {isAuthenticated && user ? (
@@ -541,8 +805,10 @@ export function SettingsPage() {
           </div>
         )}
       </div>
+      )}
 
       {/* Cross-Device Sync */}
+      {activeTab === 'cloud' && showAdvancedCloud && (
       <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-6 shadow-sm">
         <div className="flex items-center gap-2 mb-4">
           <RefreshCcw size={18} className="text-primary-500" />
@@ -685,8 +951,10 @@ export function SettingsPage() {
           </div>
         )}
       </div>
+      )}
 
       {/* Backend Database Status */}
+      {activeTab === 'cloud' && showAdvancedCloud && (
       <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-6 shadow-sm">
         <h3 className="mb-4 text-base font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2">
           <Database size={18} />
@@ -919,13 +1187,33 @@ export function SettingsPage() {
           </div>
         )}
       </div>
+      )}
 
       {/* App Info */}
+      {activeTab === 'about' && (
       <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-6 shadow-sm">
         <h3 className="mb-4 text-base font-semibold text-gray-900 dark:text-gray-100">About</h3>
         <div className="space-y-2 text-sm text-gray-600 dark:text-gray-400">
           <p><strong>ExpenseIQ</strong> — Personal Finance Manager</p>
-          <p>Version 3.0.0</p>
+          <p>
+            Version {import.meta.env.VITE_APP_VERSION || 'dev'}
+            {import.meta.env.VITE_BUILD_TIME && (
+              <span className="text-xs text-gray-400 ml-2">
+                (built {new Date(import.meta.env.VITE_BUILD_TIME as string).toLocaleString()})
+              </span>
+            )}
+            <button
+              type="button"
+              onClick={() => {
+                const info = `ExpenseIQ v${import.meta.env.VITE_APP_VERSION || 'dev'} · build ${import.meta.env.VITE_BUILD_TIME || 'n/a'} · ${navigator.userAgent}`;
+                navigator.clipboard?.writeText(info).catch(() => { /* ignore */ });
+              }}
+              className="ml-3 text-xs text-primary-600 hover:underline"
+              title="Copy version + user agent to clipboard"
+            >
+              Copy
+            </button>
+          </p>
           <p>Data is stored locally in your browser (IndexedDB) with optional encrypted cloud sync.</p>
           <p className="text-xs text-gray-400 dark:text-gray-500 mt-4">
             Total transactions: {state.transactions.length} · 
@@ -933,6 +1221,7 @@ export function SettingsPage() {
           </p>
         </div>
       </div>
+      )}
 
       {/* Clear All Confirmation */}
       <Modal

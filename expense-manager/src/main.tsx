@@ -7,13 +7,18 @@ import { PublicClientApplication } from '@azure/msal-browser';
 import { AppProvider } from './context/AppContext';
 import { AuthProvider } from './context/AuthContext';
 import { SyncProviderWrapper } from './context/SyncProviderWrapper';
+import { AppLockProvider } from './context/AppLockContext';
 import { ToastProvider } from './shared/components/ui/Toast';
 import { AUTH_CONFIG } from './shared/config/auth';
 import { preloadSymbolMap } from './shared/services/symbolResolver';
 import { initSupabaseAuth } from './shared/services/supabaseAuthService';
 import { bootstrapNativeShell } from './shared/services/nativeShell';
+import { initSentry } from './shared/services/sentry';
 import { router } from './app/router';
 import './index.css';
+
+// Sentry (opt-in via VITE_SENTRY_DSN). Init first so it captures early errors.
+initSentry();
 
 // Pre-load NSE symbol map for ISIN→ticker resolution (non-blocking)
 preloadSymbolMap().catch(() => {});
@@ -25,18 +30,36 @@ initSupabaseAuth().catch(() => {});
 // No-op on web.
 bootstrapNativeShell().catch(() => {});
 
-// MSAL instance (singleton)
-const msalInstance = new PublicClientApplication({
-  auth: {
-    clientId: AUTH_CONFIG.microsoft.clientId,
-    authority: AUTH_CONFIG.microsoft.authority,
-    redirectUri: AUTH_CONFIG.microsoft.redirectUri,
-  },
-  cache: {
-    cacheLocation: 'sessionStorage',
-    storeAuthStateInCookie: false,
-  },
-});
+// MSAL instance (singleton). Wrapped in try/catch because MSAL validates
+// clientId at construction and throws on malformed input — a synchronous
+// throw here would prevent React from ever mounting.
+let msalInstance: PublicClientApplication;
+try {
+  msalInstance = new PublicClientApplication({
+    auth: {
+      clientId: AUTH_CONFIG.microsoft.clientId,
+      authority: AUTH_CONFIG.microsoft.authority,
+      redirectUri: AUTH_CONFIG.microsoft.redirectUri,
+    },
+    cache: {
+      cacheLocation: 'sessionStorage',
+      storeAuthStateInCookie: false,
+    },
+  });
+} catch (err) {
+  console.warn('MSAL init failed; Microsoft sign-in will be disabled:', err);
+  // Fall back to an all-zeroes GUID so MsalProvider still gets a valid
+  // instance and the app boots. Microsoft button will render as
+  // "Not configured" via isMicrosoftConfigured().
+  msalInstance = new PublicClientApplication({
+    auth: {
+      clientId: '00000000-0000-0000-0000-000000000000',
+      authority: 'https://login.microsoftonline.com/common',
+      redirectUri: window.location.origin,
+    },
+    cache: { cacheLocation: 'sessionStorage', storeAuthStateInCookie: false },
+  });
+}
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
@@ -46,7 +69,9 @@ createRoot(document.getElementById('root')!).render(
           <AppProvider>
             <SyncProviderWrapper>
               <ToastProvider>
-                <RouterProvider router={router} />
+                <AppLockProvider>
+                  <RouterProvider router={router} />
+                </AppLockProvider>
               </ToastProvider>
             </SyncProviderWrapper>
           </AppProvider>

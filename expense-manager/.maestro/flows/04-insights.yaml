@@ -1,0 +1,26 @@
+# Smoke test for the Insights page — asserts our Phase C additions render.
+appId: com.expenseiq.app
+tags:
+  - smoke
+---
+- launchApp:
+    clearState: true
+    stopApp: true
+- extendedWaitUntil:
+    visible: "Dashboard|Total Balance|Continue without"
+    timeout: 60000
+- runFlow:
+    when:
+      visible: "Continue without"
+    commands:
+      - tapOn: "Continue without"
+      - extendedWaitUntil:
+          visible: "Total Balance"
+          timeout: 10000
+- tapOn:
+    text: "Insights"
+- extendedWaitUntil:
+    visible: "Smart Insights|Spending Forecast|cashflow"
+    timeout: 12000
+- assertVisible: "Spending Forecast"
+- takeScreenshot: 04-insights

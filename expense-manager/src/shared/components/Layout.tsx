@@ -1,9 +1,9 @@
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import {
-  LayoutDashboard, ArrowLeftRight, PlusCircle, CalendarDays,
+  LayoutDashboard, ArrowLeftRight, CalendarDays,
   Settings, Wallet, Menu, X, Landmark, Tag, ChevronDown,
-  Plus, LogIn, LogOut, Target, RefreshCw, FileUp, FileBarChart, Heart, TrendingUp, Bell,
-  Cloud, AlertCircle, Users, PanelLeftClose, PanelLeftOpen, Sparkles, PiggyBank, CalendarRange, Scale,
+  Plus, LogIn, LogOut, Target, RefreshCw, FileBarChart, TrendingUp, Bell,
+  Cloud, AlertCircle, Users, PanelLeftClose, PanelLeftOpen, Sparkles, PiggyBank,
 } from 'lucide-react';
 import { useState, useRef, useEffect, useMemo } from 'react';
 import { v4 as uuidv4 } from 'uuid';
@@ -19,26 +19,28 @@ import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts';
 import { PWAUpdatePrompt } from './PWAUpdatePrompt';
 import { PWAInstallPrompt } from './PWAInstallPrompt';
 import { BottomNav } from './BottomNav';
+import { MoreSheet } from './MoreSheet';
+import { usePullToRefresh } from '../hooks/usePullToRefresh';
+import { PullToRefreshIndicator } from './ui/PullToRefreshIndicator';
+import { clearPriceCache } from '../services/stockPriceService';
+import { notificationService } from '../services/notificationService';
+import { prefs } from '../services/preferences';
+import { useLocation } from 'react-router-dom';
 
 const navItems = [
   { path: '/', icon: LayoutDashboard, label: 'Dashboard' },
   { path: '/transactions', icon: ArrowLeftRight, label: 'Transactions' },
   { path: '/recurring', icon: RefreshCw, label: 'Recurring' },
   { path: '/reminders', icon: Bell, label: 'Reminders' },
-  { path: '/add', icon: PlusCircle, label: 'Add New' },
   { path: '/analytics', icon: CalendarDays, label: 'Analytics' },
   { path: '/insights', icon: Sparkles, label: 'Insights' },
-  { path: '/calendar', icon: CalendarRange, label: 'Calendar' },
-  { path: '/benchmark', icon: Scale, label: 'Benchmark' },
   { path: '/budgets', icon: Target, label: 'Budgets' },
   { path: '/savings', icon: PiggyBank, label: 'Savings' },
   { path: '/reports', icon: FileBarChart, label: 'Reports' },
-  { path: '/health', icon: Heart, label: 'Health Score' },
   { path: '/portfolio', icon: TrendingUp, label: 'Portfolio' },
   { path: '/splitwise', icon: Users, label: 'Splitwise' },
   { path: '/accounts', icon: Landmark, label: 'Accounts' },
   { path: '/categories', icon: Tag, label: 'Categories' },
-  { path: '/import', icon: FileUp, label: 'Import' },
   { path: '/settings', icon: Settings, label: 'Settings' },
 ];
 
@@ -49,11 +51,35 @@ export function Layout() {
   useTheme();
   useKeyboardShortcuts();
   const navigate = useNavigate();
+  const location = useLocation();
   const { profiles, activeProfileId, billReminders } = state;
+
+  // Pull-to-refresh: reload profile data + bust the stock price cache on the portfolio page.
+  const pull = usePullToRefresh({
+    onRefresh: async () => {
+      if (location.pathname.startsWith('/portfolio')) clearPriceCache();
+      await actions.reloadProfileData();
+    },
+  });
 
   // Overdue bills badge count
   const overdueBillsCount = useMemo(() => getOverdueBills(billReminders).length, [billReminders]);
+
+  // Keep bill-reminder local notifications in sync with the store. Fires on mount
+  // and whenever the reminders list changes; the service handles permissions
+  // and no-ops on the web.
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const enabled = await prefs.getBool('notif.billsEnabled', true);
+      if (cancelled || !enabled) return;
+      notificationService.syncBillReminders(billReminders).catch(() => { /* ignore */ });
+    })();
+    return () => { cancelled = true; };
+  }, [billReminders]);
+
   const [sidebarOpen, setSidebarOpen] = useState(false); // mobile drawer
+  const [moreSheetOpen, setMoreSheetOpen] = useState(false); // mobile bottom sheet
   const [sidebarPinned, setSidebarPinned] = useState(() => {
     try { return localStorage.getItem('expenseiq_sidebar_pinned') === 'true'; } catch { return false; }
   });
@@ -132,8 +158,9 @@ export function Layout() {
         onMouseLeave={() => setSidebarHovered(false)}
         className={classNames(
           'fixed inset-y-0 left-0 z-50 flex flex-col bg-white dark:bg-gray-800 shadow-xl transition-all duration-300 ease-in-out',
+          'pt-[env(safe-area-inset-top)]',
           // Mobile: slide in/out
-          'lg:static lg:translate-x-0',
+          'lg:static lg:translate-x-0 lg:pt-0',
           sidebarOpen ? 'translate-x-0' : '-translate-x-full',
           // Desktop: width transition
           sidebarExpanded ? 'w-64' : 'lg:w-[68px] w-64'
@@ -240,7 +267,7 @@ export function Layout() {
       {/* Main Content */}
       <div className="flex flex-1 flex-col overflow-hidden">
         {/* Top Bar */}
-        <header className="flex h-16 items-center gap-4 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-4 lg:px-8">
+        <header className="flex h-16 items-center gap-4 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-4 lg:px-8 pt-[env(safe-area-inset-top)] lg:pt-0 box-content lg:box-border">
           <button
             className="rounded-lg p-2 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 lg:hidden"
             onClick={() => setSidebarOpen(true)}
@@ -388,7 +415,13 @@ export function Layout() {
         </header>
 
         {/* Page Content — extra bottom padding on mobile so BottomNav doesn't cover content */}
-        <main id="main-content" className="flex-1 overflow-y-auto p-4 pb-24 lg:p-8 lg:pb-8" role="main">
+        <main
+          id="main-content"
+          ref={pull.containerRef as React.RefObject<HTMLElement>}
+          className="flex-1 overflow-y-auto p-4 pb-24 lg:p-8 lg:pb-8"
+          role="main"
+        >
+          <PullToRefreshIndicator {...pull} />
           <Outlet />
         </main>
       </div>
@@ -400,7 +433,8 @@ export function Layout() {
       <FloatingActionButton />
 
       {/* Mobile bottom navigation */}
-      <BottomNav onOpenMore={() => setSidebarOpen(true)} />
+      <BottomNav onOpenMore={() => setMoreSheetOpen(true)} />
+      <MoreSheet open={moreSheetOpen} onClose={() => setMoreSheetOpen(false)} />
 
       {/* PWA Prompts */}
       <PWAUpdatePrompt />

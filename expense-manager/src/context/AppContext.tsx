@@ -9,6 +9,9 @@ import { scheduleBackendSync } from '../shared/services/supabaseSyncService';
 import { startRealtimeSync, stopRealtimeSync, setRealtimeDataChangedCallback } from '../shared/services/supabaseRealtimeService';
 import { onSupabaseAuthChange } from '../shared/services/supabaseAuthService';
 import { showToastGlobal } from '../shared/components/ui/Toast';
+import { refreshWidget } from '../shared/services/widgetBridge';
+import { detectAnomalies } from '../shared/services/anomalyDetection';
+import { notificationService } from '../shared/services/notificationService';
 
 // State
 interface AppState {
@@ -215,6 +218,8 @@ export interface AppActions {
   addBillReminder: (reminder: BillReminder) => Promise<void>;
   updateBillReminder: (id: string, updates: Partial<BillReminder>) => Promise<void>;
   deleteBillReminder: (id: string) => Promise<void>;
+  /** Re-hydrate all state from the local database. Used by pull-to-refresh. */
+  reloadProfileData: () => Promise<void>;
 }
 
 // Context
@@ -560,6 +565,16 @@ export function AppProvider({ children }: { children: ReactNode }) {
       dispatch({ type: 'DELETE_BILL_REMINDER', payload: id });
       scheduleAllSync(profileIdRef.current);
     }, []),
+
+    reloadProfileData: useCallback(async () => {
+      const profileId = profileIdRef.current;
+      const [data, stockTxns] = await Promise.all([
+        repository.loadProfileData(profileId),
+        db.stockTransactions.where('profileId').equals(profileId).toArray(),
+      ]);
+      dispatch({ type: 'LOAD_PROFILE_DATA', payload: { profileId, ...data } });
+      dispatch({ type: 'SET_STOCK_TRANSACTIONS', payload: stockTxns });
+    }, []),
   };
 
   // ─── Sync: visibility-based pull + initial pull on startup ──
@@ -612,6 +627,43 @@ export function AppProvider({ children }: { children: ReactNode }) {
       unsubscribe();
     };
   }, []);
+
+  // Keep the Android home-screen widget in sync with the current month's
+  // expense total. Debounced so bulk imports don't spam the bridge.
+  useEffect(() => {
+    const currency = state.settings?.currencySymbol || '₹';
+    const timer = setTimeout(() => {
+      refreshWidget(state.transactions, currency).catch(() => { /* ignore */ });
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [state.transactions, state.settings?.currencySymbol]);
+
+  // Fresh-anomaly local notifications. Opt-in via localStorage flag
+  // `expenseiq.notifyAnomalies` (default off). Debounced + de-duped
+  // against a persisted last-seen-id set so we notify each anomaly once.
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    if (window.localStorage.getItem('expenseiq.notifyAnomalies') !== 'true') return;
+    const timer = setTimeout(() => {
+      try {
+        const anomalies = detectAnomalies(state.transactions, state.categories);
+        if (anomalies.length === 0) return;
+        const seenKey = 'expenseiq.seenAnomalyIds';
+        const seen = new Set<string>(JSON.parse(window.localStorage.getItem(seenKey) || '[]'));
+        const fresh = anomalies.filter((a) => !seen.has(a.id));
+        if (fresh.length === 0) return;
+        // Cap to 2 notifications per burst to avoid spam.
+        fresh.slice(0, 2).forEach((a) => {
+          notificationService
+            .notifyAnomaly({ id: a.id, title: a.title, description: a.description })
+            .catch(() => { /* ignore */ });
+        });
+        const next = Array.from(new Set([...seen, ...anomalies.map((a) => a.id)])).slice(-200);
+        window.localStorage.setItem(seenKey, JSON.stringify(next));
+      } catch { /* ignore */ }
+    }, 1500);
+    return () => clearTimeout(timer);
+  }, [state.transactions, state.categories]);
 
   return (
     <AppContext.Provider value={{ state, dispatch, actions }}>

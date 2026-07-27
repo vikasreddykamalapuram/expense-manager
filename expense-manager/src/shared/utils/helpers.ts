@@ -153,6 +153,133 @@ export const getLast6Months = (): string[] => {
   return months;
 };
 
+// ─── Period utilities (multi-period reports) ──────────────
+
+export type PeriodKind = 'month' | 'quarter' | 'year' | 'custom';
+
+export interface Period {
+  kind: PeriodKind;
+  /** For month: YYYY-MM. Quarter: YYYY-Qn. Year: YYYY. Custom: start date. */
+  anchor: string;
+  /** Inclusive start date, YYYY-MM-DD */
+  start: string;
+  /** Inclusive end date, YYYY-MM-DD */
+  end: string;
+  /** Human label, e.g. "July 2026", "Q3 2026", "2026", "Apr 1 – Jun 30, 2026" */
+  label: string;
+}
+
+const MONTH_NAMES = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+const MONTH_ABBR  = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+const pad2 = (n: number) => n.toString().padStart(2, '0');
+const isoDate = (y: number, m: number, d: number) => `${y}-${pad2(m)}-${pad2(d)}`;
+const daysInMonth = (y: number, m: number) => new Date(y, m, 0).getDate();
+
+export const buildPeriod = (kind: PeriodKind, anchor: string, customEnd?: string): Period => {
+  if (kind === 'month') {
+    const [y, m] = anchor.split('-').map(Number);
+    return {
+      kind, anchor,
+      start: isoDate(y, m, 1),
+      end:   isoDate(y, m, daysInMonth(y, m)),
+      label: `${MONTH_NAMES[m - 1]} ${y}`,
+    };
+  }
+  if (kind === 'quarter') {
+    // anchor "YYYY-Qn"
+    const [ys, qs] = anchor.split('-Q');
+    const y = Number(ys), q = Number(qs);
+    const startMonth = (q - 1) * 3 + 1;
+    const endMonth   = startMonth + 2;
+    return {
+      kind, anchor,
+      start: isoDate(y, startMonth, 1),
+      end:   isoDate(y, endMonth, daysInMonth(y, endMonth)),
+      label: `Q${q} ${y}`,
+    };
+  }
+  if (kind === 'year') {
+    const y = Number(anchor);
+    return {
+      kind, anchor,
+      start: isoDate(y, 1, 1),
+      end:   isoDate(y, 12, 31),
+      label: `${y}`,
+    };
+  }
+  // custom — anchor is start date, customEnd is inclusive end
+  const start = anchor;
+  const end = customEnd || anchor;
+  const [sy, sm, sd] = start.split('-').map(Number);
+  const [ey, em, ed] = end.split('-').map(Number);
+  const sameYear = sy === ey;
+  const label = sameYear
+    ? `${MONTH_ABBR[sm - 1]} ${sd} – ${MONTH_ABBR[em - 1]} ${ed}, ${sy}`
+    : `${MONTH_ABBR[sm - 1]} ${sd}, ${sy} – ${MONTH_ABBR[em - 1]} ${ed}, ${ey}`;
+  return { kind: 'custom', anchor, start, end, label };
+};
+
+export const currentPeriod = (kind: PeriodKind): Period => {
+  const now = new Date();
+  const y = now.getFullYear();
+  const m = now.getMonth() + 1;
+  if (kind === 'month')   return buildPeriod('month', `${y}-${pad2(m)}`);
+  if (kind === 'quarter') return buildPeriod('quarter', `${y}-Q${Math.floor((m - 1) / 3) + 1}`);
+  if (kind === 'year')    return buildPeriod('year', `${y}`);
+  const start = isoDate(y, m, 1);
+  const end   = isoDate(y, m, daysInMonth(y, m));
+  return buildPeriod('custom', start, end);
+};
+
+/** Move a period by one step (±1). Custom periods shift by their own length. */
+export const shiftPeriod = (p: Period, delta: 1 | -1): Period => {
+  if (p.kind === 'month') {
+    const [y, m] = p.anchor.split('-').map(Number);
+    const total = y * 12 + (m - 1) + delta;
+    const ny = Math.floor(total / 12);
+    const nm = (total % 12) + 1;
+    return buildPeriod('month', `${ny}-${pad2(nm)}`);
+  }
+  if (p.kind === 'quarter') {
+    const [ys, qs] = p.anchor.split('-Q');
+    const total = Number(ys) * 4 + (Number(qs) - 1) + delta;
+    const ny = Math.floor(total / 4);
+    const nq = (total % 4) + 1;
+    return buildPeriod('quarter', `${ny}-Q${nq}`);
+  }
+  if (p.kind === 'year') {
+    return buildPeriod('year', `${Number(p.anchor) + delta}`);
+  }
+  // custom — shift by exact span length in days
+  const start = new Date(p.start);
+  const end   = new Date(p.end);
+  const spanDays = Math.round((end.getTime() - start.getTime()) / 86400000) + 1;
+  const shift = spanDays * delta;
+  const nStart = new Date(start.getTime() + shift * 86400000);
+  const nEnd   = new Date(end.getTime()   + shift * 86400000);
+  const s = nStart.toISOString().slice(0, 10);
+  const e = nEnd.toISOString().slice(0, 10);
+  return buildPeriod('custom', s, e);
+};
+
+/** Previous equivalent period (used for comparison in reports). */
+export const previousPeriod = (p: Period): Period => shiftPeriod(p, -1);
+
+/** Months (YYYY-MM) that overlap this period. Used for budget aggregation. */
+export const monthsInPeriod = (p: Period): string[] => {
+  const [sy, sm] = p.start.split('-').map(Number);
+  const [ey, em] = p.end.split('-').map(Number);
+  const out: string[] = [];
+  let y = sy, m = sm;
+  while (y < ey || (y === ey && m <= em)) {
+    out.push(`${y}-${pad2(m)}`);
+    m++;
+    if (m > 12) { m = 1; y++; }
+  }
+  return out;
+};
+
 export const getToday = (): string => {
   return new Date().toISOString().split('T')[0];
 };

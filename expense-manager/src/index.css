@@ -4,6 +4,29 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Native date/time picker icon — invert in dark mode for visibility.
+   Chrome/Edge draw the calendar/clock indicator black by default which
+   disappears against our dark backgrounds. `filter: invert(0.85)` recolors
+   just the browser-drawn glyph without touching the input's own text. */
+.dark input[type="date"]::-webkit-calendar-picker-indicator,
+.dark input[type="time"]::-webkit-calendar-picker-indicator,
+.dark input[type="datetime-local"]::-webkit-calendar-picker-indicator,
+.dark input[type="month"]::-webkit-calendar-picker-indicator,
+.dark input[type="week"]::-webkit-calendar-picker-indicator {
+  filter: invert(0.85);
+  opacity: 0.9;
+  cursor: pointer;
+}
+
+/* Make the whole date field feel clickable — Chrome opens the picker on
+   any click inside the field once the indicator has the pointer cursor. */
+input[type="date"],
+input[type="time"],
+input[type="datetime-local"],
+input[type="month"] {
+  cursor: pointer;
+}
+
 /* Toast progress bar animation */
 @keyframes shrink-width {
   from { width: 100%; }

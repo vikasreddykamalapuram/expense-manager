@@ -14,24 +14,27 @@ import { PAYMENT_METHODS } from '../../../shared/constants/accounts';
 import { getToday, classNames } from '../../../shared/utils/helpers';
 import { Transaction, Account, PaymentMethod } from '../../../shared/types';
 import { suggestCategories, type CategorySuggestion } from '../../../shared/services/autoCategorize';
+import { haptic } from '../../../shared/services/haptics';
 
 interface TransactionFormProps {
   editTransaction?: Transaction;
   initialType?: 'income' | 'expense' | 'transfer';
+  prefillAmount?: string;
+  prefillNote?: string;
   onClose?: () => void;
 }
 
-export function TransactionForm({ editTransaction, initialType, onClose }: TransactionFormProps) {
+export function TransactionForm({ editTransaction, initialType, prefillAmount, prefillNote, onClose }: TransactionFormProps) {
   const { state, actions } = useAppContext();
   const navigate = useNavigate();
   const isEditing = !!editTransaction;
   const { accounts, categories } = state;
 
   const [type, setType] = useState<'income' | 'expense' | 'transfer'>(editTransaction?.type || initialType || 'expense');
-  const [amount, setAmount] = useState(editTransaction?.amount.toString() || '');
+  const [amount, setAmount] = useState(editTransaction?.amount.toString() || prefillAmount || '');
   const [categoryId, setCategoryId] = useState(editTransaction?.categoryId || '');
   const [date, setDate] = useState(editTransaction?.date || getToday());
-  const [notes, setNotes] = useState(editTransaction?.notes || '');
+  const [notes, setNotes] = useState(editTransaction?.notes || prefillNote || '');
   const [accountId, setAccountId] = useState(editTransaction?.accountId || '');
   const [toAccountId, setToAccountId] = useState(editTransaction?.toAccountId || '');
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod | ''>(editTransaction?.paymentMethod || '');
@@ -125,7 +128,7 @@ export function TransactionForm({ editTransaction, initialType, onClose }: Trans
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!validate()) return;
+    if (!validate()) { haptic.error(); return; }
 
     const now = new Date().toISOString();
     const txId = isEditing && editTransaction ? editTransaction.id : uuidv4();
@@ -148,6 +151,7 @@ export function TransactionForm({ editTransaction, initialType, onClose }: Trans
     } else {
       actions.addTransaction({ id: txId, ...txData, createdAt: now, updatedAt: now });
     }
+    haptic.success();
 
     // Save pending receipt file after transaction is persisted
     const fileToSave = pendingReceiptRef.current;

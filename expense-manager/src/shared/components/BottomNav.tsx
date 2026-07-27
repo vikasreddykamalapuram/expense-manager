@@ -8,6 +8,7 @@
 import { NavLink } from 'react-router-dom';
 import { LayoutDashboard, ArrowLeftRight, CalendarDays, TrendingUp, Menu } from 'lucide-react';
 import { classNames } from '../utils/helpers';
+import { haptic } from '../services/haptics';
 
 interface BottomNavProps {
   onOpenMore: () => void;
@@ -38,6 +39,7 @@ export function BottomNav({ onOpenMore }: BottomNavProps) {
             <NavLink
               to={path}
               end={end}
+              onClick={() => haptic.selection()}
               className={({ isActive }) =>
                 classNames(
                   'flex flex-col items-center justify-center gap-0.5 py-2 text-[10px] font-medium transition-colors',
@@ -68,7 +70,7 @@ export function BottomNav({ onOpenMore }: BottomNavProps) {
         <li className="flex-1">
           <button
             type="button"
-            onClick={onOpenMore}
+            onClick={() => { haptic.selection(); onOpenMore(); }}
             className="flex w-full min-h-[56px] flex-col items-center justify-center gap-0.5 py-2 text-[10px] font-medium text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 transition-colors"
             aria-label="Open full menu"
           >

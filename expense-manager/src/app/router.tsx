@@ -17,21 +17,18 @@ const AccountsPage = lazyWithRetry(() => import('../features/accounts/components
 const CategoriesPage = lazyWithRetry(() => import('../features/categories/components/CategoriesPage').then(m => ({ default: m.CategoriesPage })));
 const SettingsPage = lazyWithRetry(() => import('../features/settings/components/SettingsPage').then(m => ({ default: m.SettingsPage })));
 const BudgetsPage = lazyWithRetry(() => import('../features/budgets/components/BudgetsPage').then(m => ({ default: m.BudgetsPage })));
-const MonthlyReport = lazyWithRetry(() => import('../features/reports/components/MonthlyReport').then(m => ({ default: m.MonthlyReport })));
+const ReportsPage = lazyWithRetry(() => import('../features/reports/components/ReportsPage').then(m => ({ default: m.ReportsPage })));
 const StatementImportPage = lazyWithRetry(() => import('../features/import/components/StatementImportPage').then(m => ({ default: m.StatementImportPage })));
 const RecurringPage = lazyWithRetry(() => import('../features/recurring/components/RecurringPage').then(m => ({ default: m.RecurringPage })));
 const BillRemindersPage = lazyWithRetry(() => import('../features/reminders/components/BillRemindersPage').then(m => ({ default: m.BillRemindersPage })));
-const HealthScorePage = lazyWithRetry(() => import('../features/health/components/HealthScorePage').then(m => ({ default: m.HealthScorePage })));
 const PortfolioPage = lazyWithRetry(() => import('../features/stocks/components/PortfolioPage').then(m => ({ default: m.PortfolioPage })));
 const PortfolioAnalytics = lazyWithRetry(() => import('../features/stocks/components/PortfolioAnalytics').then(m => ({ default: m.PortfolioAnalytics })));
 const TradeHistoryPage = lazyWithRetry(() => import('../features/stocks/components/TradeHistoryPage').then(m => ({ default: m.TradeHistoryPage })));
 const TradeImportPage = lazyWithRetry(() => import('../features/stocks/components/TradeImportPage').then(m => ({ default: m.TradeImportPage })));
 const StockDetailPage = lazyWithRetry(() => import('../features/stocks/components/StockDetailPage').then(m => ({ default: m.StockDetailPage })));
 const SplitwisePage = lazyWithRetry(() => import('../features/splitwise/components/SplitwisePage').then(m => ({ default: m.SplitwisePage })));
-const SmartInsights = lazyWithRetry(() => import('../features/insights/components/SmartInsights').then(m => ({ default: m.SmartInsights })));
+const InsightsHub = lazyWithRetry(() => import('../features/insights/components/InsightsHub').then(m => ({ default: m.InsightsHub })));
 const SavingsGoalsPage = lazyWithRetry(() => import('../features/savings/components/SavingsGoalsPage').then(m => ({ default: m.SavingsGoalsPage })));
-const FinancialCalendar = lazyWithRetry(() => import('../features/insights/components/FinancialCalendar').then(m => ({ default: m.FinancialCalendar })));
-const ExpenseBenchmark = lazyWithRetry(() => import('../features/insights/components/ExpenseBenchmark').then(m => ({ default: m.ExpenseBenchmark })));
 
 function RouteLoader() {
   return (
@@ -58,7 +55,12 @@ function OnboardingGuard({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
-const basename = import.meta.env.BASE_URL.replace(/\/$/, '') || '/';
+// BASE_URL is absolute ('/expense-manager/') on GitHub Pages but relative
+// ('./') in the Capacitor build. React Router's basename must be absolute
+// — passing '.' silently renders a blank screen. Collapse any relative
+// value to '/' so mobile routes match correctly.
+const rawBase = import.meta.env.BASE_URL;
+const basename = rawBase.startsWith('/') ? (rawBase.replace(/\/$/, '') || '/') : '/';
 
 export const router = createBrowserRouter([
   {
@@ -79,8 +81,7 @@ export const router = createBrowserRouter([
       lazyRoute('analytics', AnalyticsView),
       lazyRoute('portfolio-analytics', PortfolioAnalytics),
       lazyRoute('budgets', BudgetsPage),
-      lazyRoute('reports', MonthlyReport),
-      lazyRoute('health', HealthScorePage),
+      lazyRoute('reports', ReportsPage),
       lazyRoute('portfolio', PortfolioPage),
       lazyRoute('portfolio/:symbol', StockDetailPage),
       lazyRoute('trades', TradeHistoryPage),
@@ -89,11 +90,20 @@ export const router = createBrowserRouter([
       lazyRoute('categories', CategoriesPage),
       lazyRoute('import', StatementImportPage),
       lazyRoute('splitwise', SplitwisePage),
-      lazyRoute('insights', SmartInsights),
+      lazyRoute('insights', InsightsHub),
+      lazyRoute('insights/health', InsightsHub),
+      lazyRoute('insights/benchmark', InsightsHub),
+      { path: 'health', element: <Navigate to="/insights/health" replace /> },
+      { path: 'benchmark', element: <Navigate to="/insights/benchmark" replace /> },
       lazyRoute('savings', SavingsGoalsPage),
-      lazyRoute('calendar', FinancialCalendar),
-      lazyRoute('benchmark', ExpenseBenchmark),
+      { path: 'calendar', element: <Navigate to="/transactions?view=calendar" replace /> },
       lazyRoute('settings', SettingsPage),
+      lazyRoute('settings/appearance', SettingsPage),
+      lazyRoute('settings/data', SettingsPage),
+      lazyRoute('settings/cloud', SettingsPage),
+      lazyRoute('settings/security', SettingsPage),
+      lazyRoute('settings/notifications', SettingsPage),
+      lazyRoute('settings/about', SettingsPage),
     ],
   },
 ], { basename });

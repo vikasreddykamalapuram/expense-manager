@@ -138,7 +138,7 @@ export function FinancialCalendar() {
         <div className="grid grid-cols-7">
           {/* Empty cells for offset */}
           {Array.from({ length: firstDay }).map((_, i) => (
-            <div key={`empty-${i}`} className="h-16 border-b border-r border-gray-50 dark:border-gray-750" />
+            <div key={`empty-${i}`} className="h-16 border-b border-r border-gray-50 dark:border-gray-700" />
           ))}
 
           {Array.from({ length: daysInMonth }).map((_, i) => {
@@ -153,10 +153,10 @@ export function FinancialCalendar() {
               <button
                 key={dayNum}
                 onClick={() => setSelectedDate(isSelected ? null : dateStr)}
-                className={`h-16 p-1 border-b border-r border-gray-50 dark:border-gray-750 text-left transition-all relative ${
+                className={`h-16 p-1 border-b border-r border-gray-50 dark:border-gray-700 text-left transition-all relative ${
                   isSelected ? 'bg-indigo-50 dark:bg-indigo-950/30 ring-1 ring-inset ring-indigo-300 dark:ring-indigo-700' :
                   isToday ? 'bg-blue-50 dark:bg-blue-950/20' :
-                  'hover:bg-gray-50 dark:hover:bg-gray-750'
+                  'hover:bg-gray-50 dark:hover:bg-gray-700'
                 }`}
               >
                 <span className={`text-xs font-medium ${

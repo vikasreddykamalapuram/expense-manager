@@ -1,0 +1,26 @@
+# Cold-start smoke test — must pass on every PR.
+# Verifies the app launches, dismisses any first-run banners, and reaches
+# the Dashboard within a reasonable time budget.
+appId: com.expenseiq.app
+tags:
+  - smoke
+  - critical
+---
+- launchApp:
+    clearState: true
+    clearKeychain: true
+    stopApp: true
+- extendedWaitUntil:
+    visible: "Dashboard|Total Balance|Continue without"
+    timeout: 60000
+# If we're on the auth wall, take the "Continue without account" path.
+- runFlow:
+    when:
+      visible: "Continue without"
+    commands:
+      - tapOn: "Continue without"
+      - extendedWaitUntil:
+          visible: "Dashboard|Total Balance"
+          timeout: 10000
+- assertVisible: "Total Balance"
+- takeScreenshot: 01-dashboard

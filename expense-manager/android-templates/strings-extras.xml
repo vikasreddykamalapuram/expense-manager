@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Extra string resources merged into android/app/src/main/res/values/strings.xml
+  by patch-android-manifest.mjs. Everything here is user-visible on the launcher.
+-->
+<resources>
+    <!-- App Shortcuts (launcher long-press) -->
+    <string name="shortcut_add_expense_short">Expense</string>
+    <string name="shortcut_add_expense_long">Add expense</string>
+    <string name="shortcut_add_income_short">Income</string>
+    <string name="shortcut_add_income_long">Add income</string>
+    <string name="shortcut_analytics_short">Analytics</string>
+    <string name="shortcut_analytics_long">Open analytics</string>
+    <string name="shortcut_budgets_short">Budgets</string>
+    <string name="shortcut_budgets_long">Open budgets</string>
+
+    <!-- Home-screen widget -->
+    <string name="widget_title">ExpenseIQ</string>
+    <string name="widget_add_expense">Add expense</string>
+    <string name="widget_description">Add expenses and view this month\'s spend at a glance.</string>
+</resources>
