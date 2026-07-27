@@ -30,18 +30,36 @@ initSupabaseAuth().catch(() => {});
 // No-op on web.
 bootstrapNativeShell().catch(() => {});
 
-// MSAL instance (singleton)
-const msalInstance = new PublicClientApplication({
-  auth: {
-    clientId: AUTH_CONFIG.microsoft.clientId,
-    authority: AUTH_CONFIG.microsoft.authority,
-    redirectUri: AUTH_CONFIG.microsoft.redirectUri,
-  },
-  cache: {
-    cacheLocation: 'sessionStorage',
-    storeAuthStateInCookie: false,
-  },
-});
+// MSAL instance (singleton). Wrapped in try/catch because MSAL validates
+// clientId at construction and throws on malformed input — a synchronous
+// throw here would prevent React from ever mounting.
+let msalInstance: PublicClientApplication;
+try {
+  msalInstance = new PublicClientApplication({
+    auth: {
+      clientId: AUTH_CONFIG.microsoft.clientId,
+      authority: AUTH_CONFIG.microsoft.authority,
+      redirectUri: AUTH_CONFIG.microsoft.redirectUri,
+    },
+    cache: {
+      cacheLocation: 'sessionStorage',
+      storeAuthStateInCookie: false,
+    },
+  });
+} catch (err) {
+  console.warn('MSAL init failed; Microsoft sign-in will be disabled:', err);
+  // Fall back to an all-zeroes GUID so MsalProvider still gets a valid
+  // instance and the app boots. Microsoft button will render as
+  // "Not configured" via isMicrosoftConfigured().
+  msalInstance = new PublicClientApplication({
+    auth: {
+      clientId: '00000000-0000-0000-0000-000000000000',
+      authority: 'https://login.microsoftonline.com/common',
+      redirectUri: window.location.origin,
+    },
+    cache: { cacheLocation: 'sessionStorage', storeAuthStateInCookie: false },
+  });
+}
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
