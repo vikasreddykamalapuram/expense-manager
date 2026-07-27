@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Wallet, Shield, Cloud, Smartphone, ArrowRight, AlertCircle } from 'lucide-react';
 import { useAuth } from '../../../context/AuthContext';
@@ -6,6 +6,7 @@ import { AUTH_CONFIG, isGoogleConfigured, isMicrosoftConfigured, isAnyAuthConfig
 import { GoogleLogin, CredentialResponse } from '@react-oauth/google';
 import { useMsal } from '@azure/msal-react';
 import { AuthUser } from '../../../shared/types';
+import { isNativePlatform } from '../../../shared/services/platform';
 
 function decodeJwtPayload(token: string): Record<string, string> {
   try {
@@ -30,6 +31,19 @@ export function LoginPage() {
   const [error, setError] = useState<string | null>(null);
   const [attempts, setAttempts] = useState(0);
   const [lockedUntil, setLockedUntil] = useState(0);
+  const [signingIn, setSigningIn] = useState<'google' | 'microsoft' | null>(null);
+  const isNative = isNativePlatform();
+
+  // If the user navigates away mid-sign-in, cancel the pending Custom Tab
+  // request so it doesn't resolve into a stale component.
+  useEffect(() => {
+    return () => {
+      if (!isNative) return;
+      import('../../../shared/services/mobileOAuth')
+        .then(({ cancelMobileOAuth }) => cancelMobileOAuth())
+        .catch(() => { /* ignore — module never loaded */ });
+    };
+  }, [isNative]);
 
   const isLocked = () => {
     if (lockedUntil && Date.now() < lockedUntil) return true;
@@ -86,6 +100,78 @@ export function LoginPage() {
     // multi-tab issues on mobile. The backup service will request it when needed.
   };
 
+
+  const handleGoogleMobile = async () => {
+    if (isLocked()) return;
+    setError(null);
+    setSigningIn('google');
+    try {
+      const { signInMobile } = await import('../../../shared/services/mobileOAuth');
+      const idToken = await signInMobile('google');
+      const payload = decodeJwtPayload(idToken);
+      if (!payload.sub || !payload.email) {
+        trackFailedAttempt();
+        setError('Google sign-in returned invalid credentials.');
+        return;
+      }
+      const user: AuthUser = {
+        id: payload.sub,
+        email: payload.email,
+        name: payload.name || payload.email || 'Google User',
+        avatar: payload.picture || undefined,
+        provider: 'google',
+      };
+      login(user);
+      localStorage.setItem('expenseiq_onboarded', 'true');
+      sessionStorage.setItem('em_google_id_token', idToken);
+      localStorage.setItem('em_google_client_id', AUTH_CONFIG.google.clientId);
+      navigate('/');
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Google sign-in failed. Please try again.';
+      if (!msg.toLowerCase().includes('cancel')) {
+        trackFailedAttempt();
+        setError(msg);
+      }
+    } finally {
+      setSigningIn(null);
+    }
+  };
+
+  const handleMicrosoftMobile = async () => {
+    if (isLocked()) return;
+    setError(null);
+    setSigningIn('microsoft');
+    try {
+      const { signInMobile } = await import('../../../shared/services/mobileOAuth');
+      const idToken = await signInMobile('microsoft');
+      const payload = decodeJwtPayload(idToken);
+      const email = payload.email || payload.preferred_username;
+      if (!payload.sub || !email) {
+        trackFailedAttempt();
+        setError('Microsoft sign-in returned invalid credentials.');
+        return;
+      }
+      const user: AuthUser = {
+        id: payload.oid || payload.sub,
+        email,
+        name: payload.name || email,
+        avatar: undefined,
+        provider: 'microsoft',
+      };
+      login(user);
+      localStorage.setItem('expenseiq_onboarded', 'true');
+      sessionStorage.setItem('em_microsoft_id_token', idToken);
+      navigate('/');
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Microsoft sign-in failed. Please try again.';
+      if (!msg.toLowerCase().includes('cancel')) {
+        trackFailedAttempt();
+        setError(msg);
+      }
+    } finally {
+      setSigningIn(null);
+    }
+  };
 
   const handleMicrosoftLogin = async () => {
     if (isLocked()) return;
@@ -201,17 +287,28 @@ export function LoginPage() {
           <div className="space-y-3">
             {/* Google */}
             {isGoogleConfigured() ? (
-              <div className="flex justify-center">
-                <GoogleLogin
-                  onSuccess={handleGoogleSuccess}
-                  onError={() => setError('Google sign-in failed.')}
-                  theme="outline"
-                  size="large"
-                  width="340"
-                  text="continue_with"
-                  ux_mode="popup"
-                />
-              </div>
+              isNative ? (
+                <button
+                  onClick={handleGoogleMobile}
+                  disabled={signingIn !== null}
+                  className="flex w-full items-center justify-center gap-3 rounded-xl border-2 border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 px-4 py-3 text-sm font-medium text-gray-700 dark:text-gray-300 shadow-sm transition-all hover:border-blue-300 hover:bg-blue-50 hover:shadow-md active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed"
+                >
+                  <GoogleIcon />
+                  {signingIn === 'google' ? 'Signing in…' : 'Continue with Google'}
+                </button>
+              ) : (
+                <div className="flex justify-center">
+                  <GoogleLogin
+                    onSuccess={handleGoogleSuccess}
+                    onError={() => setError('Google sign-in failed.')}
+                    theme="outline"
+                    size="large"
+                    width="340"
+                    text="continue_with"
+                    ux_mode="popup"
+                  />
+                </div>
+              )
             ) : (
               <button
                 disabled
@@ -226,11 +323,12 @@ export function LoginPage() {
             {/* Microsoft */}
             {isMicrosoftConfigured() ? (
               <button
-                onClick={handleMicrosoftLogin}
-                className="flex w-full items-center justify-center gap-3 rounded-xl border-2 border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 px-4 py-3 text-sm font-medium text-gray-700 dark:text-gray-300 shadow-sm transition-all hover:border-blue-300 hover:bg-blue-50 hover:shadow-md active:scale-[0.98]"
+                onClick={isNative ? handleMicrosoftMobile : handleMicrosoftLogin}
+                disabled={signingIn !== null}
+                className="flex w-full items-center justify-center gap-3 rounded-xl border-2 border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 px-4 py-3 text-sm font-medium text-gray-700 dark:text-gray-300 shadow-sm transition-all hover:border-blue-300 hover:bg-blue-50 hover:shadow-md active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed"
               >
                 <MicrosoftIcon />
-                Continue with Microsoft
+                {signingIn === 'microsoft' ? 'Signing in…' : 'Continue with Microsoft'}
               </button>
             ) : (
               <button
