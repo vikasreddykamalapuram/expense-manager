@@ -71,17 +71,29 @@ export interface AppLockStatus {
 
 async function detectBiometry(): Promise<{ available: boolean; type: AppLockStatus['biometryType'] }> {
   if (!isNativePlatform()) return { available: false, type: 'none' };
+  // Race the plugin call against a 2-second timeout. On some Android
+  // emulators (headless CI runners) the biometric service call never
+  // resolves when no biometrics are enrolled, which would hang app boot
+  // via appLock.status().
+  const timeout = new Promise<{ available: boolean; type: AppLockStatus['biometryType'] }>(resolve =>
+    setTimeout(() => resolve({ available: false, type: 'none' }), 2000),
+  );
   try {
-    const r = await NativeBiometric.isAvailable();
-    if (!r.isAvailable) return { available: false, type: 'none' };
-    switch (r.biometryType) {
-      case BiometryType.FACE_ID: return { available: true, type: 'faceId' };
-      case BiometryType.TOUCH_ID: return { available: true, type: 'touchId' };
-      case BiometryType.FINGERPRINT: return { available: true, type: 'fingerprint' };
-      case BiometryType.FACE_AUTHENTICATION: return { available: true, type: 'face' };
-      case BiometryType.IRIS_AUTHENTICATION: return { available: true, type: 'iris' };
-      default: return { available: true, type: 'fingerprint' };
-    }
+    return await Promise.race([
+      (async () => {
+        const r = await NativeBiometric.isAvailable();
+        if (!r.isAvailable) return { available: false, type: 'none' as const };
+        switch (r.biometryType) {
+          case BiometryType.FACE_ID: return { available: true, type: 'faceId' as const };
+          case BiometryType.TOUCH_ID: return { available: true, type: 'touchId' as const };
+          case BiometryType.FINGERPRINT: return { available: true, type: 'fingerprint' as const };
+          case BiometryType.FACE_AUTHENTICATION: return { available: true, type: 'face' as const };
+          case BiometryType.IRIS_AUTHENTICATION: return { available: true, type: 'iris' as const };
+          default: return { available: true, type: 'fingerprint' as const };
+        }
+      })(),
+      timeout,
+    ]);
   } catch {
     return { available: false, type: 'none' };
   }
@@ -92,13 +104,17 @@ export const appLock = {
   PIN_LENGTH,
 
   async status(): Promise<AppLockStatus> {
-    const [enabled, biometricEnabled, hash, idle, bio] = await Promise.all([
+    // Read prefs first (fast), then only probe biometrics if the lock is
+    // actually enabled. This avoids a boot hang on emulators / devices
+    // where the biometric plugin is slow to respond and the user hasn't
+    // configured the lock anyway.
+    const [enabled, biometricEnabled, hash, idle] = await Promise.all([
       prefs.getBool(K.enabled, false),
       prefs.getBool(K.biometric, true),
       prefs.get(K.hash),
       prefs.getNumber(K.idle, DEFAULT_IDLE_MS),
-      detectBiometry(),
     ]);
+    const bio = enabled ? await detectBiometry() : { available: false, type: 'none' as const };
     return {
       enabled,
       hasPin: !!hash,
