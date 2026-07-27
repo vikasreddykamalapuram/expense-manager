@@ -3,7 +3,7 @@ import {
   LayoutDashboard, ArrowLeftRight, CalendarDays,
   Settings, Wallet, Menu, X, Landmark, Tag, ChevronDown,
   Plus, LogIn, LogOut, Target, RefreshCw, FileBarChart, TrendingUp, Bell,
-  Cloud, AlertCircle, Users, PanelLeftClose, PanelLeftOpen, Sparkles, PiggyBank,
+  Cloud, AlertCircle, Users, PanelLeftClose, PanelLeftOpen, Sparkles, PiggyBank, CalendarRange,
 } from 'lucide-react';
 import { useState, useRef, useEffect, useMemo } from 'react';
 import { v4 as uuidv4 } from 'uuid';
@@ -34,6 +34,7 @@ const navItems = [
   { path: '/reminders', icon: Bell, label: 'Reminders' },
   { path: '/analytics', icon: CalendarDays, label: 'Analytics' },
   { path: '/insights', icon: Sparkles, label: 'Insights' },
+  { path: '/calendar', icon: CalendarRange, label: 'Calendar' },
   { path: '/budgets', icon: Target, label: 'Budgets' },
   { path: '/savings', icon: PiggyBank, label: 'Savings' },
   { path: '/reports', icon: FileBarChart, label: 'Reports' },

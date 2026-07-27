@@ -1,12 +1,14 @@
 import { useMemo } from 'react';
-import { TrendingUp, TrendingDown, Wallet, ArrowRight, PlusCircle, Heart, Bell, AlertTriangle, Landmark, RefreshCw, BarChart3, Sparkles, FileBarChart } from 'lucide-react';
+import { TrendingUp, TrendingDown, Wallet, ArrowRight, PlusCircle, Heart, Bell, AlertTriangle, Landmark, RefreshCw } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { Cell, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 import { useAppContext } from '../../../context/AppContext';
 import { useTransactions } from '../../../shared/hooks/useTransactions';
 import { StatCard } from '../../../shared/components/ui/StatCard';
 import { Button } from '../../../shared/components/ui/Button';
 import { EmptyState } from '../../../shared/components/ui/EmptyState';
-import { formatCurrency, formatDate, formatMonth, classNames } from '../../../shared/utils/helpers';
+import { formatCurrency, formatDate, formatMonth, getLast6Months, classNames } from '../../../shared/utils/helpers';
+import { CHART_COLORS } from '../../../shared/constants/categories';
 import { computeAccountBalance } from '../../../shared/constants/accounts';
 import { calculateHealthScore } from '../../../shared/services/healthScore';
 import { getOverdueBills, getDueSoonBills, BILL_CATEGORY_ICONS } from '../../../shared/services/billReminderService';
@@ -17,10 +19,24 @@ import { MonthEndForecastTile } from './MonthEndForecastTile';
 export function Dashboard() {
   const { state } = useAppContext();
   const { settings, categories, transactions: allTxns, budgets, accounts, billReminders } = state;
-  const { currentMonthStats, totalBalance, recentTransactions } = useTransactions();
+  const { currentMonthStats, totalBalance, recentTransactions, getMonthlyStats } = useTransactions();
   const navigate = useNavigate();
 
   const findCategory = (id: string) => categories.find((c) => c.id === id);
+
+  const last6Months = getLast6Months();
+  const monthlyData = last6Months.map((m: string) => {
+    const stats = getMonthlyStats(m);
+    return {
+      month: formatMonth(m).split(' ')[0].slice(0, 3),
+      income: stats.totalIncome,
+      expense: stats.totalExpense,
+    };
+  });
+
+  const expenseByCategory = currentMonthStats.byCategory
+    .filter((c) => c.type === 'expense')
+    .slice(0, 6);
 
   const hasData = state.transactions.length > 0;
 
@@ -232,50 +248,82 @@ export function Dashboard() {
             )}
           </div>
 
-          {/* Explore — deep-dive links (charts + insights + reports live on their own surfaces) */}
+          {/* Monthly Trend Chart */}
           <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800">
-            <div className="mb-4 flex items-center gap-2">
-              <BarChart3 size={18} className="text-primary-600 dark:text-primary-400" />
-              <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100">Explore your money</h3>
-            </div>
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-              <button
-                type="button"
-                onClick={() => navigate('/analytics')}
-                className="flex items-center justify-between rounded-lg border border-gray-200 bg-gray-50 p-3 text-left transition-colors hover:border-primary-300 hover:bg-primary-50 dark:border-gray-700 dark:bg-gray-700/40 dark:hover:border-primary-700 dark:hover:bg-primary-900/20"
-              >
-                <span className="flex items-center gap-2">
-                  <BarChart3 size={16} className="text-primary-600 dark:text-primary-400" />
-                  <span className="text-sm font-medium text-gray-900 dark:text-gray-100">Analytics</span>
-                </span>
-                <ArrowRight size={14} className="text-gray-400" />
-              </button>
-              <button
-                type="button"
-                onClick={() => navigate('/insights')}
-                className="flex items-center justify-between rounded-lg border border-gray-200 bg-gray-50 p-3 text-left transition-colors hover:border-primary-300 hover:bg-primary-50 dark:border-gray-700 dark:bg-gray-700/40 dark:hover:border-primary-700 dark:hover:bg-primary-900/20"
-              >
-                <span className="flex items-center gap-2">
-                  <Sparkles size={16} className="text-primary-600 dark:text-primary-400" />
-                  <span className="text-sm font-medium text-gray-900 dark:text-gray-100">Insights</span>
-                </span>
-                <ArrowRight size={14} className="text-gray-400" />
-              </button>
-              <button
-                type="button"
-                onClick={() => navigate('/reports')}
-                className="flex items-center justify-between rounded-lg border border-gray-200 bg-gray-50 p-3 text-left transition-colors hover:border-primary-300 hover:bg-primary-50 dark:border-gray-700 dark:bg-gray-700/40 dark:hover:border-primary-700 dark:hover:bg-primary-900/20"
-              >
-                <span className="flex items-center gap-2">
-                  <FileBarChart size={16} className="text-primary-600 dark:text-primary-400" />
-                  <span className="text-sm font-medium text-gray-900 dark:text-gray-100">Reports</span>
-                </span>
-                <ArrowRight size={14} className="text-gray-400" />
-              </button>
-            </div>
-            <p className="mt-3 text-xs text-gray-500 dark:text-gray-400">
-              Trend charts, category breakdowns, forecasts, and monthly reports live in their own dedicated views.
-            </p>
+            <h3 className="mb-4 text-base font-semibold text-gray-900 dark:text-gray-100">Monthly Trend</h3>
+            <ResponsiveContainer width="100%" height={250}>
+              <BarChart data={monthlyData} barGap={4}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+                <XAxis dataKey="month" tick={{ fontSize: 12, fill: '#64748b' }} />
+                <YAxis tick={{ fontSize: 12, fill: '#64748b' }} />
+                <Tooltip
+                  formatter={(value) => formatCurrency(Number(value), settings)}
+                  contentStyle={{
+                    borderRadius: '12px',
+                    border: '1px solid #e2e8f0',
+                    boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)',
+                  }}
+                />
+                <Bar dataKey="income" fill="#22c55e" name="Income" radius={[4, 4, 0, 0]}>
+                  {monthlyData.map((_, i) => <Cell key={i} fill="#22c55e" />)}
+                </Bar>
+                <Bar dataKey="expense" fill="#ef4444" name="Expense" radius={[4, 4, 0, 0]}>
+                  {monthlyData.map((_, i) => <Cell key={i} fill="#ef4444" />)}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+
+          {/* Expense Breakdown */}
+          <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800">
+            <h3 className="mb-4 text-base font-semibold text-gray-900 dark:text-gray-100">
+              Expense Breakdown— {formatMonth(currentMonthStats.month).split(' ')[0]}
+            </h3>
+            {expenseByCategory.length === 0 ? (
+              <div className="flex h-[250px] items-center justify-center text-sm text-gray-400 dark:text-gray-500">
+                No expenses this month
+              </div>
+            ) : (() => {
+              const total = expenseByCategory.reduce((s, c) => s + c.amount, 0);
+              let cumulative = 0;
+              const stops = expenseByCategory.map((cat, index) => {
+                const start = cumulative;
+                cumulative += (cat.amount / total) * 100;
+                return `${cat.color || CHART_COLORS[index % CHART_COLORS.length]} ${start}% ${cumulative}%`;
+              });
+              const gradient = `conic-gradient(${stops.join(', ')})`;
+              return (
+                <div>
+                  <div className="flex justify-center mb-4">
+                    <div className="relative" style={{ width: 160, height: 160 }}>
+                      <div className="w-full h-full rounded-full" style={{ background: gradient }} />
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <div className="w-20 h-20 rounded-full bg-white dark:bg-gray-800 flex items-center justify-center">
+                          <span className="text-xs font-semibold text-gray-500 dark:text-gray-400">{formatCurrency(total, settings)}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="space-y-1.5">
+                    {expenseByCategory.map((cat, index) => (
+                      <div key={cat.categoryId} className="flex items-center gap-2 text-sm">
+                        <div
+                          className="h-3 w-3 rounded-full flex-shrink-0"
+                          style={{ backgroundColor: cat.color || CHART_COLORS[index % CHART_COLORS.length] }}
+                        />
+                        <span className="flex-1 truncate text-gray-600 dark:text-gray-400">{cat.categoryName}</span>
+                        <span className="text-xs text-gray-400 dark:text-gray-500">
+                          {total > 0 ? Math.round((cat.amount / total) * 100) : 0}%
+                        </span>
+                        <span className="font-medium text-gray-900 dark:text-gray-100">
+                          {formatCurrency(cat.amount, settings)}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              );
+            })()}
           </div>
 
           {/* Accounts Overview */}

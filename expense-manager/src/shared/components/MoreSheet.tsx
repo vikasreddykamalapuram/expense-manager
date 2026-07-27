@@ -5,7 +5,7 @@
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  RefreshCw, Bell, Sparkles, Target,
+  RefreshCw, Bell, Sparkles, CalendarRange, Target,
   PiggyBank, FileBarChart, Users, Landmark, Tag,
   Settings, X, PlusCircle,
 } from 'lucide-react';
@@ -21,6 +21,7 @@ const items: ReadonlyArray<{ path: string; icon: typeof PlusCircle; label: strin
   { path: '/recurring', icon: RefreshCw, label: 'Recurring' },
   { path: '/reminders', icon: Bell, label: 'Reminders' },
   { path: '/insights', icon: Sparkles, label: 'Insights' },
+  { path: '/calendar', icon: CalendarRange, label: 'Calendar' },
   { path: '/budgets', icon: Target, label: 'Budgets' },
   { path: '/savings', icon: PiggyBank, label: 'Savings' },
   { path: '/reports', icon: FileBarChart, label: 'Reports' },

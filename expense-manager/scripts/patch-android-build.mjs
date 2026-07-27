@@ -26,7 +26,6 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = join(__dirname, '..');
 const ANDROID_ROOT = join(REPO_ROOT, 'android');
 const BUILD_GRADLE = join(ANDROID_ROOT, 'app', 'build.gradle');
-const VARIABLES_GRADLE = join(ANDROID_ROOT, 'variables.gradle');
 const KEYSTORE_SRC = join(REPO_ROOT, 'android-templates', 'debug.keystore');
 const KEYSTORE_DEST = join(ANDROID_ROOT, 'app', 'debug.keystore');
 const PKG_JSON = join(REPO_ROOT, 'package.json');
@@ -101,44 +100,7 @@ if (!/buildTypes\s*\{[\s\S]*?debug\s*\{[\s\S]*?signingConfig\s+signingConfigs\.d
   console.log(`  + buildTypes.debug.signingConfig`);
 }
 
-// 3e) Force older androidx.browser to stay compatible with compileSdk 35.
-// @capacitor/browser >= 8.x pulls androidx.browser:browser:1.9.0 which requires
-// compileSdk 36 + AGP 8.9.1. Until we bump the whole Android toolchain we pin
-// androidx.browser to 1.8.0, which still supports Chrome Custom Tabs on SDK 35.
-const FORCE_MARKER = '// EM_FORCE_BROWSER_1_8';
-if (!gradle.includes(FORCE_MARKER)) {
-  const forceBlock = `
-${FORCE_MARKER}
-configurations.all {
-    resolutionStrategy {
-        force 'androidx.browser:browser:1.8.0'
-    }
-}
-`;
-  gradle = gradle.trimEnd() + '\n' + forceBlock;
-  console.log(`  + resolutionStrategy: androidx.browser:browser:1.8.0`);
-}
-
 if (gradle !== before) {
   writeFileSync(BUILD_GRADLE, gradle, 'utf8');
 }
 console.log(`✓ build.gradle patched (versionCode=${versionCode}, versionName=${versionName})`);
-
-// 4) Patch variables.gradle to pin androidxBrowserVersion to a SDK-35-safe
-// value. Capacitor 8 defaults this to 1.9.0 which requires compileSdk 36.
-if (existsSync(VARIABLES_GRADLE)) {
-  let vars = readFileSync(VARIABLES_GRADLE, 'utf8');
-  const varsBefore = vars;
-  if (/androidxBrowserVersion\s*=/.test(vars)) {
-    vars = vars.replace(/androidxBrowserVersion\s*=\s*['"][^'"]*['"]/, `androidxBrowserVersion = '1.8.0'`);
-  } else {
-    // Inject inside `ext {}` block.
-    vars = vars.replace(/ext\s*\{/, `ext {\n    androidxBrowserVersion = '1.8.0'`);
-  }
-  if (vars !== varsBefore) {
-    writeFileSync(VARIABLES_GRADLE, vars, 'utf8');
-    console.log(`✓ variables.gradle: androidxBrowserVersion = 1.8.0`);
-  } else {
-    console.log(`✓ variables.gradle already pins androidxBrowserVersion to 1.8.0`);
-  }
-}
