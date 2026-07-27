@@ -61,7 +61,10 @@ jobs:
         run: npm ci
 
       - name: Build web bundle
-        run: npm run build
+        run: npm run build:capacitor
+        env:
+          VITE_GOOGLE_CLIENT_ID: ${{ secrets.VITE_GOOGLE_CLIENT_ID }}
+          VITE_MICROSOFT_CLIENT_ID: ${{ secrets.VITE_MICROSOFT_CLIENT_ID }}
 
       - name: Add Android platform (if missing)
         run: |
@@ -92,6 +95,15 @@ jobs:
             ~/.android/adb*
           key: avd-api-33-pixel-6
 
+      - name: Determine Maestro flow target
+        run: |
+          FLOW_FILTER="${{ github.event.inputs.flow_filter }}"
+          if [ -n "$FLOW_FILTER" ]; then
+            echo "MAESTRO_TARGET=.maestro/flows/$FLOW_FILTER" >> "$GITHUB_ENV"
+          else
+            echo "MAESTRO_TARGET=.maestro/flows" >> "$GITHUB_ENV"
+          fi
+
       - name: Run Maestro flows on emulator
         uses: reactivecircus/android-emulator-runner@v2
         with:
@@ -106,12 +118,7 @@ jobs:
             adb wait-for-device
             adb shell input keyevent 82 || true
             adb install -r android/app/build/outputs/apk/debug/app-debug.apk
-            FLOW_FILTER="${{ github.event.inputs.flow_filter }}"
-            if [ -n "$FLOW_FILTER" ]; then
-              maestro test .maestro/flows/"$FLOW_FILTER" --format=junit --output=maestro-report.xml || echo "MAESTRO_FAILED=1" >> "$GITHUB_ENV"
-            else
-              maestro test .maestro/flows --format=junit --output=maestro-report.xml || echo "MAESTRO_FAILED=1" >> "$GITHUB_ENV"
-            fi
+            maestro test "$MAESTRO_TARGET" --format=junit --output=maestro-report.xml || echo "MAESTRO_FAILED=1" >> "$GITHUB_ENV"
 
       - name: Upload Maestro artifacts
         if: always()
