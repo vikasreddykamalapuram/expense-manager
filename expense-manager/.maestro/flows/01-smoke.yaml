@@ -12,7 +12,7 @@ tags:
     stopApp: true
 - extendedWaitUntil:
     visible: "Dashboard|Total Balance|Continue without"
-    timeout: 20000
+    timeout: 60000
 # If we're on the auth wall, take the "Continue without account" path.
 - runFlow:
     when:

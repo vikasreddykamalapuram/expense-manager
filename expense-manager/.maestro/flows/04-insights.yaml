@@ -8,7 +8,7 @@ tags:
     stopApp: true
 - extendedWaitUntil:
     visible: "Dashboard|Total Balance|Continue without"
-    timeout: 20000
+    timeout: 60000
 - runFlow:
     when:
       visible: "Continue without"

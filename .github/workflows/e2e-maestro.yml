@@ -118,7 +118,21 @@ jobs:
             adb wait-for-device
             adb shell input keyevent 82 || true
             adb install -r android/app/build/outputs/apk/debug/app-debug.apk
+            adb logcat -c || true
+            adb logcat -v time > "$GITHUB_WORKSPACE/adb-logcat.txt" 2>&1 &
+            LOGCAT_PID=$!
             maestro test "$MAESTRO_TARGET" --format=junit --output=maestro-report.xml || echo "MAESTRO_FAILED=1" >> "$GITHUB_ENV"
+            sleep 2
+            kill $LOGCAT_PID 2>/dev/null || true
+
+      - name: Upload adb logcat on failure
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: adb-logcat-${{ github.sha }}
+          path: adb-logcat.txt
+          if-no-files-found: warn
+          retention-days: 14
 
       - name: Upload Maestro artifacts
         if: always()
