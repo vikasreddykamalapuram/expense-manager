@@ -24,6 +24,31 @@ function decodeJwtPayload(token: string): Record<string, string> {
   }
 }
 
+/**
+ * Fire-and-forget: hand the OAuth ID token to Supabase so it creates/refreshes
+ * a Supabase session. This is what powers cross-device sync — without this,
+ * the app has a local login but no backend session, and Settings shows
+ * "Backend not configured" even though everything is wired up.
+ *
+ * Kept non-blocking so a failure here (network, provider not enabled in
+ * Supabase, etc.) never breaks the local sign-in.
+ */
+function bridgeToSupabaseAsync(provider: 'google' | 'microsoft', idToken: string): void {
+  import('../../../shared/services/supabaseAuthService')
+    .then(({ bridgeGoogleAuth, bridgeMicrosoftAuth }) => {
+      const bridge = provider === 'google' ? bridgeGoogleAuth : bridgeMicrosoftAuth;
+      return bridge(idToken);
+    })
+    .then((ok) => {
+      if (!ok) {
+        console.warn(`[LoginPage] Supabase ${provider} bridge returned false — sync will be disabled.`);
+      }
+    })
+    .catch((err) => {
+      console.warn(`[LoginPage] Supabase ${provider} bridge threw:`, err);
+    });
+}
+
 export function LoginPage() {
   const { login } = useAuth();
   const { instance } = useMsal();
@@ -98,6 +123,9 @@ export function LoginPage() {
     localStorage.setItem('em_google_client_id', AUTH_CONFIG.google.clientId);
     // Don't request Drive token here — it opens another popup which causes
     // multi-tab issues on mobile. The backup service will request it when needed.
+
+    // Bridge to Supabase so cross-device sync + backend features come online.
+    bridgeToSupabaseAsync('google', response.credential);
   };
 
 
@@ -125,6 +153,7 @@ export function LoginPage() {
       localStorage.setItem('expenseiq_onboarded', 'true');
       sessionStorage.setItem('em_google_id_token', idToken);
       localStorage.setItem('em_google_client_id', AUTH_CONFIG.google.clientId);
+      bridgeToSupabaseAsync('google', idToken);
       navigate('/');
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Google sign-in failed. Please try again.';
@@ -161,6 +190,7 @@ export function LoginPage() {
       login(user);
       localStorage.setItem('expenseiq_onboarded', 'true');
       sessionStorage.setItem('em_microsoft_id_token', idToken);
+      bridgeToSupabaseAsync('microsoft', idToken);
       navigate('/');
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Microsoft sign-in failed. Please try again.';
@@ -194,6 +224,7 @@ export function LoginPage() {
         // Store ID token for Supabase auth bridge
         if (result.idToken) {
           sessionStorage.setItem('em_microsoft_id_token', result.idToken);
+          bridgeToSupabaseAsync('microsoft', result.idToken);
         }
         navigate('/');
       }
