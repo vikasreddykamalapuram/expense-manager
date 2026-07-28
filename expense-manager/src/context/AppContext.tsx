@@ -5,9 +5,10 @@ import { db, migrateStockSymbols } from '../shared/services/db';
 import { migrateFromLocalStorage, getActiveProfileIdFromLS } from '../shared/services/migration';
 import { DEFAULT_SETTINGS } from '../shared/constants/categories';
 import { schedulePush, registerVisibilitySync, pullDeltas, isSyncEnabled } from '../shared/services/syncService';
-import { scheduleBackendSync } from '../shared/services/supabaseSyncService';
+import { scheduleBackendSync, flushBackendSync } from '../shared/services/supabaseSyncService';
 import { startRealtimeSync, stopRealtimeSync, setRealtimeDataChangedCallback } from '../shared/services/supabaseRealtimeService';
-import { onSupabaseAuthChange } from '../shared/services/supabaseAuthService';
+import { onSupabaseAuthChange, isBackendConnected } from '../shared/services/supabaseAuthService';
+import { isNativePlatform } from '../shared/services/platform';
 import { showToastGlobal } from '../shared/components/ui/Toast';
 import { refreshWidget } from '../shared/services/widgetBridge';
 import { detectAnomalies } from '../shared/services/anomalyDetection';
@@ -625,6 +626,68 @@ export function AppProvider({ children }: { children: ReactNode }) {
       setRealtimeDataChangedCallback(null);
       stopRealtimeSync();
       unsubscribe();
+    };
+  }, []);
+
+  // ─── Immediate flush on app-hide / lose-focus / unload ──
+  // The 1.5s push debounce may not fire if the tab is hidden or the
+  // mobile app is backgrounded. Flush any pending sync at these lifecycle
+  // boundaries so edits never get stranded on-device.
+  //
+  // On foreground we also restart Realtime if it was dropped, and run a
+  // one-shot backendSync to catch any changes that arrived while we were away.
+  useEffect(() => {
+    let capacitorAppListeners: Array<{ remove?: () => void } | { remove: () => Promise<void> }> = [];
+
+    const flushNow = () => {
+      const profileId = profileIdRef.current;
+      if (profileId) flushBackendSync(profileId);
+    };
+
+    const onForeground = () => {
+      if (!isBackendConnected()) return;
+      // Reconnect realtime if it dropped while backgrounded.
+      startRealtimeSync();
+      // Pull any changes we missed.
+      import('../shared/services/supabaseSyncService')
+        .then(({ backendSync }) => backendSync(profileIdRef.current))
+        .catch(() => { /* best-effort */ });
+    };
+
+    const onVisibility = () => {
+      if (document.visibilityState === 'hidden') {
+        flushNow();
+      } else if (document.visibilityState === 'visible') {
+        onForeground();
+      }
+    };
+
+    document.addEventListener('visibilitychange', onVisibility);
+    window.addEventListener('pagehide', flushNow);
+    window.addEventListener('beforeunload', flushNow);
+    window.addEventListener('blur', flushNow);
+
+    // Capacitor: same idea but via native lifecycle so it works when the WebView is fully paused.
+    if (isNativePlatform()) {
+      import('@capacitor/app').then(({ App }) => {
+        App.addListener('appStateChange', ({ isActive }) => {
+          if (isActive) onForeground();
+          else flushNow();
+        }).then((h) => capacitorAppListeners.push(h));
+        App.addListener('pause', flushNow).then((h) => capacitorAppListeners.push(h));
+        App.addListener('resume', onForeground).then((h) => capacitorAppListeners.push(h));
+      }).catch(() => { /* Capacitor App plugin missing — non-fatal */ });
+    }
+
+    return () => {
+      document.removeEventListener('visibilitychange', onVisibility);
+      window.removeEventListener('pagehide', flushNow);
+      window.removeEventListener('beforeunload', flushNow);
+      window.removeEventListener('blur', flushNow);
+      for (const h of capacitorAppListeners) {
+        try { void (h as { remove: () => unknown }).remove?.(); } catch { /* ignore */ }
+      }
+      capacitorAppListeners = [];
     };
   }, []);
 

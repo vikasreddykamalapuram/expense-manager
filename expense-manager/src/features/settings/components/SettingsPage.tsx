@@ -47,7 +47,7 @@ export function SettingsPage() {
   const [showAdvancedCloud, setShowAdvancedCloud] = useState(false);
   const { state, actions } = useAppContext();
   const { user, isAuthenticated, logout } = useAuth();
-  const { syncStatus, enableSyncForUser, disableSyncForUser, syncNow, deleteCloudData, deviceName } = useSync();
+  const { syncStatus, disableSyncForUser, syncNow, deleteCloudData, deviceName } = useSync();
   const { theme, effectiveTheme, setTheme, accentColor, setAccentColor, darkMode, setDarkMode } = useTheme();
   const supabase = useSupabaseAuth();
   const realtime = useSupabaseRealtime();
@@ -503,26 +503,25 @@ export function SettingsPage() {
       </div>
       )}
 
-      {/* ─── Cloud & Sync (Phase 3 — unified) ─────────────
-          Presents ONE narrative: sign in → toggle sync → status.
-          Backups + backend DB are grouped as "Advanced" beneath. */}
-      {/* Cloud Overview — the single, unified surface */}
+      {/* ─── Cloud & Sync (Phase 2b — unified) ────────────
+          One card, one source of truth. Supabase is the primary sync path
+          (real-time cross-device). Google Drive / OneDrive file backup
+          is treated as an optional legacy backup under Advanced. */}
       {activeTab === 'cloud' && (
       <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-gradient-to-br from-primary-50 to-white dark:from-primary-900/20 dark:to-gray-800 p-6 shadow-sm">
         <div className="flex items-center gap-2 mb-4">
           <Cloud size={20} className="text-primary-500" />
-          <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100">Cloud &amp; Sync</h3>
+          <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100">Cross-device sync</h3>
         </div>
 
         {!isAuthenticated || !user ? (
           <div className="space-y-3">
             <p className="text-sm text-gray-600 dark:text-gray-400">
-              Sign in once with Google or Microsoft to unlock automatic cross-device sync, cloud backup,
-              and (when configured) real-time updates. Everything is end-to-end encrypted with AES-256-GCM
-              — even Google or Microsoft cannot read your finances.
+              Sign in with Google or Microsoft to keep this device in sync with your other devices in real time.
+              Everything is end-to-end encrypted with AES-256-GCM before it leaves the device.
             </p>
             <Button variant="primary" icon={<Cloud size={16} />} onClick={() => (window.location.href = '/login')}>
-              Sign in to enable cloud
+              Sign in to enable sync
             </Button>
           </div>
         ) : (
@@ -547,137 +546,155 @@ export function SettingsPage() {
               </Button>
             </div>
 
-            {/* Master sync toggle + status */}
-            <div className="rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 p-4">
-              <div className="flex items-center justify-between mb-2">
-                <div>
-                  <p className="text-sm font-medium text-gray-900 dark:text-gray-100">Sync this device</p>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-                    {syncStatus.state === 'disabled'
-                      ? 'Off — your data stays on this device only'
-                      : syncStatus.state === 'syncing'
-                        ? 'Syncing…'
-                        : syncStatus.state === 'error'
-                          ? 'Sync error'
-                          : 'On — encrypted delta sync via ' + (user.provider === 'google' ? 'Google Drive' : 'OneDrive')}
-                  </p>
+            {/* Unified sync status card — Supabase is the primary path */}
+            <div className="rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 p-4 space-y-3">
+              {!supabase.isConfigured ? (
+                <div className="flex items-start gap-2 text-sm text-amber-700 dark:text-amber-400">
+                  <XCircle size={16} className="mt-0.5 shrink-0" />
+                  <div>
+                    <p className="font-medium">Cloud backend not configured</p>
+                    <p className="text-xs text-amber-600 dark:text-amber-500 mt-0.5">
+                      This build is missing <code className="bg-amber-100 dark:bg-amber-900/30 px-1 rounded">VITE_SUPABASE_URL</code>.
+                      Sync will fall back to local-only.
+                    </p>
+                  </div>
                 </div>
-                {syncStatus.state === 'disabled' ? (
+              ) : supabase.isConnected ? (
+                <>
+                  {/* Connected + live status pill */}
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      {realtime.status === 'connected' ? (
+                        <Wifi size={16} className="text-success-500" />
+                      ) : realtime.status === 'connecting' ? (
+                        <RefreshCw size={16} className="text-primary-500 animate-spin" />
+                      ) : (
+                        <CheckCircle2 size={16} className="text-success-500" />
+                      )}
+                      <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                        {realtime.status === 'connected'
+                          ? 'Live sync active'
+                          : realtime.status === 'connecting'
+                            ? 'Connecting…'
+                            : 'Connected'}
+                      </span>
+                    </div>
+                    {realtime.status === 'connected' && realtime.eventsReceived > 0 && (
+                      <span className="text-xs text-gray-500 dark:text-gray-400">
+                        {realtime.eventsReceived} live {realtime.eventsReceived === 1 ? 'update' : 'updates'}
+                      </span>
+                    )}
+                  </div>
+
+                  <p className="text-xs text-gray-500 dark:text-gray-400 -mt-1 ml-6">
+                    {realtime.status === 'connected'
+                      ? 'Changes on other devices appear here instantly.'
+                      : 'Changes will sync when you tap Sync now or reopen the app.'}
+                  </p>
+
+                  {/* Last sync + device info */}
+                  <div className="flex flex-wrap items-center gap-2 text-xs text-gray-500 dark:text-gray-400 pt-1">
+                    <Smartphone size={12} />
+                    <span>{deviceName}</span>
+                    {supabase.lastSyncAt && (
+                      <>
+                        <span>·</span>
+                        <span>Last sync: {new Date(supabase.lastSyncAt).toLocaleString()}</span>
+                      </>
+                    )}
+                  </div>
+
+                  {/* E2E encryption note */}
+                  <div className="flex items-start gap-2 rounded-md bg-primary-50 dark:bg-primary-900/20 p-2.5">
+                    <Shield size={14} className="text-primary-500 mt-0.5 shrink-0" />
+                    <p className="text-xs text-primary-700 dark:text-primary-300">
+                      Data is encrypted per-row before it reaches the cloud. Only you can read it.
+                    </p>
+                  </div>
+
+                  {/* Sync actions */}
+                  <div className="flex flex-wrap gap-2 pt-1">
+                    <Button
+                      variant="primary"
+                      icon={syncActionStatus === 'syncing' ? <RefreshCw size={14} className="animate-spin" /> : <RefreshCcw size={14} />}
+                      disabled={syncActionStatus !== 'idle'}
+                      onClick={async () => {
+                        setSyncActionStatus('syncing');
+                        setSyncMessage('');
+                        const ok = await syncNow();
+                        setSyncMessage(ok ? 'Synced!' : 'Sync failed. Check your connection.');
+                        setSyncActionStatus('idle');
+                        setTimeout(() => setSyncMessage(''), 4000);
+                      }}
+                      className="!py-1.5"
+                    >
+                      Sync now
+                    </Button>
+
+                    {realtime.status !== 'connected' && realtime.status !== 'connecting' && (
+                      <Button
+                        variant="secondary"
+                        icon={<Wifi size={14} />}
+                        onClick={() => realtime.startRealtimeSync()}
+                        className="!py-1.5"
+                      >
+                        Start live sync
+                      </Button>
+                    )}
+                  </div>
+
+                  {supabase.error && (
+                    <p className="text-xs text-danger-600 flex items-center gap-1">
+                      <XCircle size={12} /> {supabase.error}
+                    </p>
+                  )}
+                  {syncMessage && (
+                    <p className={classNames(
+                      'text-xs flex items-center gap-1',
+                      syncMessage.toLowerCase().includes('fail') ? 'text-danger-600' : 'text-success-600',
+                    )}>
+                      {syncMessage.toLowerCase().includes('fail') ? <XCircle size={12} /> : <CheckCircle2 size={12} />}
+                      {syncMessage}
+                    </p>
+                  )}
+                </>
+              ) : (
+                <>
+                  <div className="flex items-start gap-2 text-sm">
+                    <CloudOff size={16} className="text-gray-400 mt-0.5 shrink-0" />
+                    <div>
+                      <p className="font-medium text-gray-900 dark:text-gray-100">Not connected</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                        Tap Connect to link this sign-in to cloud sync.
+                      </p>
+                    </div>
+                  </div>
                   <Button
                     variant="primary"
-                    icon={syncActionStatus === 'enabling' ? <RefreshCw size={14} className="animate-spin" /> : <RefreshCcw size={14} />}
-                    disabled={syncActionStatus !== 'idle'}
+                    icon={backendConnecting ? <RefreshCw size={14} className="animate-spin" /> : <Database size={14} />}
+                    disabled={!isAuthenticated || backendConnecting}
                     onClick={async () => {
-                      setSyncActionStatus('enabling');
-                      setSyncMessage('');
-                      const ok = await enableSyncForUser();
-                      setSyncMessage(ok ? 'Sync enabled!' : 'Failed to enable sync.');
-                      setSyncActionStatus('idle');
-                      if (ok) setTimeout(() => setSyncMessage(''), 5000);
+                      if (!user?.provider) return;
+                      setBackendConnecting(true);
+                      try {
+                        const idToken = sessionStorage.getItem(user.provider === 'google' ? 'em_google_id_token' : 'em_ms_id_token');
+                        if (!idToken) throw new Error('No id_token in session — sign in again.');
+                        const svc = await import('../../../shared/services/supabaseAuthService');
+                        if (user.provider === 'google') await svc.bridgeGoogleAuth(idToken);
+                        else await svc.bridgeMicrosoftAuth(idToken);
+                      } catch (err) {
+                        console.error('[SettingsPage] Backend connect failed:', err);
+                      } finally {
+                        setBackendConnecting(false);
+                      }
                     }}
                     className="!py-1.5"
                   >
-                    Turn on
+                    {backendConnecting ? 'Connecting…' : 'Connect to cloud'}
                   </Button>
-                ) : (
-                  <Button
-                    variant="secondary"
-                    onClick={async () => {
-                      await disableSyncForUser();
-                      setSyncMessage('Sync disabled.');
-                      setTimeout(() => setSyncMessage(''), 3000);
-                    }}
-                    className="!py-1.5"
-                  >
-                    Turn off
-                  </Button>
-                )}
-              </div>
-
-              {syncStatus.lastSyncAt && (
-                <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
-                  Last synced: {new Date(syncStatus.lastSyncAt).toLocaleString()}
-                </p>
-              )}
-              {syncStatus.state !== 'disabled' && (
-                <div className="mt-3 flex flex-wrap items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
-                  <Smartphone size={12} />
-                  <span>{deviceName}</span>
-                  {backupInfo && (
-                    <>
-                      <span>·</span>
-                      <span>Backup {(backupInfo.size / 1024).toFixed(1)} KB · {new Date(backupInfo.modifiedTime).toLocaleDateString()}</span>
-                    </>
-                  )}
-                </div>
-              )}
-
-              {syncStatus.state !== 'disabled' && (
-                <div className="mt-3 flex flex-wrap gap-2">
-                  <Button
-                    variant="secondary"
-                    icon={syncActionStatus === 'syncing' ? <RefreshCw size={14} className="animate-spin" /> : <RefreshCcw size={14} />}
-                    disabled={syncActionStatus !== 'idle' || syncStatus.state === 'syncing'}
-                    onClick={async () => {
-                      setSyncActionStatus('syncing');
-                      setSyncMessage('');
-                      const ok = await syncNow();
-                      setSyncMessage(ok ? 'Sync complete!' : 'Sync failed. Check your connection.');
-                      setSyncActionStatus('idle');
-                      setTimeout(() => setSyncMessage(''), 5000);
-                    }}
-                    className="!py-1.5 text-xs"
-                  >
-                    Sync now
-                  </Button>
-                  <Button
-                    variant="secondary"
-                    icon={backupStatus === 'backing-up' ? <RefreshCw size={14} className="animate-spin" /> : <Cloud size={14} />}
-                    disabled={backupStatus === 'backing-up' || backupStatus === 'restoring'}
-                    onClick={handleCloudBackup}
-                    className="!py-1.5 text-xs"
-                  >
-                    Manual backup
-                  </Button>
-                </div>
-              )}
-
-              {syncStatus.lastError && (
-                <p className="text-xs text-danger-500 mt-2">{syncStatus.lastError}</p>
-              )}
-
-              {syncMessage && (
-                <p className={classNames(
-                  'text-xs mt-2 flex items-center gap-1',
-                  syncMessage.toLowerCase().includes('fail') ? 'text-danger-600' : 'text-success-600',
-                )}>
-                  {syncMessage.toLowerCase().includes('fail') ? <XCircle size={12} /> : <CheckCircle2 size={12} />}
-                  {syncMessage}
-                </p>
-              )}
-              {backupStatus === 'success' && (
-                <p className="text-xs mt-2 text-success-600 flex items-center gap-1">
-                  <CheckCircle2 size={12} /> {backupMessage}
-                </p>
-              )}
-              {backupStatus === 'error' && (
-                <p className="text-xs mt-2 text-danger-600 flex items-center gap-1">
-                  <XCircle size={12} /> {backupMessage}
-                </p>
+                </>
               )}
             </div>
-
-            {/* Realtime badge — only if backend already connected */}
-            {supabase.isConnected && (
-              <div className="flex items-center gap-2 text-xs text-blue-700 dark:text-blue-400">
-                {realtime.status === 'connected' ? <Wifi size={14} /> : <WifiOff size={14} />}
-                <span>
-                  {realtime.status === 'connected'
-                    ? `Live sync active — updates from other devices appear instantly (${realtime.eventsReceived} received)`
-                    : 'Realtime disconnected'}
-                </span>
-              </div>
-            )}
 
             {/* Advanced toggle */}
             <button
@@ -686,7 +703,7 @@ export function SettingsPage() {
               className="flex items-center gap-1 text-xs font-medium text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
             >
               {showAdvancedCloud ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
-              Advanced (backup details, backend database, delete cloud data)
+              Advanced (legacy Drive backup, delete cloud data)
             </button>
           </div>
         )}
@@ -807,148 +824,47 @@ export function SettingsPage() {
       </div>
       )}
 
-      {/* Cross-Device Sync */}
-      {activeTab === 'cloud' && showAdvancedCloud && (
+      {/* Cross-Device Sync (Drive/OneDrive) — moved to legacy under Advanced.
+          The primary Supabase-based sync lives in the "Cross-device sync" panel above.
+          This card is only useful for the legacy Drive appdata backup flow and shows
+          only under Advanced for users who set it up before Supabase. */}
+      {activeTab === 'cloud' && showAdvancedCloud && isAuthenticated && user && syncStatus.state !== 'disabled' && (
       <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-6 shadow-sm">
         <div className="flex items-center gap-2 mb-4">
-          <RefreshCcw size={18} className="text-primary-500" />
-          <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100">Cross-Device Sync</h3>
+          <RefreshCcw size={18} className="text-gray-400" />
+          <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100">Legacy Drive sync</h3>
+          <span className="text-[10px] uppercase tracking-wide rounded bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 px-1.5 py-0.5">
+            legacy
+          </span>
         </div>
-
-        {isAuthenticated && user ? (
-          <div className="space-y-4">
-            {/* Sync Status */}
-            <div className="rounded-lg bg-gray-50 dark:bg-gray-700 p-4">
-              <div className="flex items-center justify-between mb-2">
-                <div className="flex items-center gap-2">
-                  {syncStatus.state === 'idle' && <CheckCircle2 size={16} className="text-success-500" />}
-                  {syncStatus.state === 'syncing' && <RefreshCw size={16} className="text-primary-500 animate-spin" />}
-                  {syncStatus.state === 'error' && <XCircle size={16} className="text-danger-500" />}
-                  {syncStatus.state === 'disabled' && <CloudOff size={16} className="text-gray-400" />}
-                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                    {syncStatus.state === 'idle' && 'Synced'}
-                    {syncStatus.state === 'syncing' && 'Syncing...'}
-                    {syncStatus.state === 'error' && 'Sync Error'}
-                    {syncStatus.state === 'disabled' && 'Sync Disabled'}
-                  </span>
-                </div>
-                {syncStatus.state !== 'disabled' && (
-                  <span className="text-xs text-gray-400 dark:text-gray-500">
-                    via {user.provider === 'google' ? 'Google Drive' : 'OneDrive'}
-                  </span>
-                )}
-              </div>
-
-              {syncStatus.lastSyncAt && (
-                <p className="text-xs text-gray-500 dark:text-gray-400">
-                  Last synced: {new Date(syncStatus.lastSyncAt).toLocaleString()}
-                </p>
-              )}
-              {syncStatus.lastError && (
-                <p className="text-xs text-danger-500 mt-1">{syncStatus.lastError}</p>
-              )}
-            </div>
-
-            {/* Device Info */}
-            <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
-              <Smartphone size={14} />
-              <span>This device: {deviceName}</span>
-            </div>
-
-            {/* Security note */}
-            <div className="flex items-start gap-2 rounded-lg bg-primary-50 dark:bg-primary-900/20 p-3">
-              <Shield size={14} className="text-primary-500 mt-0.5 shrink-0" />
-              <p className="text-xs text-primary-700 dark:text-primary-300">
-                Your data is encrypted with AES-256-GCM before leaving this device. Only you can read it — not even {user.provider === 'google' ? 'Google' : 'Microsoft'} can access your financial data.
-              </p>
-            </div>
-
-            {/* Actions */}
-            <div className="flex flex-col gap-2 sm:flex-row">
-              {syncStatus.state === 'disabled' ? (
-                <Button
-                  variant="primary"
-                  icon={syncActionStatus === 'enabling' ? <RefreshCw size={16} className="animate-spin" /> : <RefreshCcw size={16} />}
-                  disabled={syncActionStatus !== 'idle'}
-                  onClick={async () => {
-                    setSyncActionStatus('enabling');
-                    setSyncMessage('');
-                    const ok = await enableSyncForUser();
-                    setSyncMessage(ok ? 'Sync enabled! Your data will sync automatically.' : 'Failed to enable sync. Please try again.');
-                    setSyncActionStatus('idle');
-                    if (ok) setTimeout(() => setSyncMessage(''), 5000);
-                  }}
-                >
-                  Enable Sync
-                </Button>
-              ) : (
-                <>
-                  <Button
-                    variant="primary"
-                    icon={syncActionStatus === 'syncing' ? <RefreshCw size={16} className="animate-spin" /> : <RefreshCcw size={16} />}
-                    disabled={syncActionStatus !== 'idle' || syncStatus.state === 'syncing'}
-                    onClick={async () => {
-                      setSyncActionStatus('syncing');
-                      setSyncMessage('');
-                      const ok = await syncNow();
-                      setSyncMessage(ok ? 'Sync complete!' : 'Sync failed. Check your connection.');
-                      setSyncActionStatus('idle');
-                      setTimeout(() => setSyncMessage(''), 5000);
-                    }}
-                  >
-                    Sync Now
-                  </Button>
-                  <Button
-                    variant="secondary"
-                    onClick={async () => {
-                      await disableSyncForUser();
-                      setSyncMessage('Sync disabled.');
-                      setTimeout(() => setSyncMessage(''), 3000);
-                    }}
-                  >
-                    Disable Sync
-                  </Button>
-                </>
-              )}
-            </div>
-
-            {/* Delete cloud data */}
-            {syncStatus.state !== 'disabled' && (
-              <div className="border-t border-gray-200 dark:border-gray-700 pt-3">
-                <Button
-                  variant="secondary"
-                  icon={<Trash2 size={14} />}
-                  onClick={() => setShowDeleteSyncConfirm(true)}
-                  className="!text-danger-600 !border-danger-300 hover:!bg-danger-50 dark:!border-danger-700 dark:hover:!bg-danger-900/20 text-xs"
-                >
-                  Delete All Cloud Sync Data
-                </Button>
-                <p className="mt-1 text-xs text-gray-400 dark:text-gray-500">
-                  Removes all sync data from the cloud. Local data is not affected.
-                </p>
-              </div>
-            )}
-
-            {syncMessage && (
-              <p className={classNames(
-                'text-sm flex items-center gap-1',
-                syncMessage.includes('Failed') || syncMessage.includes('failed') ? 'text-danger-600' : 'text-success-600'
-              )}>
-                {syncMessage.includes('Failed') || syncMessage.includes('failed') ? <XCircle size={14} /> : <CheckCircle2 size={14} />}
-                {syncMessage}
-              </p>
-            )}
-
-            <p className="text-xs text-gray-400 dark:text-gray-500">
-              Sync automatically when you switch back to this tab, or 5 seconds after any data change.
-              All data is end-to-end encrypted.
-            </p>
-          </div>
-        ) : (
-          <div className="text-center py-4">
-            <RefreshCcw className="mx-auto h-8 w-8 text-gray-300 dark:text-gray-600 mb-2" />
-            <p className="text-sm text-gray-500 dark:text-gray-400">Sign in to sync data across your devices</p>
-          </div>
+        <p className="text-xs text-gray-500 dark:text-gray-400 mb-3">
+          Older file-based sync via {user.provider === 'google' ? 'Google Drive' : 'OneDrive'} appdata.
+          The primary cross-device sync above already covers this — turn it off to avoid
+          the "app not verified" popup.
+        </p>
+        <div className="flex flex-wrap gap-2">
+          <Button
+            variant="secondary"
+            onClick={async () => {
+              await disableSyncForUser();
+              setSyncMessage('Legacy Drive sync disabled.');
+              setTimeout(() => setSyncMessage(''), 3000);
+            }}
+            className="!py-1.5 text-xs"
+          >
+            Turn off legacy sync
+          </Button>
+          <Button
+            variant="secondary"
+            icon={<Trash2 size={12} />}
+            onClick={() => setShowDeleteSyncConfirm(true)}
+            className="!text-danger-600 !border-danger-300 hover:!bg-danger-50 dark:!border-danger-700 dark:hover:!bg-danger-900/20 !py-1.5 text-xs"
+          >
+            Delete cloud sync data
+          </Button>
+        </div>
+        {syncStatus.lastError && (
+          <p className="text-xs text-danger-500 mt-2">{syncStatus.lastError}</p>
         )}
       </div>
       )}
