@@ -21,7 +21,10 @@ import { getSupabaseUserId, isBackendConnected, updateLastBackendSync } from './
 
 const LAST_PUSH_KEY = 'expenseiq_backend_last_push';
 const LAST_PULL_KEY = 'expenseiq_backend_last_pull';
-const SYNC_DEBOUNCE_MS = 5000;
+// Push debounce: coalesces rapid edits (e.g., typing amount + note back-to-back)
+// into a single push, but short enough that cross-device latency stays snappy.
+// Industry benchmarks: YNAB ~500ms, Notion ~1s, Copilot Money ~1-2s.
+const SYNC_DEBOUNCE_MS = 1500;
 
 // ─── Types ──────────────────────────────────────────────
 
@@ -444,8 +447,25 @@ export function scheduleBackendSync(profileId: string): void {
   if (debounceTimer) clearTimeout(debounceTimer);
 
   debounceTimer = setTimeout(() => {
+    debounceTimer = null;
     backendPush(profileId).catch(console.error);
   }, SYNC_DEBOUNCE_MS);
+}
+
+/**
+ * Force an immediate push if a debounced sync is pending.
+ *
+ * Call this from lifecycle boundaries where the debounce timer might
+ * never fire — e.g., when the tab is being hidden, the app is being
+ * backgrounded on mobile, or the page is unloading. Guarantees that
+ * pending local edits get pushed before the app loses execution.
+ */
+export function flushBackendSync(profileId: string): void {
+  if (!isBackendConnected()) return;
+  if (!debounceTimer) return; // nothing pending
+  clearTimeout(debounceTimer);
+  debounceTimer = null;
+  backendPush(profileId).catch(console.error);
 }
 
 // ─── Sync Metadata ──────────────────────────────────────
