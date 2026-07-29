@@ -11,16 +11,19 @@ Follow this once when creating the app; then only the release steps matter for e
   - App or game: `App`
   - Free or paid: `Free`
 - [ ] Complete **App content** section:
-  - Privacy Policy URL: `https://vikasreddykamalapuram.github.io/expense-manager/PRIVACY_POLICY.html` (host `PRIVACY_POLICY.md` rendered as HTML)
+  -   Privacy Policy URL: `https://vikasreddykamalapuram.github.io/expense-manager/privacy-policy.html`
   - App access: `All functionality available without restrictions` (no login required)
   - Ads: `No, my app does not contain ads`
   - Content rating: run the questionnaire → expect `Everyone`
   - Target audience: `18+`
   - Data safety form:
-    - Data collected: `None` (unless user opts into cloud sync — then declare "Financial info" collected but encrypted in transit + at rest, not shared)
-    - Do you use any of the required data types: `No`
-    - Data encrypted in transit: `Yes`
-    - User can request deletion: `Yes` (via app Settings → Clear Data)
+    - Personal info: `Email address` — Collected, Optional, purpose: **App functionality**, encrypted in transit
+    - Personal info: `User IDs` — Collected, Optional, purpose: **App functionality**, encrypted in transit
+    - Financial info: `Other financial info` (transactions, accounts, budgets) — Collected, Optional, purpose: **App functionality**, encrypted in transit
+    - Data shared with third parties: **None**
+    - Data encrypted in transit: **Yes**
+    - User can request deletion: **Yes** (via Settings → Advanced → Delete cloud sync data)
+    - Committed to Play Families Policy: N/A (not aimed at children)
 - [ ] **Store listing** → paste from `playstore/en-IN/*`:
   - App name → `title.txt`
   - Short description → `short-description.txt`
