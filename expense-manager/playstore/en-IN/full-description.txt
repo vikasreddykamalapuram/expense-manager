@@ -2,9 +2,9 @@ ExpenseIQ is a private, local-first personal-finance manager built for people wh
 
 ⚡ WHY EXPENSEIQ
 
-• 100% local storage — your transactions live on your device, not our servers
+• 100% local storage — your transactions live on your device by default
 • No ads, no subscription, no data mining, ever
-• Optional end-to-end encrypted sync via your own Google Drive or OneDrive
+• Optional real-time cross-device sync with a private, row-isolated cloud database
 • Works fully offline, forever
 
 💰 TRACK EVERYTHING
@@ -36,7 +36,7 @@ ExpenseIQ is a private, local-first personal-finance manager built for people wh
 • Screenshot protection (FLAG_SECURE) hides balances in the recent-apps switcher
 • Auto-lock on background after configurable idle timeout
 • PBKDF2 PIN hashing with 200,000 iterations
-• AES-256-GCM end-to-end encryption for cloud sync — the cloud provider only ever sees opaque ciphertext
+• TLS 1.3 in transit + AES-256 at rest for cloud sync, with per-user row-level security
 
 📥 EASY IMPORT
 
