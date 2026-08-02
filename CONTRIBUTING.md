@@ -6,7 +6,7 @@ Use **`vrk/<short-context>`** (preferred) or **`vikasreddykamalapuram/<short-con
 
 - ✅ `vrk/play-console-onboarding`
 - ✅ `vrk/moneyiq-rebrand`
-- ✅ `vikasreddykamalapuram/boutique-checkout`
+- ✅ `vikasreddykamalapuram/moneyiq-portfolio-charts`
 - ❌ `v-vikaska-microsoft-...` (do **not** use the managed/EMU username prefix)
 - ❌ raw generated names like `fluffy-fortnight`
 
@@ -28,7 +28,7 @@ git config user.email "vikasreddykamalapuram@gmail.com"
 
 ## Workflow
 1. Branch from `master`: `git switch -c vrk/<context>`.
-2. Work inside the relevant project folder (`expense-manager/`, `boutique-app/`).
+2. Work inside the relevant project folder (e.g. `expense-manager/`).
 3. Validate before pushing: `npm run lint && npx tsc -b && npx vitest run`.
 4. Open a PR into `master`. `master` is always deployable (GitHub Pages + release tags).
 

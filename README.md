@@ -8,7 +8,6 @@ dependencies and configuration. Run commands from inside the project folder, not
 | Project | Folder | Status | Stack |
 |---------|--------|--------|-------|
 | **MoneyIQ** — personal finance manager | [`expense-manager/`](./expense-manager/) | Production ([live](https://vikasreddykamalapuram.github.io/expense-manager/)) - Play Store onboarding | React 18 - TypeScript - Vite - Tailwind - Dexie - Capacitor |
-| **PABS Boutique** — kids'' clothing e-commerce | [`boutique-app/`](./boutique-app/) | In development | Web e-commerce ([spec](./Web_app_for_Boutique.txt)) |
 
 ## Structure
 
@@ -21,7 +20,6 @@ Personal_Projects/
 ├── AGENTS.md                         # Cross-tool agent + convention guide
 ├── CONTRIBUTING.md                   # Branch naming + commit conventions
 ├── expense-manager/                  # MoneyIQ app
-├── boutique-app/                     # PABS Boutique app
 └── README.md                         # This file
 ```
 

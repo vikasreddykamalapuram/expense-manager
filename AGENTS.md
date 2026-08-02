@@ -11,7 +11,6 @@ Cross-tool agent + convention guide for this repository. Works with **GitHub Cop
 | Project | Folder | Stack |
 |---------|--------|-------|
 | MoneyIQ (personal finance) | `expense-manager/` | React 18 + TypeScript + Vite + Tailwind + Dexie + Capacitor |
-| PABS Boutique (kids' e-commerce) | `boutique-app/` | Web e-commerce (see `Web_app_for_Boutique.txt` spec) |
 
 ## Custom agents
 
