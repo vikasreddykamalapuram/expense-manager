@@ -1,4 +1,4 @@
-package com.expenseiq.app
+package io.github.vikasreddykamalapuram.expenseiq
 
 import android.os.Bundle
 import com.getcapacitor.BridgeActivity

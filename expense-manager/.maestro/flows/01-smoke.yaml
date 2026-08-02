@@ -1,7 +1,7 @@
 # Cold-start smoke test — must pass on every PR.
 # Verifies the app launches, dismisses any first-run banners, and reaches
 # the Dashboard within a reasonable time budget.
-appId: com.expenseiq.app
+appId: io.github.vikasreddykamalapuram.expenseiq
 tags:
   - smoke
   - critical

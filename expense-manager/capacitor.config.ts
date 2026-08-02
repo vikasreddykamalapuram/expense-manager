@@ -8,7 +8,7 @@ import type { CapacitorConfig } from '@capacitor/cli';
  * loads the same PWA bundle we ship to GitHub Pages.
  */
 const config: CapacitorConfig = {
-  appId: 'com.expenseiq.app',
+  appId: 'io.github.vikasreddykamalapuram.expenseiq',
   appName: 'ExpenseIQ',
   webDir: 'dist',
   // Bind to the standard file:// origin inside the WebView. Setting a custom

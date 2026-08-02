@@ -28,9 +28,9 @@ const SHORTCUTS_SRC = join(REPO_ROOT, 'android-templates', 'shortcuts.xml');
 const SHORTCUTS_DEST = join(MAIN_SRC, 'res', 'xml', 'shortcuts.xml');
 const STRINGS_EXTRAS = join(REPO_ROOT, 'android-templates', 'strings-extras.xml');
 const WIDGET_TEMPLATE_DIR = join(REPO_ROOT, 'android-templates', 'widget');
-const WIDGET_KOTLIN_DEST = join(MAIN_SRC, 'java', 'com', 'expenseiq', 'app', 'ExpenseWidgetProvider.kt');
-const WIDGET_BRIDGE_DEST = join(MAIN_SRC, 'java', 'com', 'expenseiq', 'app', 'WidgetBridgePlugin.kt');
-const MAIN_ACTIVITY_DEST = join(MAIN_SRC, 'java', 'com', 'expenseiq', 'app', 'MainActivity.kt');
+const WIDGET_KOTLIN_DEST = join(MAIN_SRC, 'java', 'io', 'github', 'vikasreddykamalapuram', 'expenseiq', 'ExpenseWidgetProvider.kt');
+const WIDGET_BRIDGE_DEST = join(MAIN_SRC, 'java', 'io', 'github', 'vikasreddykamalapuram', 'expenseiq', 'WidgetBridgePlugin.kt');
+const MAIN_ACTIVITY_DEST = join(MAIN_SRC, 'java', 'io', 'github', 'vikasreddykamalapuram', 'expenseiq', 'MainActivity.kt');
 const WIDGET_LAYOUT_DEST = join(MAIN_SRC, 'res', 'layout', 'widget_expense.xml');
 const WIDGET_INFO_DEST = join(MAIN_SRC, 'res', 'xml', 'expense_widget_info.xml');
 
@@ -133,7 +133,7 @@ if (!activityMatch) {
 if (!xml.includes('ExpenseWidgetProvider')) {
   const receiver = `
         <receiver
-            android:name="com.expenseiq.app.ExpenseWidgetProvider"
+            android:name="io.github.vikasreddykamalapuram.expenseiq.ExpenseWidgetProvider"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />

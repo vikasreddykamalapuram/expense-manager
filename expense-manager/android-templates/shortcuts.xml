@@ -16,8 +16,8 @@
         android:shortcutLongLabel="@string/shortcut_add_expense_long">
         <intent
             android:action="android.intent.action.VIEW"
-            android:targetPackage="com.expenseiq.app"
-            android:targetClass="com.expenseiq.app.MainActivity"
+            android:targetPackage="io.github.vikasreddykamalapuram.expenseiq"
+            android:targetClass="io.github.vikasreddykamalapuram.expenseiq.MainActivity"
             android:data="expenseiq://add?type=expense" />
         <categories android:name="android.shortcut.conversation" />
     </shortcut>
@@ -30,8 +30,8 @@
         android:shortcutLongLabel="@string/shortcut_add_income_long">
         <intent
             android:action="android.intent.action.VIEW"
-            android:targetPackage="com.expenseiq.app"
-            android:targetClass="com.expenseiq.app.MainActivity"
+            android:targetPackage="io.github.vikasreddykamalapuram.expenseiq"
+            android:targetClass="io.github.vikasreddykamalapuram.expenseiq.MainActivity"
             android:data="expenseiq://add?type=income" />
     </shortcut>
 
@@ -43,8 +43,8 @@
         android:shortcutLongLabel="@string/shortcut_analytics_long">
         <intent
             android:action="android.intent.action.VIEW"
-            android:targetPackage="com.expenseiq.app"
-            android:targetClass="com.expenseiq.app.MainActivity"
+            android:targetPackage="io.github.vikasreddykamalapuram.expenseiq"
+            android:targetClass="io.github.vikasreddykamalapuram.expenseiq.MainActivity"
             android:data="expenseiq://analytics" />
     </shortcut>
 
@@ -56,8 +56,8 @@
         android:shortcutLongLabel="@string/shortcut_budgets_long">
         <intent
             android:action="android.intent.action.VIEW"
-            android:targetPackage="com.expenseiq.app"
-            android:targetClass="com.expenseiq.app.MainActivity"
+            android:targetPackage="io.github.vikasreddykamalapuram.expenseiq"
+            android:targetClass="io.github.vikasreddykamalapuram.expenseiq.MainActivity"
             android:data="expenseiq://budgets" />
     </shortcut>
 

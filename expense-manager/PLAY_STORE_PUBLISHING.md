@@ -3,7 +3,7 @@
 Complete end-to-end guide to ship ExpenseIQ to the Google Play Store from a Mac.
 Follow the phases in order. Each phase lists prerequisites, exact commands, and a "done when" check.
 
-> Repo: `vikasreddykamalapuram/expense-manager` · Branch: `master` · Package: `com.expenseiq.app`
+> Repo: `vikasreddykamalapuram/expense-manager` · Branch: `master` · Package: `io.github.vikasreddykamalapuram.expenseiq`
 
 ---
 
@@ -97,9 +97,9 @@ cd ~/repos/expense-manager
 git checkout master
 git pull
 
-# package.json version is already 3.2.0 — tag matches
-git tag v3.2.0
-git push origin v3.2.0
+# package.json version is 3.2.1 (bumped after the com.expenseiq.app package rename) — tag matches
+git tag v3.2.1
+git push origin v3.2.1
 
 # Watch the run (~5 min)
 gh run watch
@@ -107,19 +107,19 @@ gh run watch
 
 **If the run fails:** read the failing step's logs, fix the issue, then re-tag:
 ```bash
-git tag -d v3.2.0
-git push origin :refs/tags/v3.2.0
+git tag -d v3.2.1
+git push origin :refs/tags/v3.2.1
 # ...commit fix, push, then:
-git tag v3.2.0
-git push origin v3.2.0
+git tag v3.2.1
+git push origin v3.2.1
 ```
 
 **Download the AAB when the run turns green:**
 ```bash
 RUN_ID=$(gh run list --workflow=android-release.yml --limit 1 --json databaseId --jq '.[0].databaseId')
-mkdir -p ~/Downloads/expenseiq-v3.2.0
-gh run download $RUN_ID -D ~/Downloads/expenseiq-v3.2.0
-find ~/Downloads/expenseiq-v3.2.0 -name "*.aab"
+mkdir -p ~/Downloads/expenseiq-v3.2.1
+gh run download $RUN_ID -D ~/Downloads/expenseiq-v3.2.1
+find ~/Downloads/expenseiq-v3.2.1 -name "*.aab"
 ```
 
 **Done when:** you have a local `app-release.aab` file (~10–20 MB).
@@ -190,10 +190,11 @@ Work through each item top-to-bottom. Reference material lives in `playstore/`:
 
 ### 7e. Data safety
 Use `playstore/UPLOAD_CHECKLIST.md` → *Data Safety* section. Declared items:
-- **Personal info → Email address** — collected + shared to Supabase (RLS-isolated).
-- **Personal info → User IDs** — collected + shared.
-- **Financial info → Purchase history, other financial info** — collected + shared.
-- All **encrypted in transit** (TLS 1.3), user can **request deletion** from Settings → Danger Zone.
+- **Personal info → Email address** — collected (cloud sync only), **not shared**.
+- **Personal info → User IDs** — collected (cloud sync only), **not shared**.
+- **Financial info → Other financial info** (transactions, accounts, budgets) — collected (cloud sync only), **not shared**.
+- Account creation method: **OAuth** (Google / Microsoft). Provide the **Delete account URL**: `https://vikasreddykamalapuram.github.io/expense-manager/account-deletion.html`.
+- All **encrypted in transit** (TLS 1.3). **Not shared** with third parties — Supabase is the developer's own backend/processor. User can **request deletion** from Settings → Advanced → Delete cloud sync data, or via the Delete account URL.
 
 ### 7f. Government apps
 - **No.**
@@ -203,6 +204,7 @@ Use `playstore/UPLOAD_CHECKLIST.md` → *Data Safety* section. Declared items:
 
 ### 7h. Privacy policy URL
 - Paste `https://vikasreddykamalapuram.github.io/expense-manager/privacy-policy.html`.
+- **Delete account URL** (Data safety → account creation): `https://vikasreddykamalapuram.github.io/expense-manager/account-deletion.html`.
 
 ### 7i. App category
 - Category: **Finance**.
@@ -254,7 +256,7 @@ Play policy: **new apps must ship on Internal / Closed / Open** before Productio
 
 1. Play Console → **Testing → Internal testing → Create new release**.
 2. **Choose signing key:** accept "Let Google manage & protect your app signing key" (Play App Signing). Upload your `expenseiq-release.keystore` as the **upload key**.
-3. **Upload the AAB** from `~/Downloads/expenseiq-v3.2.0/`.
+3. **Upload the AAB** from `~/Downloads/expenseiq-v3.2.1/`.
 4. **Release name:** `3.2.0 (41)` — matches versionCode from CI.
 5. **Release notes:** paste from `playstore/release-notes.md`.
 6. **Testers:** create an email list (add your own gmail, at least 1 other). Save an **opt-in URL** — testers open it on their Android device, join, and Play Store surfaces the app.
@@ -371,6 +373,7 @@ Both `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` must be present.
 - `playstore/release-notes.md` — release notes template + history
 - `docs/MAC_SETUP.md` — deeper Mac dev environment notes
 - `public/privacy-policy.html` — the URL you paste into Play Console
+- `public/account-deletion.html` — the Delete account URL for the Data safety form
 - `public/.well-known/assetlinks.json` — App Links verification
 - `.github/workflows/android-release.yml` — the CI that builds the AAB
 - `scripts/inject-signing-config.mjs` — release keystore injection into gradle
@@ -379,4 +382,4 @@ Both `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` must be present.
 
 ---
 
-_Last updated: 2026-07-29 · Currently at Phase 3 (waiting for green AAB build on tag `v3.2.0`)._
+_Last updated: 2026-08-02 · applicationId changed to `io.github.vikasreddykamalapuram.expenseiq` (old `com.expenseiq.app` was globally reserved). Create a FRESH Play Console app entry for the new package, then build+upload tag `v3.2.1` to Internal testing._

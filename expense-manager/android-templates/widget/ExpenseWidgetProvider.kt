@@ -1,4 +1,4 @@
-package com.expenseiq.app
+package io.github.vikasreddykamalapuram.expenseiq
 
 import android.app.PendingIntent
 import android.appwidget.AppWidgetManager

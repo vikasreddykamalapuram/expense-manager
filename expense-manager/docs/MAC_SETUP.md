@@ -526,14 +526,14 @@ Almost always missing permissions or JS error. Get the logs:
 ```bash
 adb logcat -c   # clear
 # launch the app on the device, then:
-adb logcat --pid=$(adb shell pidof -s com.expenseiq.app) > crash.log
+adb logcat --pid=$(adb shell pidof -s io.github.vikasreddykamalapuram.expenseiq) > crash.log
 ```
 Look for `chromium:` or `Capacitor/Console:` lines. Send those to me.
 
 ### "Unable to install app-debug.apk: INSTALL_FAILED_UPDATE_INCOMPATIBLE"
 You installed a differently-signed version earlier. Uninstall first:
 ```bash
-adb uninstall com.expenseiq.app
+adb uninstall io.github.vikasreddykamalapuram.expenseiq
 ```
 
 ### "adb: command not found" after fresh install
@@ -548,8 +548,8 @@ Add platform-tools to PATH (see step 1f). Or invoke it directly:
 
 ### Deep links open the browser instead of the app
 1. Verify the intent-filter is in `AndroidManifest.xml`: `grep -A 3 'android:host' android/app/src/main/AndroidManifest.xml`.
-2. After first release upload to Play Console, copy the **App Signing SHA-256** into `public/.well-known/assetlinks.json`, redeploy the web app, then run: `adb shell pm verify-app-links --re-verify com.expenseiq.app`.
-3. Verify: `adb shell pm get-app-links com.expenseiq.app` → status should be `verified`.
+2. After first release upload to Play Console, copy the **App Signing SHA-256** into `public/.well-known/assetlinks.json`, redeploy the web app, then run: `adb shell pm verify-app-links --re-verify io.github.vikasreddykamalapuram.expenseiq`.
+3. Verify: `adb shell pm get-app-links io.github.vikasreddykamalapuram.expenseiq` → status should be `verified`.
 
 ### `npm run cap:assets` fails with "sharp" install error
 ```bash

@@ -1,5 +1,5 @@
 # Adds a transaction and verifies it lands in the Transactions list.
-appId: com.expenseiq.app
+appId: io.github.vikasreddykamalapuram.expenseiq
 tags:
   - critical
 ---
