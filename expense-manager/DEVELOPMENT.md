@@ -1,6 +1,6 @@
-# ExpenseIQ — Development Setup Guide
+# MoneyIQ — Development Setup Guide
 
-Everything you need to build, test, and run ExpenseIQ locally as a **web app**
+Everything you need to build, test, and run MoneyIQ locally as a **web app**
 and as a **mobile app** (Android via Capacitor). Follow the sections in order
 the first time; after that, jump straight to the "Everyday commands"
 cheat‑sheet at the bottom.

@@ -4,7 +4,7 @@
  *   1. INTERNET, VIBRATE, USE_BIOMETRIC, POST_NOTIFICATIONS, SCHEDULE_EXACT_ALARM
  *   2. VIEW intent-filters for App Links (https) + custom scheme (expenseiq://)
  *   3. SEND / SEND_MULTIPLE intent-filter so users can share bank SMS or
- *      receipt text into ExpenseIQ (parsed by shareParser.ts to prefill /add).
+ *      receipt text into MoneyIQ (parsed by shareParser.ts to prefill /add).
  *   4. <meta-data android:name="android.app.shortcuts" ...> pointer so
  *      long-pressing the launcher icon shows our 4 quick actions.
  *
@@ -28,9 +28,9 @@ const SHORTCUTS_SRC = join(REPO_ROOT, 'android-templates', 'shortcuts.xml');
 const SHORTCUTS_DEST = join(MAIN_SRC, 'res', 'xml', 'shortcuts.xml');
 const STRINGS_EXTRAS = join(REPO_ROOT, 'android-templates', 'strings-extras.xml');
 const WIDGET_TEMPLATE_DIR = join(REPO_ROOT, 'android-templates', 'widget');
-const WIDGET_KOTLIN_DEST = join(MAIN_SRC, 'java', 'io', 'github', 'vikasreddykamalapuram', 'expenseiq', 'ExpenseWidgetProvider.kt');
-const WIDGET_BRIDGE_DEST = join(MAIN_SRC, 'java', 'io', 'github', 'vikasreddykamalapuram', 'expenseiq', 'WidgetBridgePlugin.kt');
-const MAIN_ACTIVITY_DEST = join(MAIN_SRC, 'java', 'io', 'github', 'vikasreddykamalapuram', 'expenseiq', 'MainActivity.kt');
+const WIDGET_KOTLIN_DEST = join(MAIN_SRC, 'java', 'io', 'github', 'vikasreddykamalapuram', 'moneyiq', 'ExpenseWidgetProvider.kt');
+const WIDGET_BRIDGE_DEST = join(MAIN_SRC, 'java', 'io', 'github', 'vikasreddykamalapuram', 'moneyiq', 'WidgetBridgePlugin.kt');
+const MAIN_ACTIVITY_DEST = join(MAIN_SRC, 'java', 'io', 'github', 'vikasreddykamalapuram', 'moneyiq', 'MainActivity.kt');
 const WIDGET_LAYOUT_DEST = join(MAIN_SRC, 'res', 'layout', 'widget_expense.xml');
 const WIDGET_INFO_DEST = join(MAIN_SRC, 'res', 'xml', 'expense_widget_info.xml');
 
@@ -133,7 +133,7 @@ if (!activityMatch) {
 if (!xml.includes('ExpenseWidgetProvider')) {
   const receiver = `
         <receiver
-            android:name="io.github.vikasreddykamalapuram.expenseiq.ExpenseWidgetProvider"
+            android:name="io.github.vikasreddykamalapuram.moneyiq.ExpenseWidgetProvider"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />

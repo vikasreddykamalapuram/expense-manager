@@ -50,7 +50,7 @@ export function PWAUpdatePrompt() {
         <RefreshCw size={20} className="text-primary-500 flex-shrink-0" />
         <div className="flex-1">
           <p className="text-sm font-medium text-gray-900 dark:text-gray-100">Update available</p>
-          <p className="text-xs text-gray-500 dark:text-gray-400">A new version of ExpenseIQ is ready</p>
+          <p className="text-xs text-gray-500 dark:text-gray-400">A new version of MoneyIQ is ready</p>
         </div>
         <button
           onClick={handleUpdate}

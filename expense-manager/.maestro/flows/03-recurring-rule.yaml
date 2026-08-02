@@ -1,6 +1,6 @@
 # Verifies that the recurring-rule flow opens without regression.
 # Guards the "recurring rule" issue the user flagged earlier.
-appId: io.github.vikasreddykamalapuram.expenseiq
+appId: io.github.vikasreddykamalapuram.moneyiq
 tags:
   - regression
 ---

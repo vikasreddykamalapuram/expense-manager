@@ -1,4 +1,4 @@
-# ExpenseIQ — Personal Finance Manager
+# MoneyIQ — Personal Finance Manager
 
 > A modern, feature-rich expense tracking web application built with React, TypeScript, and Tailwind CSS.
 

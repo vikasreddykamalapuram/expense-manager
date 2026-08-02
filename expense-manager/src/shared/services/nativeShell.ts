@@ -107,7 +107,7 @@ export async function bootstrapNativeShell(): Promise<void> {
   } catch { /* ignore */ }
 
   // Share-target handler: when the user shares text (bank SMS, receipt email,
-  // payment confirmation) into ExpenseIQ, parse it and prefill /add.
+  // payment confirmation) into MoneyIQ, parse it and prefill /add.
   try {
     await handlePendingShareIntent();
     App.addListener('appStateChange', ({ isActive }) => {

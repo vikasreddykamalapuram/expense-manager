@@ -175,7 +175,7 @@ export function Layout() {
             'transition-opacity duration-200 min-w-0',
             sidebarExpanded ? 'opacity-100' : 'lg:opacity-0 lg:w-0 opacity-100'
           )}>
-            <h1 className="text-lg font-bold text-gray-900 dark:text-gray-100 whitespace-nowrap">ExpenseIQ</h1>
+            <h1 className="text-lg font-bold text-gray-900 dark:text-gray-100 whitespace-nowrap">MoneyIQ</h1>
             <p className="text-[10px] font-medium uppercase tracking-wider text-gray-400 dark:text-gray-500 whitespace-nowrap">Finance Manager</p>
           </div>
           {/* Mobile close */}

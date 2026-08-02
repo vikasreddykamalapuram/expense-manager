@@ -1,4 +1,4 @@
-# Mac Setup — Android platform for ExpenseIQ
+# Mac Setup — Android platform for MoneyIQ
 
 Complete step-by-step guide for setting up the Android build/test environment on macOS. Every command is copy-paste ready. Use **Terminal** or **Google Antigravity** — the shell commands are identical.
 
@@ -388,7 +388,7 @@ keytool -genkey -v \
 Answer the prompts:
 - Store password: **pick a strong one** — record it in your password manager NOW.
 - First & last name: `Vikas Kamalapuram`
-- Organizational unit: `ExpenseIQ`
+- Organizational unit: `MoneyIQ`
 - Organization: `Personal`
 - City / State / Country: your info
 - Correct? → **yes**
@@ -526,14 +526,14 @@ Almost always missing permissions or JS error. Get the logs:
 ```bash
 adb logcat -c   # clear
 # launch the app on the device, then:
-adb logcat --pid=$(adb shell pidof -s io.github.vikasreddykamalapuram.expenseiq) > crash.log
+adb logcat --pid=$(adb shell pidof -s io.github.vikasreddykamalapuram.moneyiq) > crash.log
 ```
 Look for `chromium:` or `Capacitor/Console:` lines. Send those to me.
 
 ### "Unable to install app-debug.apk: INSTALL_FAILED_UPDATE_INCOMPATIBLE"
 You installed a differently-signed version earlier. Uninstall first:
 ```bash
-adb uninstall io.github.vikasreddykamalapuram.expenseiq
+adb uninstall io.github.vikasreddykamalapuram.moneyiq
 ```
 
 ### "adb: command not found" after fresh install
@@ -548,8 +548,8 @@ Add platform-tools to PATH (see step 1f). Or invoke it directly:
 
 ### Deep links open the browser instead of the app
 1. Verify the intent-filter is in `AndroidManifest.xml`: `grep -A 3 'android:host' android/app/src/main/AndroidManifest.xml`.
-2. After first release upload to Play Console, copy the **App Signing SHA-256** into `public/.well-known/assetlinks.json`, redeploy the web app, then run: `adb shell pm verify-app-links --re-verify io.github.vikasreddykamalapuram.expenseiq`.
-3. Verify: `adb shell pm get-app-links io.github.vikasreddykamalapuram.expenseiq` → status should be `verified`.
+2. After first release upload to Play Console, copy the **App Signing SHA-256** into `public/.well-known/assetlinks.json`, redeploy the web app, then run: `adb shell pm verify-app-links --re-verify io.github.vikasreddykamalapuram.moneyiq`.
+3. Verify: `adb shell pm get-app-links io.github.vikasreddykamalapuram.moneyiq` → status should be `verified`.
 
 ### `npm run cap:assets` fails with "sharp" install error
 ```bash
@@ -599,17 +599,17 @@ The app should launch on your connected phone / emulator.
 After first install, test each mobile-integration surface:
 
 **1. App Shortcuts (launcher long-press)**
-- Long-press the ExpenseIQ icon on your home screen / app drawer.
+- Long-press the MoneyIQ icon on your home screen / app drawer.
 - You should see: **Expense**, **Income**, **Analytics**, **Budgets**.
 - Tap **Expense** → app opens directly to the Add Transaction form with type=expense.
 
 **2. Share target (bank SMS → prefilled add)**
 - Open any bank-style SMS or note text like `"Rs. 500 debited at Uber on 25-Jul"`.
-- Long-press → **Share** → pick **ExpenseIQ**.
+- Long-press → **Share** → pick **MoneyIQ**.
 - App opens with amount `500` and note `Uber` prefilled.
 
 **3. Home-screen widget**
-- Long-press an empty area on your home screen → **Widgets** → find **ExpenseIQ**.
+- Long-press an empty area on your home screen → **Widgets** → find **MoneyIQ**.
 - Drag it to the home screen. It shows this month's expense total.
 - Tap the "Add expense" button → deep-links into the app.
 - The widget refreshes automatically whenever you add/edit/delete a transaction.

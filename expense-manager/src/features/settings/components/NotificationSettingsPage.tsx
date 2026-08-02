@@ -146,7 +146,7 @@ export function NotificationSettingsPage() {
 
       {status === 'denied' && (
         <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700 dark:border-red-900 dark:bg-red-950/40 dark:text-red-200">
-          Notification permission was denied. Enable it in your device Settings for ExpenseIQ.
+          Notification permission was denied. Enable it in your device Settings for MoneyIQ.
         </div>
       )}
 

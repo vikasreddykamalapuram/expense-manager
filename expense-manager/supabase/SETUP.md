@@ -1,4 +1,4 @@
-# ExpenseIQ — Supabase Setup Guide
+# MoneyIQ — Supabase Setup Guide
 
 ## Step 1: Create a New Supabase Project
 
@@ -111,7 +111,7 @@ Each table should show a shield icon 🛡️ indicating Row Level Security is ac
 
 ```
 ┌──────────────────────────────────────────────┐
-│              ExpenseIQ (Browser)              │
+│              MoneyIQ (Browser)              │
 │                                              │
 │  IndexedDB (Dexie) ←→ React App ←→ UI       │
 │       ↕ (delta sync)                         │

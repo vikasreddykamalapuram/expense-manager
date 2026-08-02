@@ -1,4 +1,4 @@
-package io.github.vikasreddykamalapuram.expenseiq
+package io.github.vikasreddykamalapuram.moneyiq
 
 import android.app.PendingIntent
 import android.appwidget.AppWidgetManager
@@ -11,7 +11,7 @@ import android.net.Uri
 import android.widget.RemoteViews
 
 /**
- * Minimal home-screen widget for ExpenseIQ.
+ * Minimal home-screen widget for MoneyIQ.
  *
  * Shows this month's total spend (read from SharedPreferences that the JS
  * side keeps in sync via the WidgetBridge Capacitor plugin — for now we

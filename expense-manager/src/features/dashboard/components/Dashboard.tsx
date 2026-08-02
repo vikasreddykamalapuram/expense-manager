@@ -129,7 +129,7 @@ export function Dashboard() {
       {!hasData ? (
         <EmptyState
           icon={<Wallet size={40} />}
-          title="Welcome to ExpenseIQ!"
+          title="Welcome to MoneyIQ!"
           description="Start tracking your finances by adding your first transaction. Your dashboard will come alive with charts and insights."
           action={
             <Button icon={<PlusCircle size={18} />} onClick={() => navigate('/add')}>

@@ -81,7 +81,7 @@ export function PWAInstallPrompt() {
           <div className="flex items-start gap-3">
             <Download size={20} className="mt-0.5 text-primary-500 flex-shrink-0" />
             <div className="flex-1">
-              <p className="text-sm font-medium text-gray-900 dark:text-gray-100">Install ExpenseIQ</p>
+              <p className="text-sm font-medium text-gray-900 dark:text-gray-100">Install MoneyIQ</p>
               <div className="mt-2 space-y-2">
                 <div className="flex items-center gap-2 text-xs text-gray-600 dark:text-gray-400">
                   <span className="flex h-5 w-5 items-center justify-center rounded-full bg-primary-100 text-[10px] font-bold text-primary-700 dark:bg-primary-900 dark:text-primary-300">1</span>
@@ -114,7 +114,7 @@ export function PWAInstallPrompt() {
       <div className="flex items-center gap-3 rounded-xl border border-primary-200 bg-white p-4 shadow-lg dark:border-primary-800 dark:bg-gray-800">
         <Download size={20} className="text-primary-500 flex-shrink-0" />
         <div className="flex-1">
-          <p className="text-sm font-medium text-gray-900 dark:text-gray-100">Install ExpenseIQ</p>
+          <p className="text-sm font-medium text-gray-900 dark:text-gray-100">Install MoneyIQ</p>
           <p className="text-xs text-gray-500 dark:text-gray-400">Add to home screen for the best experience</p>
         </div>
         <button

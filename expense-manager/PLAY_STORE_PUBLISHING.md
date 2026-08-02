@@ -1,9 +1,9 @@
-# ExpenseIQ — Google Play Store Publishing Playbook
+# MoneyIQ — Google Play Store Publishing Playbook
 
-Complete end-to-end guide to ship ExpenseIQ to the Google Play Store from a Mac.
+Complete end-to-end guide to ship MoneyIQ to the Google Play Store from a Mac.
 Follow the phases in order. Each phase lists prerequisites, exact commands, and a "done when" check.
 
-> Repo: `vikasreddykamalapuram/expense-manager` · Branch: `master` · Package: `io.github.vikasreddykamalapuram.expenseiq`
+> Repo: `vikasreddykamalapuram/expense-manager` · Branch: `master` · Package: `io.github.vikasreddykamalapuram.moneyiq`
 
 ---
 
@@ -42,7 +42,7 @@ keytool -genkeypair -v \
   -keyalg RSA -keysize 2048 -validity 10000 \
   -storepass 'CHOOSE_A_STRONG_PASSWORD' \
   -keypass 'CHOOSE_A_STRONG_PASSWORD' \
-  -dname "CN=Vikas Kamalapuram, OU=ExpenseIQ, O=Personal, L=Hyderabad, ST=Telangana, C=IN"
+  -dname "CN=Vikas Kamalapuram, OU=MoneyIQ, O=Personal, L=Hyderabad, ST=Telangana, C=IN"
 ```
 
 **Back it up NOW to at least two places:**
@@ -146,7 +146,7 @@ https://vikasreddykamalapuram.github.io/expense-manager/privacy-policy.html
 ## Phase 5 — Play Console account setup
 
 1. Open **https://play.google.com/console/signup**.
-2. Choose **"An organization"** if you want ExpenseIQ under a brand later; else **"Myself"**.
+2. Choose **"An organization"** if you want MoneyIQ under a brand later; else **"Myself"**.
 3. Pay the **USD 25 one-time fee** (credit card, non-refundable).
 4. Complete developer profile: legal name, address, phone (India OK), support email (`vikasreddykamalapuram@gmail.com`).
 5. Verify identity (Play Console will guide you — govt ID + selfie for individual accounts).
@@ -161,7 +161,7 @@ Click **"Create app"** and fill:
 
 | Field | Value |
 |-------|-------|
-| App name | `ExpenseIQ` |
+| App name | `MoneyIQ` |
 | Default language | English (India) — `en-IN` |
 | App or game | App |
 | Free or paid | Free |
@@ -182,7 +182,7 @@ Work through each item top-to-bottom. Reference material lives in `playstore/`:
 - **No ads.**
 
 ### 7c. Content ratings
-- Fill the IARC questionnaire. ExpenseIQ has no violence/gambling/user-generated content → will get **"Rated for 3+"** or equivalent.
+- Fill the IARC questionnaire. MoneyIQ has no violence/gambling/user-generated content → will get **"Rated for 3+"** or equivalent.
 
 ### 7d. Target audience
 - Ages 18+ (finance app).
@@ -244,7 +244,7 @@ adb pull /sdcard/screen1.png ~/Downloads/screenshots/
 Aim for 4–6 screenshots covering: Dashboard, Add transaction, Analytics, Budget, Reports, Cross-device sync.
 
 ### Feature graphic
-Fastest path: use Canva → search "Google Play Feature Graphic" → 1024×500 template → drop the ExpenseIQ logo + tagline "Smart personal finance, everywhere you are." → export PNG.
+Fastest path: use Canva → search "Google Play Feature Graphic" → 1024×500 template → drop the MoneyIQ logo + tagline "Smart personal finance, everywhere you are." → export PNG.
 
 **Done when:** all fields + graphics are uploaded and the Store listing shows a **"Saved"** badge.
 
@@ -264,7 +264,7 @@ Play policy: **new apps must ship on Internal / Closed / Open** before Productio
 
 **Wait 10–60 min** for Play to process the AAB. When it's live:
 - Open the opt-in URL on your phone.
-- Install ExpenseIQ from Play Store.
+- Install MoneyIQ from Play Store.
 - Verify: sign-in, add a transaction, sync round-trip with the web app.
 
 **Done when:** you've installed the app from Play Store via the internal track and confirmed it works.
@@ -289,7 +289,7 @@ For `https://vikasreddykamalapuram.github.io/expense-manager` links to open the 
    ```
 5. Play Console → **Setup → App links** → auto-verify shows green.
 
-**Done when:** clicking a `https://vikasreddykamalapuram.github.io/expense-manager/...` link on your phone opens ExpenseIQ directly instead of a browser.
+**Done when:** clicking a `https://vikasreddykamalapuram.github.io/expense-manager/...` link on your phone opens MoneyIQ directly instead of a browser.
 
 ---
 
@@ -304,7 +304,7 @@ Once internal testing is stable (recommend **7 days of dogfooding**):
 
 **Review time:** typically 1–3 days for first-time apps, few hours for updates.
 
-**Done when:** Play Console shows **"Available on Google Play"** and searching for `ExpenseIQ` on your phone's Play Store returns your app.
+**Done when:** Play Console shows **"Available on Google Play"** and searching for `MoneyIQ` on your phone's Play Store returns your app.
 
 ---
 
@@ -382,4 +382,4 @@ Both `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` must be present.
 
 ---
 
-_Last updated: 2026-08-02 · applicationId changed to `io.github.vikasreddykamalapuram.expenseiq` (old `com.expenseiq.app` was globally reserved). Create a FRESH Play Console app entry for the new package, then build+upload tag `v3.2.1` to Internal testing._
+_Last updated: 2026-08-02 · applicationId changed to `io.github.vikasreddykamalapuram.moneyiq` (old `com.expenseiq.app` was globally reserved). Create a FRESH Play Console app entry for the new package, then build+upload tag `v3.2.1` to Internal testing._

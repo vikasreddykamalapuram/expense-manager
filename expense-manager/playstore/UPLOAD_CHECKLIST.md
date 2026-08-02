@@ -6,7 +6,7 @@ Follow this once when creating the app; then only the release steps matter for e
 
 - [ ] Create Google Play Developer account ($25 one-time).
 - [ ] In Play Console → **Create app**:
-  - App name: `ExpenseIQ`
+  - App name: `MoneyIQ`
   - Default language: `English (India)`
   - App or game: `App`
   - Free or paid: `Free`
@@ -65,8 +65,8 @@ Copy that fingerprint into `expense-manager/public/.well-known/assetlinks.json`,
 
 Verify with:
 ```
-adb shell pm verify-app-links --re-verify io.github.vikasreddykamalapuram.expenseiq
-adb shell pm get-app-links io.github.vikasreddykamalapuram.expenseiq
+adb shell pm verify-app-links --re-verify io.github.vikasreddykamalapuram.moneyiq
+adb shell pm get-app-links io.github.vikasreddykamalapuram.moneyiq
 ```
 
 ## Play Store Data safety declaration (cheat sheet)
