@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useCallback } from 'react';
 import { useAppContext } from '../../context/AppContext';
 import { Settings, AccentColor, DarkMode } from '../types';
+import { syncStatusBarTheme } from '../services/statusBar';
 
 type ThemeMode = Settings['theme'];
 type EffectiveTheme = 'light' | 'dark';
@@ -27,6 +28,8 @@ export function useTheme() {
       } else {
         root.classList.remove('dark');
       }
+      // Keep the native status bar icons legible after runtime theme switches.
+      void syncStatusBarTheme(t === 'dark');
     };
 
     if (theme === 'system') {

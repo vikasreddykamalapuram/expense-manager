@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
-import { useSearchParams } from 'react-router-dom';
-import { List, CalendarDays } from 'lucide-react';
+import { useSearchParams, useNavigate } from 'react-router-dom';
+import { List, CalendarDays, Plus } from 'lucide-react';
 import { TransactionList } from './TransactionList';
 import { FinancialCalendar } from '../../insights/components/FinancialCalendar';
 import { useAppContext } from '../../../context/AppContext';
@@ -15,6 +15,7 @@ const VIEWS: Array<{ id: ViewMode; label: string; icon: typeof List }> = [
 
 export function TransactionsPage() {
   const { state } = useAppContext();
+  const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const view: ViewMode = useMemo(() => {
     const v = searchParams.get('view');
@@ -39,6 +40,14 @@ export function TransactionsPage() {
             {state.transactions.length} total transaction{state.transactions.length !== 1 ? 's' : ''}
           </p>
         </div>
+        <button
+          type="button"
+          onClick={() => navigate('/add')}
+          className="inline-flex items-center justify-center gap-2 rounded-lg bg-primary-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-primary-700"
+        >
+          <Plus size={18} />
+          Add transaction
+        </button>
       </div>
 
       <div className="flex gap-1 border-b border-gray-200 dark:border-gray-700" role="tablist" aria-label="Transactions view">

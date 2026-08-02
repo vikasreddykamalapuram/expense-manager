@@ -15,10 +15,10 @@
  */
 import { App } from '@capacitor/app';
 import { SplashScreen } from '@capacitor/splash-screen';
-import { StatusBar, Style } from '@capacitor/status-bar';
+import { syncStatusBarTheme } from './statusBar';
 import { PrivacyScreen } from '@capacitor-community/privacy-screen';
 import { SendIntent } from 'send-intent';
-import { isNativePlatform, isAndroid } from './platform';
+import { isNativePlatform } from './platform';
 import { prefs } from './preferences';
 import { notificationService } from './notificationService';
 import { parseSharedText, buildAddDeepLink } from './shareParser';
@@ -31,14 +31,8 @@ export async function bootstrapNativeShell(): Promise<void> {
 
   if (!isNativePlatform()) return;
 
-  // Status bar: follow the current theme (dark class on <html>).
-  try {
-    const isDark = document.documentElement.classList.contains('dark');
-    await StatusBar.setStyle({ style: isDark ? Style.Dark : Style.Light });
-    if (isAndroid()) {
-      await StatusBar.setBackgroundColor({ color: isDark ? '#0a0a0a' : '#ffffff' });
-    }
-  } catch { /* ignore */ }
+  // Status bar: follow the current theme. Re-applied on every theme change by useTheme.
+  await syncStatusBarTheme(document.documentElement.classList.contains('dark'));
 
   // Hide the splash screen shortly after the app boots.
   try {

@@ -175,26 +175,26 @@ export function SettingsPage() {
         <p className="text-sm text-gray-500 dark:text-gray-400">Customize your experience</p>
       </div>
 
-      {/* Tab bar */}
-      <div className="-mx-4 overflow-x-auto sm:mx-0">
-        <div className="flex min-w-max gap-1 border-b border-gray-200 dark:border-gray-700 px-4 sm:px-0">
-          {TABS.map(({ id, label, icon: Icon, path }) => (
-            <button
-              key={id}
-              onClick={() => navigate(path, { replace: true })}
-              className={classNames(
-                'flex items-center gap-1.5 border-b-2 px-3 py-2 text-sm font-medium whitespace-nowrap transition-colors',
-                activeTab === id
-                  ? 'border-primary-600 text-primary-700 dark:text-primary-400'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200',
-              )}
-              aria-current={activeTab === id ? 'page' : undefined}
-            >
-              <Icon size={14} />
-              {label}
-            </button>
-          ))}
-        </div>
+      {/* Tab bar — wraps to multiple rows so every section is reachable without horizontal scrolling */}
+      <div className="flex flex-wrap gap-2" role="tablist" aria-label="Settings sections">
+        {TABS.map(({ id, label, icon: Icon, path }) => (
+          <button
+            key={id}
+            role="tab"
+            onClick={() => navigate(path, { replace: true })}
+            className={classNames(
+              'flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium transition-colors',
+              activeTab === id
+                ? 'bg-primary-600 text-white shadow-sm'
+                : 'bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700',
+            )}
+            aria-selected={activeTab === id}
+            aria-current={activeTab === id ? 'page' : undefined}
+          >
+            <Icon size={14} />
+            {label}
+          </button>
+        ))}
       </div>
 
       {/* Notifications tab */}
