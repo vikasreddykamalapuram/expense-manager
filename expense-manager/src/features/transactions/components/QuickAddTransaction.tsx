@@ -1,11 +1,15 @@
 import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { v4 as uuidv4 } from 'uuid';
-import { ArrowUpCircle, ArrowDownCircle, ArrowLeftRight, Delete } from 'lucide-react';
+import { ArrowUpCircle, ArrowDownCircle, ArrowLeftRight, Delete, Plus } from 'lucide-react';
 import { useAppContext } from '../../../context/AppContext';
 import { CategoryIcon } from '../../../shared/components/ui/CategoryIcon';
+import { Modal } from '../../../shared/components/ui/Modal';
+import { CategoryForm } from '../../categories/components/CategoryForm';
+import { AccountForm } from '../../accounts/components/AccountForm';
 import { getToday, classNames } from '../../../shared/utils/helpers';
 import { haptic } from '../../../shared/services/haptics';
+import type { Account } from '../../../shared/types';
 
 type TxType = 'income' | 'expense' | 'transfer';
 
@@ -53,6 +57,9 @@ export function QuickAddTransaction({ initialType, prefillAmount, prefillNote, o
   const [date, setDate] = useState(getToday());
   const [note, setNote] = useState(prefillNote || '');
   const [error, setError] = useState('');
+  const [showCategoryForm, setShowCategoryForm] = useState(false);
+  const [newCatParentId, setNewCatParentId] = useState<string | undefined>(undefined);
+  const [showAccountForm, setShowAccountForm] = useState(false);
 
   const activeAccounts = useMemo(() => accounts.filter((a) => a.isActive), [accounts]);
   const parentCategories = useMemo(
@@ -163,6 +170,18 @@ export function QuickAddTransaction({ initialType, prefillAmount, prefillNote, o
       {/* Category grid (income/expense) */}
       {type !== 'transfer' ? (
         <div>
+          {parentCategories.length === 0 ? (
+            <div className="flex flex-col items-center gap-2 rounded-xl border border-dashed border-gray-300 py-6 text-center dark:border-gray-600">
+              <p className="text-sm text-gray-500 dark:text-gray-400">No {type} categories yet</p>
+              <button
+                type="button"
+                onClick={() => { setNewCatParentId(undefined); setShowCategoryForm(true); }}
+                className="inline-flex items-center gap-1.5 rounded-lg bg-primary-600 px-3 py-1.5 text-sm font-medium text-white transition-colors hover:bg-primary-700"
+              >
+                <Plus size={16} /> Create category
+              </button>
+            </div>
+          ) : (
           <div className="grid max-h-44 grid-cols-4 gap-2 overflow-y-auto sm:grid-cols-5">
             {parentCategories.map((c) => (
               <button
@@ -178,13 +197,23 @@ export function QuickAddTransaction({ initialType, prefillAmount, prefillNote, o
                 <span className="line-clamp-2 text-[11px] leading-tight text-gray-600 dark:text-gray-300">{c.name}</span>
               </button>
             ))}
+            <button
+              type="button"
+              onClick={() => { setNewCatParentId(undefined); setShowCategoryForm(true); }}
+              className="flex flex-col items-center justify-center gap-1 rounded-xl border border-dashed border-gray-300 p-2 text-gray-500 transition-colors hover:border-primary-400 hover:text-primary-600 dark:border-gray-600 dark:text-gray-400"
+            >
+              <Plus size={20} />
+              <span className="text-[11px] leading-tight">New</span>
+            </button>
           </div>
+          )}
           {subcategories.length > 0 && (
             <div className="mt-2 flex flex-wrap gap-1.5">
               <button type="button" onClick={() => setCategoryId(parentId)} className={chipCls(categoryId === parentId)}>General</button>
               {subcategories.map((s) => (
                 <button key={s.id} type="button" onClick={() => setCategoryId(s.id)} className={chipCls(categoryId === s.id)}>{s.name}</button>
               ))}
+              <button type="button" onClick={() => { setNewCatParentId(parentId); setShowCategoryForm(true); }} className={chipCls(false)}>+ Sub</button>
             </div>
           )}
         </div>
@@ -196,6 +225,7 @@ export function QuickAddTransaction({ initialType, prefillAmount, prefillNote, o
               {activeAccounts.map((a) => (
                 <button key={a.id} type="button" onClick={() => setAccountId(a.id)} className={chipCls(accountId === a.id)}>{a.name}</button>
               ))}
+              <button type="button" onClick={() => setShowAccountForm(true)} className={chipCls(false)}>+ Add</button>
             </div>
           </div>
           <div>
@@ -204,18 +234,20 @@ export function QuickAddTransaction({ initialType, prefillAmount, prefillNote, o
               {activeAccounts.filter((a) => a.id !== accountId).map((a) => (
                 <button key={a.id} type="button" onClick={() => setToAccountId(a.id)} className={chipCls(toAccountId === a.id)}>{a.name}</button>
               ))}
+              <button type="button" onClick={() => setShowAccountForm(true)} className={chipCls(false)}>+ Add</button>
             </div>
           </div>
         </div>
       )}
 
       {/* Account chips (income/expense) */}
-      {type !== 'transfer' && activeAccounts.length > 0 && (
+      {type !== 'transfer' && (
         <div className="flex gap-1.5 overflow-x-auto pb-1">
           <button type="button" onClick={() => setAccountId('')} className={chipCls(accountId === '')}>No account</button>
           {activeAccounts.map((a) => (
             <button key={a.id} type="button" onClick={() => setAccountId(a.id)} className={chipCls(accountId === a.id)}>{a.name}</button>
           ))}
+          <button type="button" onClick={() => setShowAccountForm(true)} className={chipCls(false)}>+ Add</button>
         </div>
       )}
 
@@ -266,6 +298,26 @@ export function QuickAddTransaction({ initialType, prefillAmount, prefillNote, o
       >
         Save
       </button>
+
+      {/* Inline creation modals — unlimited custom categories & accounts */}
+      <Modal
+        isOpen={showCategoryForm}
+        onClose={() => setShowCategoryForm(false)}
+        title={newCatParentId ? 'New Subcategory' : 'New Category'}
+      >
+        <CategoryForm
+          defaultType={type === 'income' ? 'income' : 'expense'}
+          defaultParentId={newCatParentId}
+          onClose={() => setShowCategoryForm(false)}
+          onCreated={(newCatId) => { setCategoryId(newCatId); setShowCategoryForm(false); }}
+        />
+      </Modal>
+      <Modal isOpen={showAccountForm} onClose={() => setShowAccountForm(false)} title="New Account">
+        <AccountForm
+          onClose={() => setShowAccountForm(false)}
+          onCreated={(account: Account) => { setAccountId(account.id); setShowAccountForm(false); }}
+        />
+      </Modal>
     </div>
   );
 }
