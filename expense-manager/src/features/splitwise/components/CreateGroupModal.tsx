@@ -25,7 +25,7 @@ export function CreateGroupModal({ profileId, members, onClose, onCreated, onMem
   const [customCategoryInput, setCustomCategoryInput] = useState('');
   const [customCategories, setCustomCategories] = useState<string[]>(() => {
     try {
-      return JSON.parse(localStorage.getItem('expenseiq_custom_group_categories') || '[]');
+      return JSON.parse(localStorage.getItem('moneyiq_custom_group_categories') || '[]');
     } catch { return []; }
   });
 
@@ -36,7 +36,7 @@ export function CreateGroupModal({ profileId, members, onClose, onCreated, onMem
     if (!trimmed || allCategories.includes(trimmed)) return;
     const updated = [...customCategories, trimmed];
     setCustomCategories(updated);
-    localStorage.setItem('expenseiq_custom_group_categories', JSON.stringify(updated));
+    localStorage.setItem('moneyiq_custom_group_categories', JSON.stringify(updated));
     setCategory(trimmed);
     setCustomCategoryInput('');
     setShowCustomCategory(false);

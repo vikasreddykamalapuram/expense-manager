@@ -47,3 +47,6 @@ android/local.properties
 # in place instead of hitting "package conflicts with existing package".
 !android-templates/debug.keystore
 
+
+# Local Play Store screenshot captures
+playstore/assets/screenshots/

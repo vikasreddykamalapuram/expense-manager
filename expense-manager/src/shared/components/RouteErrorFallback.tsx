@@ -23,7 +23,7 @@ export function RouteErrorFallback() {
 
   const handleHardReload = async () => {
     try {
-      window.sessionStorage.removeItem('expenseiq_chunk_reloaded');
+      window.sessionStorage.removeItem('moneyiq_chunk_reloaded');
       if ('caches' in window) {
         const keys = await caches.keys();
         await Promise.all(keys.map((k) => caches.delete(k)));

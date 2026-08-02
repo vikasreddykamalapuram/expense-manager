@@ -1,6 +1,6 @@
 import { Transaction, Category } from '../types';
 
-const STORAGE_KEY = 'expenseiq_cat_patterns';
+const STORAGE_KEY = 'moneyiq_cat_patterns';
 
 interface PatternEntry {
   keyword: string;

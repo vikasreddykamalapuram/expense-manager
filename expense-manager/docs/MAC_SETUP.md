@@ -459,7 +459,7 @@ Or open **https://github.com/vikasreddykamalapuram/expense-manager/actions**.
 When done, download the AAB artifact:
 
 ```bash
-gh run download --name "expenseiq-release-aab-$(git rev-parse HEAD)"
+gh run download --name "moneyiq-release-aab-$(git rev-parse HEAD)"
 ls -lh *.aab
 ```
 

@@ -12,7 +12,7 @@
 import { Preferences } from '@capacitor/preferences';
 import { isNativePlatform } from './platform';
 
-const NS = 'expenseiq_';
+const NS = 'moneyiq_';
 
 async function nativeGet(key: string): Promise<string | null> {
   const { value } = await Preferences.get({ key: NS + key });

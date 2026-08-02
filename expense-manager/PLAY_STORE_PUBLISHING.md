@@ -117,9 +117,9 @@ git push origin v3.2.1
 **Download the AAB when the run turns green:**
 ```bash
 RUN_ID=$(gh run list --workflow=android-release.yml --limit 1 --json databaseId --jq '.[0].databaseId')
-mkdir -p ~/Downloads/expenseiq-v3.2.1
-gh run download $RUN_ID -D ~/Downloads/expenseiq-v3.2.1
-find ~/Downloads/expenseiq-v3.2.1 -name "*.aab"
+mkdir -p ~/Downloads/moneyiq-v3.2.1
+gh run download $RUN_ID -D ~/Downloads/moneyiq-v3.2.1
+find ~/Downloads/moneyiq-v3.2.1 -name "*.aab"
 ```
 
 **Done when:** you have a local `app-release.aab` file (~10–20 MB).
@@ -248,6 +248,10 @@ Fastest path: use Canva → search "Google Play Feature Graphic" → 1024×500 t
 
 **Done when:** all fields + graphics are uploaded and the Store listing shows a **"Saved"** badge.
 
+> 📎 Ready-made helpers: see **`playstore/ASSETS.md`** for the full asset checklist, a ready
+> **`playstore/assets/feature-graphic.svg`** (export to PNG with the command in ASSETS.md), and
+> **`scripts/capture-screenshots.sh`** to grab phone screenshots from an emulator/device.
+
 ---
 
 ## Phase 9 — Internal testing track (mandatory first step)
@@ -256,7 +260,7 @@ Play policy: **new apps must ship on Internal / Closed / Open** before Productio
 
 1. Play Console → **Testing → Internal testing → Create new release**.
 2. **Choose signing key:** accept "Let Google manage & protect your app signing key" (Play App Signing). Upload your `expenseiq-release.keystore` as the **upload key**.
-3. **Upload the AAB** from `~/Downloads/expenseiq-v3.2.1/`.
+3. **Upload the AAB** from `~/Downloads/moneyiq-v3.2.1/`.
 4. **Release name:** `3.2.0 (41)` — matches versionCode from CI.
 5. **Release notes:** paste from `playstore/release-notes.md`.
 6. **Testers:** create an email list (add your own gmail, at least 1 other). Save an **opt-in URL** — testers open it on their Android device, join, and Play Store surfaces the app.
@@ -323,7 +327,7 @@ gh run watch
 
 # 3. Download AAB
 RUN_ID=$(gh run list --workflow=android-release.yml --limit 1 --json databaseId --jq '.[0].databaseId')
-gh run download $RUN_ID -D ~/Downloads/expenseiq-latest
+gh run download $RUN_ID -D ~/Downloads/moneyiq-latest
 
 # 4. Play Console → Production → Create new release → upload AAB → rollout
 ```
@@ -352,7 +356,7 @@ Read the failing step's Gradle output. Common causes:
 
 ### App installs but crashes on launch
 ```bash
-adb logcat -c && adb logcat | grep -i "expenseiq\|AndroidRuntime"
+adb logcat -c && adb logcat | grep -i "moneyiq\|AndroidRuntime"
 ```
 Attach the log to a new session and we'll triage.
 

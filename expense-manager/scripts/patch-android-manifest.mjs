@@ -2,7 +2,7 @@
 /**
  * Idempotently patches android/app/src/main/AndroidManifest.xml with:
  *   1. INTERNET, VIBRATE, USE_BIOMETRIC, POST_NOTIFICATIONS, SCHEDULE_EXACT_ALARM
- *   2. VIEW intent-filters for App Links (https) + custom scheme (expenseiq://)
+ *   2. VIEW intent-filters for App Links (https) + custom scheme (moneyiq://)
  *   3. SEND / SEND_MULTIPLE intent-filter so users can share bank SMS or
  *      receipt text into MoneyIQ (parsed by shareParser.ts to prefill /add).
  *   4. <meta-data android:name="android.app.shortcuts" ...> pointer so
@@ -36,7 +36,7 @@ const WIDGET_INFO_DEST = join(MAIN_SRC, 'res', 'xml', 'expense_widget_info.xml')
 
 const HOST = 'vikasreddykamalapuram.github.io';
 const PATH_PREFIX = '/expense-manager';
-const SCHEME = 'expenseiq';
+const SCHEME = 'moneyiq';
 
 if (!existsSync(MANIFEST)) {
   console.error(`✗ AndroidManifest.xml not found at ${MANIFEST}`);
@@ -75,7 +75,7 @@ if (!activityMatch) {
   let activityBlock = activityMatch[0];
   const originalActivity = activityBlock;
 
-  // 1. Deep links (https App Link + expenseiq:// custom scheme)
+  // 1. Deep links (https App Link + moneyiq:// custom scheme)
   if (!activityBlock.includes(`android:host="${HOST}"`)) {
     const filter = `
             <intent-filter android:autoVerify="true">

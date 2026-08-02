@@ -51,11 +51,11 @@
   <script>
     // The provider sent tokens back in the URL fragment. Immediately deep-link
     // them into the MoneyIQ app via its custom scheme — the AndroidManifest
-    // intent-filter for expenseiq:// hands control to MainActivity, and the
+    // intent-filter for moneyiq:// hands control to MainActivity, and the
     // Capacitor App plugin's appUrlOpen listener extracts + validates the token.
     (function () {
       var fragment = window.location.hash || '';
-      var target = 'expenseiq://oauth/callback' + fragment;
+      var target = 'moneyiq://oauth/callback' + fragment;
       // Use replace so the browser tab history doesn't retain the callback URL.
       window.location.replace(target);
     })();

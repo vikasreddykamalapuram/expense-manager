@@ -9,7 +9,7 @@
 
 import { repository } from './repository';
 
-const BACKUP_FILENAME = 'expenseiq-backup.json';
+const BACKUP_FILENAME = 'moneyiq-backup.json';
 
 export interface BackupMetadata {
   id: string;

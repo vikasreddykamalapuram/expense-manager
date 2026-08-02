@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
   Static App Shortcuts — shown when the user long-presses the launcher icon.
-  Each shortcut fires a VIEW intent with an expenseiq:// URL that
+  Each shortcut fires a VIEW intent with an moneyiq:// URL that
   nativeShell.ts routes through appUrlOpen → navigateToDeepLink.
 
   Package name below must stay in sync with capacitor.config.ts appId.
@@ -18,7 +18,7 @@
             android:action="android.intent.action.VIEW"
             android:targetPackage="io.github.vikasreddykamalapuram.moneyiq"
             android:targetClass="io.github.vikasreddykamalapuram.moneyiq.MainActivity"
-            android:data="expenseiq://add?type=expense" />
+            android:data="moneyiq://add?type=expense" />
         <categories android:name="android.shortcut.conversation" />
     </shortcut>
 
@@ -32,7 +32,7 @@
             android:action="android.intent.action.VIEW"
             android:targetPackage="io.github.vikasreddykamalapuram.moneyiq"
             android:targetClass="io.github.vikasreddykamalapuram.moneyiq.MainActivity"
-            android:data="expenseiq://add?type=income" />
+            android:data="moneyiq://add?type=income" />
     </shortcut>
 
     <shortcut
@@ -45,7 +45,7 @@
             android:action="android.intent.action.VIEW"
             android:targetPackage="io.github.vikasreddykamalapuram.moneyiq"
             android:targetClass="io.github.vikasreddykamalapuram.moneyiq.MainActivity"
-            android:data="expenseiq://analytics" />
+            android:data="moneyiq://analytics" />
     </shortcut>
 
     <shortcut
@@ -58,7 +58,7 @@
             android:action="android.intent.action.VIEW"
             android:targetPackage="io.github.vikasreddykamalapuram.moneyiq"
             android:targetClass="io.github.vikasreddykamalapuram.moneyiq.MainActivity"
-            android:data="expenseiq://budgets" />
+            android:data="moneyiq://budgets" />
     </shortcut>
 
 </shortcuts>

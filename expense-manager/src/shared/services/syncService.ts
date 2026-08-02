@@ -28,9 +28,9 @@ const DEVICE_NAME_KEY = 'em_device_name';
 const SYNC_ENABLED_KEY = 'em_sync_enabled';
 const LAST_SYNC_KEY = 'em_last_sync_at';
 const LAST_PUSH_KEY = 'em_last_push_at';
-const MANIFEST_FILENAME = 'expenseiq-sync-manifest.json';
-const SNAPSHOT_FILENAME = 'expenseiq-sync-snapshot.enc';
-const DELTA_PREFIX = 'expenseiq-delta-';
+const MANIFEST_FILENAME = 'moneyiq-sync-manifest.json';
+const SNAPSHOT_FILENAME = 'moneyiq-sync-snapshot.enc';
+const DELTA_PREFIX = 'moneyiq-delta-';
 const TOMBSTONE_TTL_DAYS = 30;
 const TOMBSTONE_CLEANUP_KEY = 'em_last_tombstone_cleanup';
 const TOMBSTONE_CLEANUP_INTERVAL_DAYS = 7;
@@ -391,7 +391,7 @@ async function downloadGoogleFile(token: string, fileId: string): Promise<string
 }
 
 function extractTimestamp(filename: string): number {
-  // Format: expenseiq-delta-{deviceId}-{timestamp}.enc
+  // Format: moneyiq-delta-{deviceId}-{timestamp}.enc
   const match = filename.match(/-(\d+)\.enc$/);
   return match ? parseInt(match[1], 10) : 0;
 }

@@ -107,7 +107,7 @@ export class ExpenseDatabase extends Dexie {
   savingsGoals!: Table<DbSavingsGoal, string>;
 
   constructor() {
-    super('ExpenseIQDatabase');
+    super('MoneyIQDatabase');
 
     this.version(1).stores({
       transactions: 'id, profileId, [profileId+date], [profileId+categoryId], [profileId+accountId], [profileId+type]',

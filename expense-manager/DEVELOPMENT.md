@@ -376,7 +376,7 @@ add insets. If you see this, wrap `Layout` in a container with
 → Check Settings → Sound & vibration → "Touch feedback" is enabled on the
 device — some phones ship it off. Also confirm `haptic.isEnabled()`
 returns `true` (the localStorage kill‑switch lives at
-`expenseiq_haptics_enabled`).
+`moneyiq_haptics_enabled`).
 
 **Pull‑to‑refresh doesn't trigger**
 → It only fires when `scrollTop === 0`. If your page has a fixed header

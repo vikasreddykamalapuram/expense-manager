@@ -11,7 +11,7 @@ import { lazy, type ComponentType } from 'react';
  * A sessionStorage flag prevents an infinite reload loop when the failure is
  * caused by something other than stale chunks (e.g., real network outage).
  */
-const RELOAD_FLAG = 'expenseiq_chunk_reloaded';
+const RELOAD_FLAG = 'moneyiq_chunk_reloaded';
 
 function isChunkLoadError(err: unknown): boolean {
   if (!err) return false;

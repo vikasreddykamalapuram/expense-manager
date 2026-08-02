@@ -75,20 +75,20 @@ export async function bootstrapNativeShell(): Promise<void> {
   } catch { /* ignore */ }
 
   // Deep-link handler: fires when the app is opened via https://.../expense-manager/*
-  // (App Link) or expenseiq://* (custom scheme). Strip the base URL and hand the
+  // (App Link) or moneyiq://* (custom scheme). Strip the base URL and hand the
   // path to the router.
   try {
     App.addListener('appUrlOpen', (event) => {
       try {
-        // OAuth callbacks arrive as expenseiq://oauth/callback#id_token=…&state=…
+        // OAuth callbacks arrive as moneyiq://oauth/callback#id_token=…&state=…
         // Route them through the mobile OAuth handler instead of the generic
         // router, otherwise React Router tries to navigate to a non-existent
         // /oauth/callback page. Use a dynamic import so @capacitor/browser
         // stays out of the web bundle and only loads when a real OAuth
         // callback URL arrives on native.
         const isOAuthCallback =
-          event.url.startsWith('expenseiq://oauth') ||
-          event.url.startsWith('expenseiq:/oauth') ||
+          event.url.startsWith('moneyiq://oauth') ||
+          event.url.startsWith('moneyiq:/oauth') ||
           event.url.includes('/oauth/callback');
         if (isOAuthCallback) {
           import('./mobileOAuth')

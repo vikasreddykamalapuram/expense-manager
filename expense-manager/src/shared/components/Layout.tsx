@@ -81,7 +81,7 @@ export function Layout() {
   const [sidebarOpen, setSidebarOpen] = useState(false); // mobile drawer
   const [moreSheetOpen, setMoreSheetOpen] = useState(false); // mobile bottom sheet
   const [sidebarPinned, setSidebarPinned] = useState(() => {
-    try { return localStorage.getItem('expenseiq_sidebar_pinned') === 'true'; } catch { return false; }
+    try { return localStorage.getItem('moneyiq_sidebar_pinned') === 'true'; } catch { return false; }
   });
   const [sidebarHovered, setSidebarHovered] = useState(false);
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
@@ -95,7 +95,7 @@ export function Layout() {
   const togglePin = () => {
     const next = !sidebarPinned;
     setSidebarPinned(next);
-    try { localStorage.setItem('expenseiq_sidebar_pinned', String(next)); } catch { /* */ }
+    try { localStorage.setItem('moneyiq_sidebar_pinned', String(next)); } catch { /* */ }
   };
 
   // Close dropdown on outside click

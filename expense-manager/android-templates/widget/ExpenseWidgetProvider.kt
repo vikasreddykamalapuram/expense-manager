@@ -16,7 +16,7 @@ import android.widget.RemoteViews
  * Shows this month's total spend (read from SharedPreferences that the JS
  * side keeps in sync via the WidgetBridge Capacitor plugin — for now we
  * fall back to a placeholder if the value isn't set yet) and an
- * "Add expense" button that fires the expenseiq://add?type=expense deep link.
+ * "Add expense" button that fires the moneyiq://add?type=expense deep link.
  */
 class ExpenseWidgetProvider : AppWidgetProvider() {
 
@@ -31,7 +31,7 @@ class ExpenseWidgetProvider : AppWidgetProvider() {
     }
 
     companion object {
-        const val PREFS = "expenseiq_widget"
+        const val PREFS = "moneyiq_widget"
         const val KEY_MONTH_SPEND = "monthSpend"
         const val KEY_CURRENCY = "currency"
 
@@ -54,7 +54,7 @@ class ExpenseWidgetProvider : AppWidgetProvider() {
 
             // Tap the "Add expense" button → deep-link into the app.
             val addIntent = Intent(Intent.ACTION_VIEW).apply {
-                data = Uri.parse("expenseiq://add?type=expense")
+                data = Uri.parse("moneyiq://add?type=expense")
                 setPackage(context.packageName)
                 flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
             }
@@ -68,7 +68,7 @@ class ExpenseWidgetProvider : AppWidgetProvider() {
 
             // Tap anywhere else → open the dashboard.
             val openIntent = Intent(Intent.ACTION_VIEW).apply {
-                data = Uri.parse("expenseiq:///")
+                data = Uri.parse("moneyiq:///")
                 setPackage(context.packageName)
                 flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
             }
