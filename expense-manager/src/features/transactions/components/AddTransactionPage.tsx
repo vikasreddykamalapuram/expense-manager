@@ -1,6 +1,10 @@
+import { useState } from 'react';
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { X } from 'lucide-react';
 import { TransactionForm } from './TransactionForm';
+import { QuickAddTransaction } from './QuickAddTransaction';
+
+const ADD_MODE_KEY = 'moneyiq_add_mode';
 
 export function AddTransactionPage() {
   const location = useLocation();
@@ -15,6 +19,14 @@ export function AddTransactionPage() {
 
   const prefillAmount = searchParams.get('amount') || undefined;
   const prefillNote = searchParams.get('note') || undefined;
+
+  const [mode, setMode] = useState<'quick' | 'classic'>(() => {
+    try { return localStorage.getItem(ADD_MODE_KEY) === 'classic' ? 'classic' : 'quick'; } catch { return 'quick'; }
+  });
+  const chooseMode = (m: 'quick' | 'classic') => {
+    setMode(m);
+    try { localStorage.setItem(ADD_MODE_KEY, m); } catch { /* ignore */ }
+  };
 
   // Cancel: if we have history to pop, go back; otherwise fall back to the
   // transactions list. Covers both in-app nav and deep-link entries.
@@ -39,13 +51,41 @@ export function AddTransactionPage() {
           <X className="h-5 w-5" />
         </button>
       </div>
-      <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-6 shadow-sm">
-        <TransactionForm
-          initialType={initialType}
-          prefillAmount={prefillAmount}
-          prefillNote={prefillNote}
-          onClose={handleClose}
-        />
+      {/* Entry-mode toggle — Quick (fast keypad) vs Classic (full form) */}
+      <div className="flex gap-1 rounded-lg bg-gray-100 p-1 text-sm dark:bg-gray-800">
+        {(['quick', 'classic'] as const).map((m) => (
+          <button
+            key={m}
+            type="button"
+            onClick={() => chooseMode(m)}
+            className={
+              'flex-1 rounded-md py-1.5 font-medium capitalize transition-colors ' +
+              (mode === m
+                ? 'bg-white text-primary-700 shadow-sm dark:bg-gray-700 dark:text-primary-300'
+                : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200')
+            }
+          >
+            {m}
+          </button>
+        ))}
+      </div>
+
+      <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-4 shadow-sm sm:p-6">
+        {mode === 'quick' ? (
+          <QuickAddTransaction
+            initialType={initialType}
+            prefillAmount={prefillAmount}
+            prefillNote={prefillNote}
+            onClose={handleClose}
+          />
+        ) : (
+          <TransactionForm
+            initialType={initialType}
+            prefillAmount={prefillAmount}
+            prefillNote={prefillNote}
+            onClose={handleClose}
+          />
+        )}
       </div>
     </div>
   );
