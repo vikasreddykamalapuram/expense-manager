@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>MoneyIQ — Account &amp; Data Deletion</title>
+<style>
+  :root { color-scheme: light dark; }
+  body { max-width: 720px; margin: 0 auto; padding: 24px; font: 16px/1.55 -apple-system, Segoe UI, Roboto, sans-serif; color: #1f2937; }
+  @media (prefers-color-scheme: dark) { body { background: #0f172a; color: #e2e8f0; } code { background: #1e293b; } a { color: #93c5fd; } }
+  h1 { font-size: 1.75rem; margin: 0 0 4px; }
+  h2 { font-size: 1.15rem; margin: 28px 0 8px; }
+  code { background: #f1f5f9; padding: 1px 5px; border-radius: 4px; font-size: 0.9em; }
+  .muted { color: #64748b; font-size: 0.9rem; }
+  ul, ol { padding-left: 22px; }
+  li { margin: 4px 0; }
+  a { color: #2563eb; }
+</style>
+</head>
+<body>
+
+<h1>MoneyIQ — Account &amp; Data Deletion</h1>
+<p class="muted">App: <strong>MoneyIQ</strong> · Developer: <strong>Vikas Kamalapuram</strong> · Package: <code>io.github.vikasreddykamalapuram.moneyiq</code></p>
+
+<p>This page explains how to request deletion of your MoneyIQ account and the data associated with it. It applies to the optional cloud-sync account you create when you sign in with Google or Microsoft. If you never signed in, MoneyIQ has no account or server-side data for you at all — see "Local data" below.</p>
+
+<h2>Option 1 — Delete in the app (fastest, immediate)</h2>
+<ol>
+  <li>Open MoneyIQ and go to <em>Settings → Advanced</em>.</li>
+  <li>Tap <strong>Delete cloud sync data</strong> and confirm.</li>
+</ol>
+<p>This immediately removes all your rows from the cloud sync database — including your encryption key and every sync delta. Your on-device data is preserved so the app keeps working locally. Signing out afterwards (<em>Settings → Cross-device sync → Sign out</em>) stops any further sync.</p>
+
+<h2>Option 2 — Request deletion by email</h2>
+<p>If you can no longer open the app, email <a href="mailto:vikasreddykamalapuram@gmail.com?subject=MoneyIQ%20account%20deletion%20request">vikasreddykamalapuram@gmail.com</a> from the address you signed in with, with the subject <strong>"MoneyIQ account deletion request"</strong>. Your cloud data will be deleted within <strong>30 days</strong> and you will receive a confirmation.</p>
+
+<h2>What data is deleted</h2>
+<ul>
+  <li>Your account identifiers: email address and provider-issued user ID.</li>
+  <li>All synced financial data: transactions, accounts, categories, budgets, recurring rules, stock transactions, and bill reminders.</li>
+  <li>Sync metadata: device names, sync timestamps, and your sync encryption key.</li>
+</ul>
+
+<h2>What is retained</h2>
+<ul>
+  <li><strong>Nothing is retained after deletion</strong> beyond what is required by law. There are no backups kept beyond the deletion window, and your financial content is never used for analytics or advertising.</li>
+  <li><strong>Local data on your device</strong> is not affected by a cloud deletion. To remove it, uninstall MoneyIQ or clear the app's storage — this permanently erases the on-device IndexedDB database.</li>
+</ul>
+
+<h2>Local data (no sign-in)</h2>
+<p>MoneyIQ is local-first. If you use it without signing in, everything you enter stays only in your browser/app storage on your device. Uninstalling the app or clearing its data deletes it permanently, and no deletion request is needed because nothing ever left your device.</p>
+
+<p class="muted">See also our <a href="./privacy-policy.html">Privacy Policy</a>.</p>
+
+</body>
+</html>

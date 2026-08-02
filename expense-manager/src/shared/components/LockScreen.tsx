@@ -127,7 +127,7 @@ export function LockScreen({ onUnlock }: Props) {
         <div className="rounded-2xl bg-primary-600/20 p-4">
           <Lock size={28} className="text-primary-400" />
         </div>
-        <h1 className="text-lg font-semibold">ExpenseIQ locked</h1>
+        <h1 className="text-lg font-semibold">MoneyIQ locked</h1>
         <p className="text-sm text-gray-400">Enter your PIN to continue</p>
 
         {/* PIN dots */}

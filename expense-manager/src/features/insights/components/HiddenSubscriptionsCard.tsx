@@ -82,7 +82,7 @@ export function HiddenSubscriptionsCard() {
         Hidden subscriptions
       </h2>
       <p className="text-xs text-gray-500 dark:text-gray-400 -mt-1">
-        We spotted these repeating charges. Promote them to recurring rules so ExpenseIQ can auto-generate
+        We spotted these repeating charges. Promote them to recurring rules so MoneyIQ can auto-generate
         the next transaction.
       </p>
       <div className="space-y-2">

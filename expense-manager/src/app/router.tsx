@@ -50,7 +50,7 @@ function lazyRoute(path: string, Component: ComponentType): RouteObject {
 
 /** Redirect to /login if first-time visitor (no onboarding flag set) */
 function OnboardingGuard({ children }: { children: React.ReactNode }) {
-  const onboarded = localStorage.getItem('expenseiq_onboarded');
+  const onboarded = localStorage.getItem('moneyiq_onboarded');
   if (!onboarded) return <Navigate to="/login" replace />;
   return <>{children}</>;
 }

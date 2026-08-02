@@ -1,5 +1,5 @@
 # Smoke test for the Insights page — asserts our Phase C additions render.
-appId: com.expenseiq.app
+appId: io.github.vikasreddykamalapuram.moneyiq
 tags:
   - smoke
 ---

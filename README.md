@@ -1,32 +1,43 @@
 # Personal Projects
 
-Personal side projects workspace. Each project lives in its own directory with independent dependencies and configuration.
+Personal side-projects workspace. Each project lives in its own top-level folder with independent
+dependencies and configuration. Run commands from inside the project folder, not the repo root.
 
 ## Projects
 
-| Project | Status | Tech Stack |
-|---------|--------|------------|
-| [Expense Manager](./expense-manager/) | 🚧 In Development | React, TypeScript, Tailwind CSS |
+| Project | Folder | Status | Stack |
+|---------|--------|--------|-------|
+| **MoneyIQ** — personal finance manager | [`expense-manager/`](./expense-manager/) | Production ([live](https://vikasreddykamalapuram.github.io/expense-manager/)) - Play Store onboarding | React 18 - TypeScript - Vite - Tailwind - Dexie - Capacitor |
 
 ## Structure
 
 ```
 Personal_Projects/
 ├── .github/copilot-instructions.md   # Copilot rules for all personal projects
-├── agents/                            # Custom Copilot agents
-│   ├── planner.agent.md              # Feature decomposition & task planning
-│   ├── coder.agent.md                # Production code implementation
-│   ├── tester.agent.md               # Test writing & quality assurance
-│   └── reviewer.agent.md             # Code review & quality checks
-├── expense-manager/                   # Expense Manager web app
-└── README.md                          # This file
+├── .github/workflows/                # CI: deploy, android build, e2e, price updates
+├── .claude/agents/                   # Agents for Claude Code (mirror of agents/)
+├── agents/                           # Canonical custom agents (Copilot CLI + others)
+├── AGENTS.md                         # Cross-tool agent + convention guide
+├── CONTRIBUTING.md                   # Branch naming + commit conventions
+├── expense-manager/                  # MoneyIQ app
+└── README.md                         # This file
 ```
 
-## Custom Agents
+## Custom agents (portable)
+
+Reusable specialist agents work across **Copilot CLI**, **Claude Code**, **Antigravity**, **Cursor**,
+and any machine (no hardcoded paths). See [`AGENTS.md`](./AGENTS.md).
 
 | Agent | Purpose |
 |-------|---------|
-| `planner` | Breaks features into tasks with acceptance criteria |
-| `coder` | Writes production-ready TypeScript/React code |
-| `tester` | Writes meaningful tests using Vitest + RTL |
-| `reviewer` | Reviews code for bugs, performance, and quality |
+| `planner` | Feature decomposition & task planning |
+| `coder` | Production TypeScript/React implementation |
+| `tester` | Vitest + RTL tests |
+| `reviewer` | Code review for bugs, perf, quality |
+| `security-auditor` | XSS/CSRF/injection & data-handling audit |
+
+## Conventions
+
+- **Branches:** `vrk/<short-context>` — see [`CONTRIBUTING.md`](./CONTRIBUTING.md).
+- **Commits:** Conventional Commits, author `vikasreddykamalapuram <vikasreddykamalapuram@gmail.com>`, no AI co-author trailer.
+- **`master`** is always deployable (GitHub Pages + release tags).

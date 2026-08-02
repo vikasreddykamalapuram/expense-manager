@@ -1,15 +1,15 @@
 import type { CapacitorConfig } from '@capacitor/cli';
 
 /**
- * Capacitor configuration for the ExpenseIQ Android/iOS shell.
+ * Capacitor configuration for the MoneyIQ Android/iOS shell.
  *
  * `webDir` points at the Vite build output; `npx cap sync` copies it into
  * the native project (android/app/src/main/assets/public) so the shell
  * loads the same PWA bundle we ship to GitHub Pages.
  */
 const config: CapacitorConfig = {
-  appId: 'com.expenseiq.app',
-  appName: 'ExpenseIQ',
+  appId: 'io.github.vikasreddykamalapuram.moneyiq',
+  appName: 'MoneyIQ',
   webDir: 'dist',
   // Bind to the standard file:// origin inside the WebView. Setting a custom
   // hostname keeps localStorage/IndexedDB namespaced consistently and lets

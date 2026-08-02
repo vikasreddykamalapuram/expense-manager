@@ -1,0 +1,77 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="500" viewBox="0 0 1024 500" role="img" aria-label="MoneyIQ feature graphic">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#0b1220"/>
+      <stop offset="0.5" stop-color="#1d4ed8"/>
+      <stop offset="1" stop-color="#6d28d9"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="0.22" cy="0.18" r="0.9">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.16"/>
+      <stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="card" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.16"/>
+      <stop offset="1" stop-color="#ffffff" stop-opacity="0.05"/>
+    </linearGradient>
+    <linearGradient id="area" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#34d399" stop-opacity="0.55"/>
+      <stop offset="1" stop-color="#34d399" stop-opacity="0"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#22d3ee"/>
+      <stop offset="1" stop-color="#34d399"/>
+    </linearGradient>
+    <filter id="shadow" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="16" stdDeviation="24" flood-color="#000000" flood-opacity="0.35"/>
+    </filter>
+  </defs>
+
+  <rect width="1024" height="500" fill="url(#bg)"/>
+  <rect width="1024" height="500" fill="url(#glow)"/>
+
+  <!-- ===== Left: wordmark + tagline ===== -->
+  <g transform="translate(80,0)">
+    <text x="0" y="222" font-family="Segoe UI, Roboto, Helvetica, Arial, sans-serif" font-size="112" font-weight="800" fill="#ffffff" letter-spacing="-3">MoneyIQ</text>
+    <rect x="4" y="248" width="132" height="6" rx="3" fill="url(#accent)"/>
+    <text x="4" y="300" font-family="Segoe UI, Roboto, Helvetica, Arial, sans-serif" font-size="31" font-weight="600" fill="#e6edff">Smart personal finance,</text>
+    <text x="4" y="340" font-family="Segoe UI, Roboto, Helvetica, Arial, sans-serif" font-size="31" font-weight="600" fill="#e6edff">private by default.</text>
+    <text x="4" y="392" font-family="Segoe UI, Roboto, Helvetica, Arial, sans-serif" font-size="22" font-weight="500" fill="#a9b8e8">Local-first &#160;&#183;&#160; End-to-end encrypted &#160;&#183;&#160; No ads</text>
+  </g>
+
+  <!-- ===== Right: glass dashboard card ===== -->
+  <g transform="translate(612,96)" filter="url(#shadow)">
+    <rect x="0" y="0" width="344" height="308" rx="30" fill="url(#card)" stroke="#ffffff" stroke-opacity="0.28" stroke-width="1.5"/>
+
+    <!-- header -->
+    <text x="28" y="52" font-family="Segoe UI, Roboto, Arial, sans-serif" font-size="19" font-weight="500" fill="#c7d2fe">Net worth</text>
+    <g transform="translate(232,32)">
+      <rect x="0" y="0" width="84" height="30" rx="15" fill="#34d399" fill-opacity="0.22"/>
+      <path d="M14 20 L20 12 L26 20" fill="none" stroke="#6ee7b7" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+      <text x="34" y="20" font-family="Segoe UI, Roboto, Arial, sans-serif" font-size="15" font-weight="700" fill="#6ee7b7">+12.4%</text>
+    </g>
+    <text x="28" y="100" font-family="Segoe UI, Roboto, Arial, sans-serif" font-size="42" font-weight="800" fill="#ffffff">&#8377; 8,42,500</text>
+
+    <!-- sparkline + area -->
+    <path d="M28 188 C 78 182 96 152 132 152 C 172 152 190 120 216 124 C 258 130 300 104 316 110 L316 200 L28 200 Z" fill="url(#area)"/>
+    <path d="M28 188 C 78 182 96 152 132 152 C 172 152 190 120 216 124 C 258 130 300 104 316 110" fill="none" stroke="url(#accent)" stroke-width="3.5" stroke-linecap="round"/>
+    <circle cx="316" cy="110" r="5" fill="#34d399" stroke="#ffffff" stroke-width="1.5"/>
+
+    <!-- divider -->
+    <rect x="28" y="216" width="288" height="1.4" fill="#ffffff" fill-opacity="0.14"/>
+
+    <!-- donut (budget split) -->
+    <g transform="translate(70,262) rotate(-90)">
+      <circle r="42" fill="none" stroke="#ffffff" stroke-opacity="0.10" stroke-width="15"/>
+      <circle r="42" fill="none" stroke="#6366f1" stroke-width="15" stroke-dasharray="118.8 145.1" stroke-dashoffset="0"/>
+      <circle r="42" fill="none" stroke="#22d3ee" stroke-width="15" stroke-dasharray="79.2 184.7" stroke-dashoffset="-118.8"/>
+      <circle r="42" fill="none" stroke="#f59e0b" stroke-width="15" stroke-dasharray="66.0 197.9" stroke-dashoffset="-198.0"/>
+    </g>
+
+    <!-- legend -->
+    <g font-family="Segoe UI, Roboto, Arial, sans-serif" font-size="15" font-weight="600" fill="#e6edff">
+      <circle cx="142" cy="238" r="5" fill="#6366f1"/><text x="156" y="243">Needs&#160;&#160;45%</text>
+      <circle cx="142" cy="263" r="5" fill="#22d3ee"/><text x="156" y="268">Wants&#160;&#160;30%</text>
+      <circle cx="142" cy="288" r="5" fill="#f59e0b"/><text x="156" y="293">Save&#160;&#160;&#160;25%</text>
+    </g>
+  </g>
+</svg>

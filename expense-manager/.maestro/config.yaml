@@ -1,6 +1,6 @@
-# Maestro configuration for ExpenseIQ e2e flows.
+# Maestro configuration for MoneyIQ e2e flows.
 # See https://maestro.mobile.dev/ for docs.
-appId: com.expenseiq.app
+appId: io.github.vikasreddykamalapuram.moneyiq
 ---
 # Global settings applied to every flow when Maestro's `flow.yaml` isn't used
 # directly (kept minimal — per-flow config lives in each flows/*.yaml file).

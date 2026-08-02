@@ -102,7 +102,7 @@ jobs:
       - name: Upload AAB
         uses: actions/upload-artifact@v4
         with:
-          name: expenseiq-release-aab-${{ github.sha }}
+          name: moneyiq-release-aab-${{ github.sha }}
           path: expense-manager/android/app/build/outputs/bundle/release/*.aab
           retention-days: 30
           if-no-files-found: error
@@ -110,7 +110,7 @@ jobs:
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: expenseiq-release-apk-${{ github.sha }}
+          name: moneyiq-release-apk-${{ github.sha }}
           path: expense-manager/android/app/build/outputs/apk/release/*.apk
           retention-days: 30
           if-no-files-found: error

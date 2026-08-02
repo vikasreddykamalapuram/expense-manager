@@ -59,7 +59,7 @@ ${entries}
  * Generate robots.txt
  */
 function generateRobotsTxt() {
-  return `# ExpenseIQ - Personal Finance Manager
+  return `# MoneyIQ - Personal Finance Manager
 # https://vikasreddykamalapuram.github.io/expense-manager
 
 User-agent: *

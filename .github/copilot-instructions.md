@@ -6,11 +6,11 @@ This workspace contains personal side projects, completely separate from officia
 ## Projects
 | Project | Directory | Status | Live URL |
 |---------|-----------|--------|----------|
-| ExpenseIQ | `expense-manager/` | Active — Production | https://vikasreddykamalapuram.github.io/expense-manager/ |
+| MoneyIQ | `expense-manager/` | Active — Production | https://vikasreddykamalapuram.github.io/expense-manager/ |
 
 ---
 
-## ExpenseIQ — Personal Finance Manager
+## MoneyIQ — Personal Finance Manager
 
 ### Tech Stack
 - **Frontend:** React 18 + TypeScript + Vite 5 + Tailwind CSS

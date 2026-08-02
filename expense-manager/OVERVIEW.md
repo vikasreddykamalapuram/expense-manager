@@ -1,4 +1,4 @@
-# ExpenseIQ — The Complete Guide
+# MoneyIQ — The Complete Guide
 
 > **Your money, on your terms.** A private-by-default personal-finance app that turns your phone into a full-featured expense manager, portfolio tracker, and financial assistant — with **zero servers**, **zero subscriptions**, and **zero data leaves your device** unless you say so.
 
@@ -23,7 +23,7 @@
 
 ## 🎯 The Elevator Pitch
 
-> "ExpenseIQ is a **local-first** personal-finance app that runs entirely in your browser or phone. It tracks expenses, budgets, stock portfolios, and bills — with **biometric-locked**, **end-to-end encrypted** optional sync across your devices. No backend, no ads, no data mining. Install it as a PWA today, get a native Android app tomorrow."
+> "MoneyIQ is a **local-first** personal-finance app that runs entirely in your browser or phone. It tracks expenses, budgets, stock portfolios, and bills — with **biometric-locked**, **end-to-end encrypted** optional sync across your devices. No backend, no ads, no data mining. Install it as a PWA today, get a native Android app tomorrow."
 
 **Three sentences.** That's the pitch.
 
@@ -57,7 +57,7 @@ mindmap
       "Categories don't match Indian spending"
 ```
 
-**ExpenseIQ answers each of these directly.** Local-first fixes privacy + control. Free hosting on GitHub Pages fixes cost. Indian-first design (₹ / lakh / crore / UPI / NSE stocks) fixes fit.
+**MoneyIQ answers each of these directly.** Local-first fixes privacy + control. Free hosting on GitHub Pages fixes cost. Indian-first design (₹ / lakh / crore / UPI / NSE stocks) fixes fit.
 
 ---
 
@@ -67,7 +67,7 @@ mindmap
 
 ```mermaid
 flowchart LR
-    A[ExpenseIQ] --> B[Core Money]
+    A[MoneyIQ] --> B[Core Money]
     A --> C[Analytics & Insights]
     A --> D[Automation]
     A --> E[Portfolio]
@@ -508,7 +508,7 @@ graph LR
 
 Print this section, memorize the bullets, and you can talk about the app fluently in any interview or demo.
 
-### If someone asks "What's ExpenseIQ?"
+### If someone asks "What's MoneyIQ?"
 > "It's a **local-first personal-finance PWA** built in React + TypeScript. Your data stays on your device in IndexedDB. Cloud sync is optional and E2E-encrypted. I built it to escape ₹5000/year subscriptions that harvest your bank data."
 
 ### If they ask about the **tech stack**

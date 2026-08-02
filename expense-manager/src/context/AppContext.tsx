@@ -702,16 +702,16 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }, [state.transactions, state.settings?.currencySymbol]);
 
   // Fresh-anomaly local notifications. Opt-in via localStorage flag
-  // `expenseiq.notifyAnomalies` (default off). Debounced + de-duped
+  // `moneyiq.notifyAnomalies` (default off). Debounced + de-duped
   // against a persisted last-seen-id set so we notify each anomaly once.
   useEffect(() => {
     if (typeof window === 'undefined') return;
-    if (window.localStorage.getItem('expenseiq.notifyAnomalies') !== 'true') return;
+    if (window.localStorage.getItem('moneyiq.notifyAnomalies') !== 'true') return;
     const timer = setTimeout(() => {
       try {
         const anomalies = detectAnomalies(state.transactions, state.categories);
         if (anomalies.length === 0) return;
-        const seenKey = 'expenseiq.seenAnomalyIds';
+        const seenKey = 'moneyiq.seenAnomalyIds';
         const seen = new Set<string>(JSON.parse(window.localStorage.getItem(seenKey) || '[]'));
         const fresh = anomalies.filter((a) => !seen.has(a.id));
         if (fresh.length === 0) return;

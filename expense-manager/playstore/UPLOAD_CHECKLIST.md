@@ -6,7 +6,7 @@ Follow this once when creating the app; then only the release steps matter for e
 
 - [ ] Create Google Play Developer account ($25 one-time).
 - [ ] In Play Console → **Create app**:
-  - App name: `ExpenseIQ`
+  - App name: `MoneyIQ`
   - Default language: `English (India)`
   - App or game: `App`
   - Free or paid: `Free`
@@ -17,12 +17,15 @@ Follow this once when creating the app; then only the release steps matter for e
   - Content rating: run the questionnaire → expect `Everyone`
   - Target audience: `18+`
   - Data safety form:
-    - Personal info: `Email address` — Collected, Optional, purpose: **App functionality**, encrypted in transit
-    - Personal info: `User IDs` — Collected, Optional, purpose: **App functionality**, encrypted in transit
-    - Financial info: `Other financial info` (transactions, accounts, budgets) — Collected, Optional, purpose: **App functionality**, encrypted in transit
-    - Data shared with third parties: **None**
+    - Does your app collect or share user data? **Yes** (only when the user opts into cloud sync)
+    - Account creation methods supported: **OAuth** (Google / Microsoft sign-in) — tick OAuth only
+    - Delete account URL: `https://vikasreddykamalapuram.github.io/expense-manager/account-deletion.html`
+    - Personal info: `Email address` — Collected, Optional, purpose: **App functionality**, encrypted in transit, **NOT shared**
+    - Personal info: `User IDs` — Collected, Optional, purpose: **App functionality**, encrypted in transit, **NOT shared**
+    - Financial info: `Other financial info` (transactions, accounts, budgets) — Collected, Optional, purpose: **App functionality**, encrypted in transit, **NOT shared**
+    - Data shared with third parties: **None** (Supabase is the developer's own backend/processor, not a third party under Play's definition)
     - Data encrypted in transit: **Yes**
-    - User can request deletion: **Yes** (via Settings → Advanced → Delete cloud sync data)
+    - User can request deletion: **Yes** (in-app via Settings → Advanced → Delete cloud sync data, or the Delete account URL above)
     - Committed to Play Families Policy: N/A (not aimed at children)
 - [ ] **Store listing** → paste from `playstore/en-IN/*`:
   - App name → `title.txt`
@@ -62,8 +65,8 @@ Copy that fingerprint into `expense-manager/public/.well-known/assetlinks.json`,
 
 Verify with:
 ```
-adb shell pm verify-app-links --re-verify com.expenseiq.app
-adb shell pm get-app-links com.expenseiq.app
+adb shell pm verify-app-links --re-verify io.github.vikasreddykamalapuram.moneyiq
+adb shell pm get-app-links io.github.vikasreddykamalapuram.moneyiq
 ```
 
 ## Play Store Data safety declaration (cheat sheet)

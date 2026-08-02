@@ -25,7 +25,7 @@ export function getSupabase(): SupabaseClient | null {
     supabaseInstance = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
       auth: {
         persistSession: true,
-        storageKey: 'expenseiq_supabase_auth',
+        storageKey: 'moneyiq_supabase_auth',
         autoRefreshToken: true,
         detectSessionInUrl: false, // we handle OAuth ourselves
       },

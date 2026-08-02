@@ -37,7 +37,7 @@ let currentState: SupabaseAuthState = {
 };
 
 const listeners = new Set<AuthStateListener>();
-const LAST_BACKEND_SYNC_KEY = 'expenseiq_backend_last_sync';
+const LAST_BACKEND_SYNC_KEY = 'moneyiq_backend_last_sync';
 
 // ─── State Management ───────────────────────────────────
 

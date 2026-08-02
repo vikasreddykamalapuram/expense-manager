@@ -19,8 +19,8 @@ import { getSupabaseUserId, isBackendConnected, updateLastBackendSync } from './
 
 // ─── Constants ──────────────────────────────────────────
 
-const LAST_PUSH_KEY = 'expenseiq_backend_last_push';
-const LAST_PULL_KEY = 'expenseiq_backend_last_pull';
+const LAST_PUSH_KEY = 'moneyiq_backend_last_push';
+const LAST_PULL_KEY = 'moneyiq_backend_last_pull';
 // Push debounce: coalesces rapid edits (e.g., typing amount + note back-to-back)
 // into a single push, but short enough that cross-device latency stays snappy.
 // Industry benchmarks: YNAB ~500ms, Notion ~1s, Copilot Money ~1-2s.

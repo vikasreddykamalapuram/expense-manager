@@ -1,5 +1,5 @@
 /**
- * Cloud Backup Service — backs up/restores ExpenseIQ data to Google Drive or OneDrive.
+ * Cloud Backup Service — backs up/restores MoneyIQ data to Google Drive or OneDrive.
  * Uses the App Data folder (hidden from user's main Drive/OneDrive view).
  *
  * Both providers require the user to be authenticated with the correct scopes:
@@ -9,7 +9,7 @@
 
 import { repository } from './repository';
 
-const BACKUP_FILENAME = 'expenseiq-backup.json';
+const BACKUP_FILENAME = 'moneyiq-backup.json';
 
 export interface BackupMetadata {
   id: string;

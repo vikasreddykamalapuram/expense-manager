@@ -114,7 +114,7 @@ export function LoginPage() {
     };
 
     login(user);
-    localStorage.setItem('expenseiq_onboarded', 'true');
+    localStorage.setItem('moneyiq_onboarded', 'true');
     navigate('/');
 
     // Store ID token for Supabase auth bridge
@@ -150,7 +150,7 @@ export function LoginPage() {
         provider: 'google',
       };
       login(user);
-      localStorage.setItem('expenseiq_onboarded', 'true');
+      localStorage.setItem('moneyiq_onboarded', 'true');
       sessionStorage.setItem('em_google_id_token', idToken);
       localStorage.setItem('em_google_client_id', AUTH_CONFIG.google.clientId);
       bridgeToSupabaseAsync('google', idToken);
@@ -188,7 +188,7 @@ export function LoginPage() {
         provider: 'microsoft',
       };
       login(user);
-      localStorage.setItem('expenseiq_onboarded', 'true');
+      localStorage.setItem('moneyiq_onboarded', 'true');
       sessionStorage.setItem('em_microsoft_id_token', idToken);
       bridgeToSupabaseAsync('microsoft', idToken);
       navigate('/');
@@ -220,7 +220,7 @@ export function LoginPage() {
           provider: 'microsoft',
         };
         login(user);
-        localStorage.setItem('expenseiq_onboarded', 'true');
+        localStorage.setItem('moneyiq_onboarded', 'true');
         // Store ID token for Supabase auth bridge
         if (result.idToken) {
           sessionStorage.setItem('em_microsoft_id_token', result.idToken);
@@ -238,7 +238,7 @@ export function LoginPage() {
   };
 
   const handleSkip = () => {
-    localStorage.setItem('expenseiq_onboarded', 'true');
+    localStorage.setItem('moneyiq_onboarded', 'true');
     navigate('/');
   };
 
@@ -254,7 +254,7 @@ export function LoginPage() {
               <Wallet className="h-8 w-8 text-white" />
             </div>
             <div>
-              <h1 className="text-3xl font-bold">ExpenseIQ</h1>
+              <h1 className="text-3xl font-bold">MoneyIQ</h1>
               <p className="text-primary-200 text-sm">Personal Finance Manager</p>
             </div>
           </div>
@@ -279,7 +279,7 @@ export function LoginPage() {
 
           <div className="mt-8 rounded-xl bg-white/10 backdrop-blur-sm p-4">
             <p className="text-sm text-primary-100">
-              <strong className="text-white">Privacy first:</strong> ExpenseIQ works entirely offline.
+              <strong className="text-white">Privacy first:</strong> MoneyIQ works entirely offline.
               Sign-in is optional and only used for cloud backup.
             </p>
           </div>
@@ -295,7 +295,7 @@ export function LoginPage() {
               <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary-600">
                 <Wallet className="h-6 w-6 text-white" />
               </div>
-              <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">ExpenseIQ</h1>
+              <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">MoneyIQ</h1>
             </div>
             <p className="text-sm text-gray-500 dark:text-gray-400">Personal Finance Manager</p>
           </div>

@@ -72,7 +72,7 @@ jobs:
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
-          name: expenseiq-debug-apk-v${{ github.run_number }}-${{ github.sha }}
+          name: moneyiq-debug-apk-v${{ github.run_number }}-${{ github.sha }}
           path: expense-manager/android/app/build/outputs/apk/debug/*.apk
           if-no-files-found: error
           retention-days: 14

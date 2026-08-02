@@ -1110,7 +1110,7 @@ export function SettingsPage() {
       <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-6 shadow-sm">
         <h3 className="mb-4 text-base font-semibold text-gray-900 dark:text-gray-100">About</h3>
         <div className="space-y-2 text-sm text-gray-600 dark:text-gray-400">
-          <p><strong>ExpenseIQ</strong> — Personal Finance Manager</p>
+          <p><strong>MoneyIQ</strong> — Personal Finance Manager</p>
           <p>
             Version {import.meta.env.VITE_APP_VERSION || 'dev'}
             {import.meta.env.VITE_BUILD_TIME && (
@@ -1121,7 +1121,7 @@ export function SettingsPage() {
             <button
               type="button"
               onClick={() => {
-                const info = `ExpenseIQ v${import.meta.env.VITE_APP_VERSION || 'dev'} · build ${import.meta.env.VITE_BUILD_TIME || 'n/a'} · ${navigator.userAgent}`;
+                const info = `MoneyIQ v${import.meta.env.VITE_APP_VERSION || 'dev'} · build ${import.meta.env.VITE_BUILD_TIME || 'n/a'} · ${navigator.userAgent}`;
                 navigator.clipboard?.writeText(info).catch(() => { /* ignore */ });
               }}
               className="ml-3 text-xs text-primary-600 hover:underline"

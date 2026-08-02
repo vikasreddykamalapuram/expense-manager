@@ -160,12 +160,12 @@ export const appLock = {
   },
 
   /** Prompt the OS biometric dialog. Resolves true on success. */
-  async promptBiometric(reason = 'Unlock ExpenseIQ'): Promise<boolean> {
+  async promptBiometric(reason = 'Unlock MoneyIQ'): Promise<boolean> {
     if (!isNativePlatform()) return false;
     try {
       await NativeBiometric.verifyIdentity({
         reason,
-        title: 'ExpenseIQ',
+        title: 'MoneyIQ',
         subtitle: 'Authenticate to continue',
         description: reason,
         useFallback: false,

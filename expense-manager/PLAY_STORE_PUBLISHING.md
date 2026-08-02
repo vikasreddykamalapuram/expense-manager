@@ -1,9 +1,9 @@
-# ExpenseIQ — Google Play Store Publishing Playbook
+# MoneyIQ — Google Play Store Publishing Playbook
 
-Complete end-to-end guide to ship ExpenseIQ to the Google Play Store from a Mac.
+Complete end-to-end guide to ship MoneyIQ to the Google Play Store from a Mac.
 Follow the phases in order. Each phase lists prerequisites, exact commands, and a "done when" check.
 
-> Repo: `vikasreddykamalapuram/expense-manager` · Branch: `master` · Package: `com.expenseiq.app`
+> Repo: `vikasreddykamalapuram/expense-manager` · Branch: `master` · Package: `io.github.vikasreddykamalapuram.moneyiq`
 
 ---
 
@@ -42,7 +42,7 @@ keytool -genkeypair -v \
   -keyalg RSA -keysize 2048 -validity 10000 \
   -storepass 'CHOOSE_A_STRONG_PASSWORD' \
   -keypass 'CHOOSE_A_STRONG_PASSWORD' \
-  -dname "CN=Vikas Kamalapuram, OU=ExpenseIQ, O=Personal, L=Hyderabad, ST=Telangana, C=IN"
+  -dname "CN=Vikas Kamalapuram, OU=MoneyIQ, O=Personal, L=Hyderabad, ST=Telangana, C=IN"
 ```
 
 **Back it up NOW to at least two places:**
@@ -97,9 +97,9 @@ cd ~/repos/expense-manager
 git checkout master
 git pull
 
-# package.json version is already 3.2.0 — tag matches
-git tag v3.2.0
-git push origin v3.2.0
+# package.json version is 3.2.1 (bumped after the com.expenseiq.app package rename) — tag matches
+git tag v3.2.1
+git push origin v3.2.1
 
 # Watch the run (~5 min)
 gh run watch
@@ -107,19 +107,19 @@ gh run watch
 
 **If the run fails:** read the failing step's logs, fix the issue, then re-tag:
 ```bash
-git tag -d v3.2.0
-git push origin :refs/tags/v3.2.0
+git tag -d v3.2.1
+git push origin :refs/tags/v3.2.1
 # ...commit fix, push, then:
-git tag v3.2.0
-git push origin v3.2.0
+git tag v3.2.1
+git push origin v3.2.1
 ```
 
 **Download the AAB when the run turns green:**
 ```bash
 RUN_ID=$(gh run list --workflow=android-release.yml --limit 1 --json databaseId --jq '.[0].databaseId')
-mkdir -p ~/Downloads/expenseiq-v3.2.0
-gh run download $RUN_ID -D ~/Downloads/expenseiq-v3.2.0
-find ~/Downloads/expenseiq-v3.2.0 -name "*.aab"
+mkdir -p ~/Downloads/moneyiq-v3.2.1
+gh run download $RUN_ID -D ~/Downloads/moneyiq-v3.2.1
+find ~/Downloads/moneyiq-v3.2.1 -name "*.aab"
 ```
 
 **Done when:** you have a local `app-release.aab` file (~10–20 MB).
@@ -146,7 +146,7 @@ https://vikasreddykamalapuram.github.io/expense-manager/privacy-policy.html
 ## Phase 5 — Play Console account setup
 
 1. Open **https://play.google.com/console/signup**.
-2. Choose **"An organization"** if you want ExpenseIQ under a brand later; else **"Myself"**.
+2. Choose **"An organization"** if you want MoneyIQ under a brand later; else **"Myself"**.
 3. Pay the **USD 25 one-time fee** (credit card, non-refundable).
 4. Complete developer profile: legal name, address, phone (India OK), support email (`vikasreddykamalapuram@gmail.com`).
 5. Verify identity (Play Console will guide you — govt ID + selfie for individual accounts).
@@ -161,7 +161,7 @@ Click **"Create app"** and fill:
 
 | Field | Value |
 |-------|-------|
-| App name | `ExpenseIQ` |
+| App name | `MoneyIQ` |
 | Default language | English (India) — `en-IN` |
 | App or game | App |
 | Free or paid | Free |
@@ -182,7 +182,7 @@ Work through each item top-to-bottom. Reference material lives in `playstore/`:
 - **No ads.**
 
 ### 7c. Content ratings
-- Fill the IARC questionnaire. ExpenseIQ has no violence/gambling/user-generated content → will get **"Rated for 3+"** or equivalent.
+- Fill the IARC questionnaire. MoneyIQ has no violence/gambling/user-generated content → will get **"Rated for 3+"** or equivalent.
 
 ### 7d. Target audience
 - Ages 18+ (finance app).
@@ -190,10 +190,11 @@ Work through each item top-to-bottom. Reference material lives in `playstore/`:
 
 ### 7e. Data safety
 Use `playstore/UPLOAD_CHECKLIST.md` → *Data Safety* section. Declared items:
-- **Personal info → Email address** — collected + shared to Supabase (RLS-isolated).
-- **Personal info → User IDs** — collected + shared.
-- **Financial info → Purchase history, other financial info** — collected + shared.
-- All **encrypted in transit** (TLS 1.3), user can **request deletion** from Settings → Danger Zone.
+- **Personal info → Email address** — collected (cloud sync only), **not shared**.
+- **Personal info → User IDs** — collected (cloud sync only), **not shared**.
+- **Financial info → Other financial info** (transactions, accounts, budgets) — collected (cloud sync only), **not shared**.
+- Account creation method: **OAuth** (Google / Microsoft). Provide the **Delete account URL**: `https://vikasreddykamalapuram.github.io/expense-manager/account-deletion.html`.
+- All **encrypted in transit** (TLS 1.3). **Not shared** with third parties — Supabase is the developer's own backend/processor. User can **request deletion** from Settings → Advanced → Delete cloud sync data, or via the Delete account URL.
 
 ### 7f. Government apps
 - **No.**
@@ -203,6 +204,7 @@ Use `playstore/UPLOAD_CHECKLIST.md` → *Data Safety* section. Declared items:
 
 ### 7h. Privacy policy URL
 - Paste `https://vikasreddykamalapuram.github.io/expense-manager/privacy-policy.html`.
+- **Delete account URL** (Data safety → account creation): `https://vikasreddykamalapuram.github.io/expense-manager/account-deletion.html`.
 
 ### 7i. App category
 - Category: **Finance**.
@@ -242,9 +244,13 @@ adb pull /sdcard/screen1.png ~/Downloads/screenshots/
 Aim for 4–6 screenshots covering: Dashboard, Add transaction, Analytics, Budget, Reports, Cross-device sync.
 
 ### Feature graphic
-Fastest path: use Canva → search "Google Play Feature Graphic" → 1024×500 template → drop the ExpenseIQ logo + tagline "Smart personal finance, everywhere you are." → export PNG.
+Fastest path: use Canva → search "Google Play Feature Graphic" → 1024×500 template → drop the MoneyIQ logo + tagline "Smart personal finance, everywhere you are." → export PNG.
 
 **Done when:** all fields + graphics are uploaded and the Store listing shows a **"Saved"** badge.
+
+> 📎 Ready-made helpers: see **`playstore/ASSETS.md`** for the full asset checklist, a ready
+> **`playstore/assets/feature-graphic.svg`** (export to PNG with the command in ASSETS.md), and
+> **`scripts/capture-screenshots.sh`** to grab phone screenshots from an emulator/device.
 
 ---
 
@@ -254,7 +260,7 @@ Play policy: **new apps must ship on Internal / Closed / Open** before Productio
 
 1. Play Console → **Testing → Internal testing → Create new release**.
 2. **Choose signing key:** accept "Let Google manage & protect your app signing key" (Play App Signing). Upload your `expenseiq-release.keystore` as the **upload key**.
-3. **Upload the AAB** from `~/Downloads/expenseiq-v3.2.0/`.
+3. **Upload the AAB** from `~/Downloads/moneyiq-v3.2.1/`.
 4. **Release name:** `3.2.0 (41)` — matches versionCode from CI.
 5. **Release notes:** paste from `playstore/release-notes.md`.
 6. **Testers:** create an email list (add your own gmail, at least 1 other). Save an **opt-in URL** — testers open it on their Android device, join, and Play Store surfaces the app.
@@ -262,7 +268,7 @@ Play policy: **new apps must ship on Internal / Closed / Open** before Productio
 
 **Wait 10–60 min** for Play to process the AAB. When it's live:
 - Open the opt-in URL on your phone.
-- Install ExpenseIQ from Play Store.
+- Install MoneyIQ from Play Store.
 - Verify: sign-in, add a transaction, sync round-trip with the web app.
 
 **Done when:** you've installed the app from Play Store via the internal track and confirmed it works.
@@ -287,7 +293,7 @@ For `https://vikasreddykamalapuram.github.io/expense-manager` links to open the 
    ```
 5. Play Console → **Setup → App links** → auto-verify shows green.
 
-**Done when:** clicking a `https://vikasreddykamalapuram.github.io/expense-manager/...` link on your phone opens ExpenseIQ directly instead of a browser.
+**Done when:** clicking a `https://vikasreddykamalapuram.github.io/expense-manager/...` link on your phone opens MoneyIQ directly instead of a browser.
 
 ---
 
@@ -302,7 +308,7 @@ Once internal testing is stable (recommend **7 days of dogfooding**):
 
 **Review time:** typically 1–3 days for first-time apps, few hours for updates.
 
-**Done when:** Play Console shows **"Available on Google Play"** and searching for `ExpenseIQ` on your phone's Play Store returns your app.
+**Done when:** Play Console shows **"Available on Google Play"** and searching for `MoneyIQ` on your phone's Play Store returns your app.
 
 ---
 
@@ -321,7 +327,7 @@ gh run watch
 
 # 3. Download AAB
 RUN_ID=$(gh run list --workflow=android-release.yml --limit 1 --json databaseId --jq '.[0].databaseId')
-gh run download $RUN_ID -D ~/Downloads/expenseiq-latest
+gh run download $RUN_ID -D ~/Downloads/moneyiq-latest
 
 # 4. Play Console → Production → Create new release → upload AAB → rollout
 ```
@@ -350,7 +356,7 @@ Read the failing step's Gradle output. Common causes:
 
 ### App installs but crashes on launch
 ```bash
-adb logcat -c && adb logcat | grep -i "expenseiq\|AndroidRuntime"
+adb logcat -c && adb logcat | grep -i "moneyiq\|AndroidRuntime"
 ```
 Attach the log to a new session and we'll triage.
 
@@ -371,6 +377,7 @@ Both `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` must be present.
 - `playstore/release-notes.md` — release notes template + history
 - `docs/MAC_SETUP.md` — deeper Mac dev environment notes
 - `public/privacy-policy.html` — the URL you paste into Play Console
+- `public/account-deletion.html` — the Delete account URL for the Data safety form
 - `public/.well-known/assetlinks.json` — App Links verification
 - `.github/workflows/android-release.yml` — the CI that builds the AAB
 - `scripts/inject-signing-config.mjs` — release keystore injection into gradle
@@ -379,4 +386,4 @@ Both `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` must be present.
 
 ---
 
-_Last updated: 2026-07-29 · Currently at Phase 3 (waiting for green AAB build on tag `v3.2.0`)._
+_Last updated: 2026-08-02 · applicationId changed to `io.github.vikasreddykamalapuram.moneyiq` (old `com.expenseiq.app` was globally reserved). Create a FRESH Play Console app entry for the new package, then build+upload tag `v3.2.1` to Internal testing._

@@ -1,4 +1,4 @@
-# v3.2.0 — First Play Store release
+# v3.2.1 — First Play Store release
 
 **What's new**
 

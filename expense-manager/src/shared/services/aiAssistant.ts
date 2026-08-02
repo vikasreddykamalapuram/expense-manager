@@ -629,7 +629,7 @@ function handleGreeting(ctx: AssistantContext): string {
   const greetings = ['Hey there! 👋', 'Hello! 😊', 'Hi! 👋', 'Hey! 🙌'];
   const greeting = greetings[Math.floor(Math.random() * greetings.length)];
 
-  let text = `${greeting} Welcome back to ExpenseIQ!\n\n`;
+  let text = `${greeting} Welcome back to MoneyIQ!\n\n`;
   text += `Here's a quick snapshot for this month:\n`;
   text += `  💰 Income: **${fc(comp.income, ctx.settings)}**\n`;
   text += `  💸 Expenses: **${fc(comp.expenses, ctx.settings)}**\n`;

@@ -1,15 +1,15 @@
-# ExpenseIQ — Privacy Policy
+# MoneyIQ — Privacy Policy
 
 _Last updated: 2026-07-29_
 
 ## Summary
 
-ExpenseIQ is a **local-first** personal-finance manager. Your data lives on your device by default. When you optionally sign in, a real-time synced copy is kept in a private database that only your account can read.
+MoneyIQ is a **local-first** personal-finance manager. Your data lives on your device by default. When you optionally sign in, a real-time synced copy is kept in a private database that only your account can read.
 
 ## Data we do NOT collect
 
 - Your bank credentials or SMS messages. (We do not read your SMS. We do not connect to your bank.)
-- Advertising identifiers. (There are no ads in ExpenseIQ.)
+- Advertising identifiers. (There are no ads in MoneyIQ.)
 - Anything at all if you use the app without signing in.
 
 ## Data stored on your device
@@ -18,7 +18,7 @@ The app stores everything you enter (transactions, accounts, budgets, portfolio,
 
 ## Optional cloud sync (when you sign in)
 
-You may optionally sign in with **your own** Google or Microsoft account to enable cross-device sync. When enabled, ExpenseIQ uses a private Supabase Postgres database hosted by the developer to sync your data between your devices in real time.
+You may optionally sign in with **your own** Google or Microsoft account to enable cross-device sync. When enabled, MoneyIQ uses a private Supabase Postgres database hosted by the developer to sync your data between your devices in real time.
 
 Data that leaves your device when sync is on:
 
@@ -49,7 +49,7 @@ The app schedules local notifications on your device for daily reminders and bil
 
 ## Permissions requested
 
-- **Internet:** to load the app, fetch live stock prices from a public GitHub-hosted file, and (if you enable it) sync with the ExpenseIQ database.
+- **Internet:** to load the app, fetch live stock prices from a public GitHub-hosted file, and (if you enable it) sync with the MoneyIQ database.
 - **Biometric / Fingerprint:** for app-lock, entirely on-device.
 - **Vibrate:** for haptic feedback.
 - **Post notifications:** to fire bill reminders you configure.

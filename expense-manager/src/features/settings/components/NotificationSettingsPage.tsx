@@ -44,7 +44,7 @@ export function NotificationSettingsPage() {
       ]);
       const anomalyEnabled =
         typeof window !== 'undefined' &&
-        window.localStorage.getItem('expenseiq.notifyAnomalies') === 'true';
+        window.localStorage.getItem('moneyiq.notifyAnomalies') === 'true';
       setCfg({ dailyEnabled, dailyHour: hour, dailyMinute: minute, billsEnabled, anomalyEnabled });
     })();
   }, []);
@@ -112,10 +112,10 @@ export function NotificationSettingsPage() {
     const next = { ...cfg, anomalyEnabled: !cfg.anomalyEnabled };
     setCfg(next);
     if (typeof window !== 'undefined') {
-      window.localStorage.setItem('expenseiq.notifyAnomalies', String(next.anomalyEnabled));
+      window.localStorage.setItem('moneyiq.notifyAnomalies', String(next.anomalyEnabled));
       // Reset seen set when turning on so the user sees existing anomalies once.
       if (next.anomalyEnabled) {
-        window.localStorage.removeItem('expenseiq.seenAnomalyIds');
+        window.localStorage.removeItem('moneyiq.seenAnomalyIds');
       }
     }
   };
@@ -146,7 +146,7 @@ export function NotificationSettingsPage() {
 
       {status === 'denied' && (
         <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700 dark:border-red-900 dark:bg-red-950/40 dark:text-red-200">
-          Notification permission was denied. Enable it in your device Settings for ExpenseIQ.
+          Notification permission was denied. Enable it in your device Settings for MoneyIQ.
         </div>
       )}
 

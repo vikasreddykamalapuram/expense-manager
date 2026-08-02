@@ -1,4 +1,4 @@
-package com.expenseiq.app
+package io.github.vikasreddykamalapuram.moneyiq
 
 import com.getcapacitor.JSObject
 import com.getcapacitor.Plugin

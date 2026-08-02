@@ -10,7 +10,7 @@
 import { Haptics, ImpactStyle, NotificationType } from '@capacitor/haptics';
 import { isNativePlatform } from './platform';
 
-const STORAGE_KEY = 'expenseiq_haptics_enabled';
+const STORAGE_KEY = 'moneyiq_haptics_enabled';
 
 function isEnabled(): boolean {
   try {

@@ -13,7 +13,7 @@
  *   2. Open that URL in a Chrome Custom Tab via `@capacitor/browser`.
  *   3. Provider redirects to our hosted landing page
  *      (`https://vikasreddykamalapuram.github.io/expense-manager/oauth/callback.html`).
- *   4. That page immediately `window.location.replace('expenseiq://oauth/callback#…')`,
+ *   4. That page immediately `window.location.replace('moneyiq://oauth/callback#…')`,
  *      which triggers our AndroidManifest intent-filter and hands control
  *      back to MainActivity.
  *   5. `App.addListener('appUrlOpen')` in `nativeShell.ts` sees the custom
@@ -137,7 +137,7 @@ export function handleOAuthCallback(url: string): boolean {
   }
 
   const isOAuthUrl =
-    parsed.protocol === 'expenseiq:' &&
+    parsed.protocol === 'moneyiq:' &&
     (parsed.host === 'oauth' || parsed.pathname.startsWith('/oauth'));
   if (!isOAuthUrl) return false;
 

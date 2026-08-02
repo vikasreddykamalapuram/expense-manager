@@ -14,7 +14,7 @@
 import { generateSyncKey, exportSyncKey, importSyncKey } from './syncEncryptionService';
 import type { AuthProvider } from '../types';
 
-const SYNC_KEY_FILENAME = 'expenseiq-sync-key.json';
+const SYNC_KEY_FILENAME = 'moneyiq-sync-key.json';
 const LOCAL_CACHE_KEY = 'em_sync_key_jwk';
 
 // Use sessionStorage for sync key cache — clears on tab close, not accessible after session ends.

@@ -62,7 +62,7 @@ const TIPS: Tip[] = [
   },
 ];
 
-const DISMISSED_KEY = 'expenseiq_dismissed_tips';
+const DISMISSED_KEY = 'moneyiq_dismissed_tips';
 
 function getDismissedTips(): Set<string> {
   try {
