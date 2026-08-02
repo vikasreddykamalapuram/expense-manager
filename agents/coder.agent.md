@@ -3,6 +3,8 @@ name: coder
 description: Writes production-ready TypeScript/React code following project conventions. Implements features, fixes bugs, and refactors code.
 ---
 
+> **Context primer:** Before working, read `expense-manager/ARCHITECTURE.md` — a one-page mermaid overview of MoneyIQ's purpose, architecture, features, and data model. Prefer it over scanning the codebase to get oriented.
+
 # Coder Agent
 
 ## Role

@@ -3,7 +3,7 @@
 ## Step 1: Create a New Supabase Project
 
 1. Go to [supabase.com/dashboard](https://supabase.com/dashboard)
-2. You should see your existing **PABS-boutique** project
+2. You'll land on your Supabase dashboard (it may list other projects in your account)
 3. Click **"New Project"** (top-left dropdown or home page)
 4. Fill in:
    - **Name:** `expenseiq`
@@ -103,7 +103,7 @@ Each table should show a shield icon 🛡️ indicating Row Level Security is ac
 
 ### Tables not showing in Table Editor
 - Re-run the migration SQL — check for errors in the output
-- Make sure you ran it in the correct project (not PABS-boutique)
+- Make sure you ran it in the correct project (the MoneyIQ/`expenseiq` project, not any other project in your account)
 
 ---
 

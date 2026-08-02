@@ -3,6 +3,8 @@ name: planner
 description: Breaks down features into actionable implementation tasks with clear scope, dependencies, and acceptance criteria. Use for sprint planning, feature decomposition, and roadmap creation.
 ---
 
+> **Context primer:** Before working, read `expense-manager/ARCHITECTURE.md` — a one-page mermaid overview of MoneyIQ's purpose, architecture, features, and data model. Prefer it over scanning the codebase to get oriented.
+
 # Planner Agent
 
 ## Role

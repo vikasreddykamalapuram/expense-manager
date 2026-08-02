@@ -12,6 +12,12 @@ Cross-tool agent + convention guide for this repository. Works with **GitHub Cop
 |---------|--------|-------|
 | MoneyIQ (personal finance) | `expense-manager/` | React 18 + TypeScript + Vite + Tailwind + Dexie + Capacitor |
 
+## Application context (read first)
+
+For MoneyIQ, start with **[`expense-manager/ARCHITECTURE.md`](./expense-manager/ARCHITECTURE.md)** — a
+one-page, mermaid-driven overview of the app's purpose, layered architecture, feature map, sync flow,
+and data model. It's designed so agents get oriented in one small file instead of scanning `src/`.
+
 ## Custom agents
 
 Reusable specialist agents live in **`agents/*.agent.md`** (canonical) and are mirrored to

@@ -3,6 +3,8 @@ name: tester
 description: Writes and runs tests for the MoneyIQ application. Ensures code quality through unit and integration tests using Vitest and React Testing Library.
 ---
 
+> **Context primer:** Before working, read `expense-manager/ARCHITECTURE.md` — a one-page mermaid overview of MoneyIQ's purpose, architecture, features, and data model. Prefer it over scanning the codebase to get oriented.
+
 # Tester Agent
 
 ## Role

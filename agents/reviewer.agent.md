@@ -3,6 +3,8 @@ name: reviewer
 description: Reviews code for quality, consistency, performance, accessibility, and potential bugs. Provides actionable feedback without modifying code directly.
 ---
 
+> **Context primer:** Before working, read `expense-manager/ARCHITECTURE.md` — a one-page mermaid overview of MoneyIQ's purpose, architecture, features, and data model. Prefer it over scanning the codebase to get oriented.
+
 # Reviewer Agent
 
 ## Role
