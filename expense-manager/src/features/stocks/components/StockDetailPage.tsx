@@ -71,10 +71,6 @@ export function StockDetailPage() {
     if (symbol) fetchPrice();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  if (!symbol) {
-    return <p className="text-gray-500 dark:text-gray-400 p-6">Invalid stock symbol</p>;
-  }
-
   // Compute stats from transactions
   const txnStats = useMemo(() => {
     let totalBought = 0;
@@ -113,6 +109,11 @@ export function StockDetailPage() {
     }
     return [...map.values()].sort((a, b) => a.month.localeCompare(b.month));
   }, [transactions]);
+
+  // All hooks above run unconditionally; safe to bail out here.
+  if (!symbol) {
+    return <p className="text-gray-500 dark:text-gray-400 p-6">Invalid stock symbol</p>;
+  }
 
   const stockName = holding?.name || transactions[0]?.name || symbol;
 
