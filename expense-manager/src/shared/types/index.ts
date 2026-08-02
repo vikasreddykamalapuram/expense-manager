@@ -35,6 +35,10 @@ export interface Transaction {
   paymentMethod?: PaymentMethod;
   isRecurring: boolean;
   recurringFrequency?: 'daily' | 'weekly' | 'monthly' | 'yearly';
+  // Installments: a purchase split into N linked monthly transactions (like an EMI).
+  installmentGroupId?: string; // shared across all transactions in one plan
+  installmentNumber?: number;  // 1-based position within the plan
+  installmentCount?: number;   // total number of installments in the plan
   receiptId?: string; // references a receipt in the receipts store
   createdAt: string;
   updatedAt: string;

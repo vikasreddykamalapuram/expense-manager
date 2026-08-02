@@ -276,6 +276,11 @@ export function TransactionList() {
                         Recurring
                       </span>
                     )}
+                    {tx.installmentCount && tx.installmentNumber && (
+                      <span className="text-[10px] font-medium uppercase text-indigo-600 bg-indigo-50 dark:bg-indigo-900/30 px-1.5 py-0.5 rounded whitespace-nowrap">
+                        EMI {tx.installmentNumber}/{tx.installmentCount}
+                      </span>
+                    )}
                     {tx.receiptId && (
                       <button
                         type="button"
