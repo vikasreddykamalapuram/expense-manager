@@ -170,6 +170,18 @@ export function QuickAddTransaction({ initialType, prefillAmount, prefillNote, o
       {/* Category grid (income/expense) */}
       {type !== 'transfer' ? (
         <div>
+          {parentCategories.length === 0 ? (
+            <div className="flex flex-col items-center gap-2 rounded-xl border border-dashed border-gray-300 py-6 text-center dark:border-gray-600">
+              <p className="text-sm text-gray-500 dark:text-gray-400">No {type} categories yet</p>
+              <button
+                type="button"
+                onClick={() => { setNewCatParentId(undefined); setShowCategoryForm(true); }}
+                className="inline-flex items-center gap-1.5 rounded-lg bg-primary-600 px-3 py-1.5 text-sm font-medium text-white transition-colors hover:bg-primary-700"
+              >
+                <Plus size={16} /> Create category
+              </button>
+            </div>
+          ) : (
           <div className="grid max-h-44 grid-cols-4 gap-2 overflow-y-auto sm:grid-cols-5">
             {parentCategories.map((c) => (
               <button
@@ -194,6 +206,7 @@ export function QuickAddTransaction({ initialType, prefillAmount, prefillNote, o
               <span className="text-[11px] leading-tight">New</span>
             </button>
           </div>
+          )}
           {subcategories.length > 0 && (
             <div className="mt-2 flex flex-wrap gap-1.5">
               <button type="button" onClick={() => setCategoryId(parentId)} className={chipCls(categoryId === parentId)}>General</button>
