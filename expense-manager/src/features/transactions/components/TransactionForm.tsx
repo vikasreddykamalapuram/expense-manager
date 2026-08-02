@@ -16,6 +16,16 @@ import { Transaction, Account, PaymentMethod } from '../../../shared/types';
 import { suggestCategories, type CategorySuggestion } from '../../../shared/services/autoCategorize';
 import { haptic } from '../../../shared/services/haptics';
 
+/** Add whole months to a YYYY-MM-DD string using local date math (no timezone shift). */
+function addMonthsToISODate(iso: string, months: number): string {
+  const [y, m, d] = iso.split('-').map(Number);
+  const dt = new Date(y, m - 1 + months, d);
+  const yy = dt.getFullYear();
+  const mm = String(dt.getMonth() + 1).padStart(2, '0');
+  const dd = String(dt.getDate()).padStart(2, '0');
+  return `${yy}-${mm}-${dd}`;
+}
+
 interface TransactionFormProps {
   editTransaction?: Transaction;
   initialType?: 'income' | 'expense' | 'transfer';
@@ -42,6 +52,8 @@ export function TransactionForm({ editTransaction, initialType, prefillAmount, p
   const [recurringFrequency, setRecurringFrequency] = useState(
     editTransaction?.recurringFrequency || 'monthly'
   );
+  const [isInstallment, setIsInstallment] = useState(false);
+  const [installmentCount, setInstallmentCount] = useState('3');
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [showCategoryForm, setShowCategoryForm] = useState(false);
   const [newCategoryParentId, setNewCategoryParentId] = useState<string | undefined>();
@@ -131,6 +143,40 @@ export function TransactionForm({ editTransaction, initialType, prefillAmount, p
     if (!validate()) { haptic.error(); return; }
 
     const now = new Date().toISOString();
+
+    // Installment plan: generate N linked monthly transactions instead of one.
+    if (isInstallment && !isEditing && type !== 'transfer') {
+      const groupId = uuidv4();
+      const total = parseFloat(amount);
+      const n = Math.min(120, Math.max(2, parseInt(installmentCount, 10) || 2));
+      const per = Math.round((total / n) * 100) / 100;
+      let allocated = 0;
+      for (let i = 0; i < n; i++) {
+        const isLast = i === n - 1;
+        const instAmount = isLast ? Math.round((total - allocated) * 100) / 100 : per;
+        if (!isLast) allocated += per;
+        actions.addTransaction({
+          id: uuidv4(),
+          type,
+          amount: instAmount,
+          categoryId,
+          date: addMonthsToISODate(date, i),
+          notes: notes ? `${notes} (${i + 1}/${n})` : `Installment ${i + 1}/${n}`,
+          accountId: accountId || undefined,
+          paymentMethod: paymentMethod || undefined,
+          isRecurring: false,
+          installmentGroupId: groupId,
+          installmentNumber: i + 1,
+          installmentCount: n,
+          createdAt: now,
+          updatedAt: now,
+        });
+      }
+      haptic.success();
+      if (onClose) onClose(); else navigate('/transactions');
+      return;
+    }
+
     const txId = isEditing && editTransaction ? editTransaction.id : uuidv4();
     const txData = {
       type,
@@ -454,7 +500,7 @@ export function TransactionForm({ editTransaction, initialType, prefillAmount, p
             <input
               type="checkbox"
               checked={isRecurring}
-              onChange={(e) => setIsRecurring(e.target.checked)}
+              onChange={(e) => { setIsRecurring(e.target.checked); if (e.target.checked) setIsInstallment(false); }}
               className="h-4 w-4 rounded border-gray-300 dark:border-gray-600 text-primary-600 focus:ring-primary-500"
             />
             <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Recurring transaction</span>
@@ -471,6 +517,42 @@ export function TransactionForm({ editTransaction, initialType, prefillAmount, p
               ]}
               className="w-32"
             />
+          )}
+        </div>
+      )}
+
+      {/* Installments */}
+      {type !== 'transfer' && !isEditing && (
+        <div className="space-y-2">
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={isInstallment}
+              onChange={(e) => { setIsInstallment(e.target.checked); if (e.target.checked) setIsRecurring(false); }}
+              className="h-4 w-4 rounded border-gray-300 dark:border-gray-600 text-primary-600 focus:ring-primary-500"
+            />
+            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Split into installments</span>
+          </label>
+          {isInstallment && (
+            <div className="flex items-end gap-3 pl-6">
+              <Input
+                label="Months"
+                type="number"
+                min="2"
+                max="120"
+                value={installmentCount}
+                onChange={(e) => setInstallmentCount(e.target.value)}
+                className="w-24"
+              />
+              {parseFloat(amount) > 0 && parseInt(installmentCount, 10) >= 2 && (
+                <p className="pb-2 text-xs text-gray-500 dark:text-gray-400">
+                  {installmentCount} monthly payments of{' '}
+                  <span className="font-semibold text-gray-700 dark:text-gray-300">
+                    {state.settings.currencySymbol}{(parseFloat(amount) / parseInt(installmentCount, 10)).toFixed(2)}
+                  </span>
+                </p>
+              )}
+            </div>
           )}
         </div>
       )}
