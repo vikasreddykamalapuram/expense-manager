@@ -146,6 +146,40 @@ export interface RecurringRule {
   deletedAt?: string;
 }
 
+// ─── Salary / Payslip Types ─────────────────────────────
+
+export type SalaryComponentKind = 'earning' | 'deduction';
+
+export interface SalaryComponent {
+  id: string;
+  label: string;   // e.g., 'Basic', 'HRA', 'Provident Fund'
+  amount: number;  // monthly amount, in the user's currency
+  kind: SalaryComponentKind;
+}
+
+/** The user's current salary structure (one per profile). */
+export interface SalaryProfile {
+  employer?: string;
+  components: SalaryComponent[]; // monthly earnings + deductions
+  payDay?: number;               // day of month salary is credited (1-31)
+  effectiveFrom?: string;        // YYYY-MM-DD
+  updatedAt: string;
+}
+
+/** A single month's payslip snapshot (history). */
+export interface Payslip {
+  id: string;
+  month: string;            // YYYY-MM
+  employer?: string;
+  gross: number;
+  totalDeductions: number;
+  net: number;
+  components: SalaryComponent[];
+  source: 'manual' | 'pdf';
+  createdAt: string;
+  updatedAt: string;
+}
+
 // ─── Stock/Trading Types ────────────────────────────────
 
 export type StockExchange = 'NSE' | 'BSE' | 'MCX' | 'OTHER';

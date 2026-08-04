@@ -30,6 +30,7 @@ mindmap
     Wealth
       stocks (NSE holdings, P&L)
       savings (goals)
+      salary (breakdown, take-home)
     Shared
       splitwise (groups/expenses)
     Data in/out

@@ -1,5 +1,5 @@
 import Dexie, { Table } from 'dexie';
-import { Transaction, Category, Account, Budget, Settings, Profile, RecurringRule, StockTransaction, BillReminder, SplitGroup, SplitMember, SplitExpense, SplitSettlement, SavingsGoal } from '../types';
+import { Transaction, Category, Account, Budget, Settings, Profile, RecurringRule, StockTransaction, BillReminder, SplitGroup, SplitMember, SplitExpense, SplitSettlement, SavingsGoal, SalaryProfile, Payslip } from '../types';
 import { loadMapSync, resolveSymbolSync } from './symbolResolver';
 
 // Sync metadata fields added to all syncable records
@@ -87,6 +87,14 @@ export interface DbSavingsGoal extends SavingsGoal, SyncFields {
   profileId: string;
 }
 
+export interface DbSalaryProfile extends SalaryProfile, SyncFields {
+  profileId: string;
+}
+
+export interface DbPayslip extends Payslip, SyncFields {
+  profileId: string;
+}
+
 export class ExpenseDatabase extends Dexie {
   transactions!: Table<DbTransaction, string>;
   categories!: Table<DbCategory, string>;
@@ -105,6 +113,8 @@ export class ExpenseDatabase extends Dexie {
   splitExpenses!: Table<DbSplitExpense, string>;
   splitSettlements!: Table<DbSplitSettlement, string>;
   savingsGoals!: Table<DbSavingsGoal, string>;
+  salaryProfiles!: Table<DbSalaryProfile, string>;
+  payslips!: Table<DbPayslip, string>;
 
   constructor() {
     super('MoneyIQDatabase');
@@ -243,6 +253,12 @@ export class ExpenseDatabase extends Dexie {
       splitExpenses: 'id, profileId, groupId, [profileId+groupId], [profileId+createdAt], [profileId+updatedAt]',
       splitSettlements: 'id, profileId, groupId, [profileId+groupId], [profileId+updatedAt]',
       savingsGoals: 'id, profileId, [profileId+updatedAt]',
+    });
+
+    // v9: Salary Intelligence — salary profile (one per profile) + payslip history
+    this.version(9).stores({
+      salaryProfiles: 'profileId',
+      payslips: 'id, profileId, [profileId+month], [profileId+updatedAt]',
     });
   }
 }
