@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { useState, useRef, type ChangeEvent } from 'react';
 import { v4 as uuidv4 } from 'uuid';
-import { Wallet, Plus, Trash2, Pencil, Building2, CalendarClock } from 'lucide-react';
+import { Wallet, Plus, Trash2, Pencil, Building2, CalendarClock, FileUp, Loader2 } from 'lucide-react';
 import { useAppContext } from '../../../context/AppContext';
 import { useSalaryProfile, computeSalaryTotals } from '../../../shared/hooks/useSalaryProfile';
+import { parsePayslipPdf } from '../../../shared/services/payslipParser';
 import type { SalaryComponent, SalaryComponentKind } from '../../../shared/types';
 
 const seedComponents = (): SalaryComponent[] => [
@@ -24,6 +25,71 @@ export function SalaryPage() {
   const [employer, setEmployer] = useState('');
   const [payDay, setPayDay] = useState('');
   const [components, setComponents] = useState<SalaryComponent[]>([]);
+
+  const fileRef = useRef<HTMLInputElement>(null);
+  const [importing, setImporting] = useState(false);
+  const [pendingFile, setPendingFile] = useState<File | null>(null);
+  const [pwd, setPwd] = useState('');
+  const [needsPwd, setNeedsPwd] = useState(false);
+  const [importMsg, setImportMsg] = useState('');
+
+  const runImport = async (file: File, password?: string) => {
+    setImporting(true);
+    setImportMsg('');
+    const res = await parsePayslipPdf(file, password);
+    setImporting(false);
+    if (res.needsPassword) { setPendingFile(file); setNeedsPwd(true); return; }
+    if (res.wrongPassword) { setImportMsg('Incorrect password. Try again.'); return; }
+    if (res.error) { setImportMsg(res.error); setNeedsPwd(false); setPendingFile(null); return; }
+    setEmployer(profile?.employer || '');
+    setPayDay(profile?.payDay ? String(profile.payDay) : '');
+    setComponents(res.components.length ? res.components : seedComponents());
+    setEditing(true);
+    setNeedsPwd(false);
+    setPendingFile(null);
+    setPwd('');
+    setImportMsg(`Imported ${res.components.length} component${res.components.length === 1 ? '' : 's'} — review & save.`);
+  };
+
+  const onPickFile = (e: ChangeEvent<HTMLInputElement>) => {
+    const f = e.target.files?.[0];
+    e.target.value = '';
+    if (!f) return;
+    setNeedsPwd(false);
+    setPwd('');
+    setImportMsg('');
+    void runImport(f);
+  };
+
+  const importControls = (
+    <div className="space-y-2">
+      <input ref={fileRef} type="file" accept="application/pdf" className="hidden" onChange={onPickFile} />
+      <button
+        type="button"
+        onClick={() => fileRef.current?.click()}
+        disabled={importing}
+        className="inline-flex items-center gap-1.5 rounded-lg border border-gray-300 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-60 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-700"
+      >
+        {importing ? <Loader2 size={16} className="animate-spin" /> : <FileUp size={16} />}
+        {importing ? 'Reading…' : 'Import payslip PDF'}
+      </button>
+      {needsPwd && (
+        <div className="flex items-center gap-2">
+          <input
+            type="password"
+            value={pwd}
+            onChange={(e) => setPwd(e.target.value)}
+            placeholder="PDF password"
+            className="flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
+          />
+          <button type="button" onClick={() => pendingFile && runImport(pendingFile, pwd)} disabled={importing || !pwd}
+            className="rounded-lg bg-primary-600 px-3 py-2 text-sm font-medium text-white disabled:opacity-60">Unlock</button>
+        </div>
+      )}
+      {importMsg && <p className="text-xs text-gray-500 dark:text-gray-400">{importMsg}</p>}
+      <p className="text-[11px] text-gray-400 dark:text-gray-500">Parsed on your device — the file is never uploaded.</p>
+    </div>
+  );
 
   const fmt = (n: number) => `${sym}${Math.round(n).toLocaleString(undefined)}`;
 
@@ -94,6 +160,10 @@ export function SalaryPage() {
           <p className="text-sm text-gray-500 dark:text-gray-400">Enter your monthly salary components</p>
         </div>
 
+        <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-700 dark:bg-gray-800">
+          {importControls}
+        </div>
+
         <div className="space-y-4 rounded-xl border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-700 dark:bg-gray-800">
           <div className="grid grid-cols-2 gap-3">
             <label className="block">
@@ -154,6 +224,7 @@ export function SalaryPage() {
           <button type="button" onClick={startEdit} className="inline-flex items-center gap-1.5 rounded-lg bg-primary-600 px-4 py-2 text-sm font-semibold text-white hover:bg-primary-700">
             <Plus size={16} /> Add salary breakdown
           </button>
+          <div className="w-full max-w-xs pt-2">{importControls}</div>
         </div>
       </div>
     );
