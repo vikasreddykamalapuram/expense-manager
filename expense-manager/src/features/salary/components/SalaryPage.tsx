@@ -1,8 +1,9 @@
 import { useState, useRef, type ChangeEvent } from 'react';
 import { v4 as uuidv4 } from 'uuid';
-import { Wallet, Plus, Trash2, Pencil, Building2, CalendarClock, FileUp, Loader2 } from 'lucide-react';
+import { Wallet, Plus, Trash2, Pencil, Building2, CalendarClock, FileUp, Loader2, History, TrendingUp } from 'lucide-react';
 import { useAppContext } from '../../../context/AppContext';
 import { useSalaryProfile, computeSalaryTotals } from '../../../shared/hooks/useSalaryProfile';
+import { usePayslips } from '../../../shared/hooks/usePayslips';
 import { parsePayslipPdf } from '../../../shared/services/payslipParser';
 import type { SalaryComponent, SalaryComponentKind } from '../../../shared/types';
 
@@ -20,11 +21,15 @@ export function SalaryPage() {
   const sym = state.settings.currencySymbol;
   const profileId = state.activeProfileId;
   const { profile, loading, save } = useSalaryProfile(profileId);
+  const { payslips, upsertForMonth, remove: removePayslip } = usePayslips(profileId);
 
+  const currentMonth = new Date().toISOString().slice(0, 7);
   const [editing, setEditing] = useState(false);
   const [employer, setEmployer] = useState('');
   const [payDay, setPayDay] = useState('');
   const [components, setComponents] = useState<SalaryComponent[]>([]);
+  const [month, setMonth] = useState(currentMonth);
+  const [source, setSource] = useState<'manual' | 'pdf'>('manual');
 
   const fileRef = useRef<HTMLInputElement>(null);
   const [importing, setImporting] = useState(false);
@@ -44,6 +49,8 @@ export function SalaryPage() {
     setEmployer(profile?.employer || '');
     setPayDay(profile?.payDay ? String(profile.payDay) : '');
     setComponents(res.components.length ? res.components : seedComponents());
+    setMonth(currentMonth);
+    setSource('pdf');
     setEditing(true);
     setNeedsPwd(false);
     setPendingFile(null);
@@ -97,6 +104,8 @@ export function SalaryPage() {
     setEmployer(profile?.employer || '');
     setPayDay(profile?.payDay ? String(profile.payDay) : '');
     setComponents(profile?.components?.length ? profile.components.map((c) => ({ ...c })) : seedComponents());
+    setMonth(currentMonth);
+    setSource('manual');
     setEditing(true);
   };
 
@@ -114,6 +123,18 @@ export function SalaryPage() {
       components: cleaned,
       effectiveFrom: profile?.effectiveFrom,
     });
+    if (month && cleaned.length > 0) {
+      const t = computeSalaryTotals(cleaned);
+      await upsertForMonth({
+        month,
+        employer: employer.trim() || undefined,
+        gross: t.gross,
+        totalDeductions: t.deductions,
+        net: t.net,
+        components: cleaned,
+        source,
+      });
+    }
     setEditing(false);
   };
 
@@ -178,6 +199,12 @@ export function SalaryPage() {
             </label>
           </div>
 
+          <label className="block">
+            <span className="mb-1 block text-xs font-medium text-gray-500 dark:text-gray-400">For month (saved to payslip history)</span>
+            <input type="month" value={month} onChange={(e) => setMonth(e.target.value)}
+              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100" />
+          </label>
+
           <div>
             <p className="mb-2 text-sm font-semibold text-success-700 dark:text-success-400">Earnings</p>
             <div className="space-y-2">{earnings.map(Row)}</div>
@@ -234,6 +261,18 @@ export function SalaryPage() {
   const totals = computeSalaryTotals(profile.components);
   const earnings = profile.components.filter((c) => c.kind === 'earning');
   const deductions = profile.components.filter((c) => c.kind === 'deduction');
+
+  const year = currentMonth.slice(0, 4);
+  const ytd = payslips.filter((p) => p.month.startsWith(year));
+  const ytdGross = ytd.reduce((s, p) => s + p.gross, 0);
+  const ytdNet = ytd.reduce((s, p) => s + p.net, 0);
+  const pfYtd = ytd.reduce((s, p) => s + p.components.filter((c) => /provident|pf/i.test(c.label)).reduce((a, c) => a + c.amount, 0), 0);
+  const trend = [...payslips].slice(0, 6).reverse();
+  const maxNet = Math.max(1, ...trend.map((p) => p.net));
+  const monthLabel = (m: string) => {
+    const [y, mo] = m.split('-');
+    return new Date(Number(y), Number(mo) - 1, 1).toLocaleString(undefined, { month: 'short', year: '2-digit' });
+  };
 
   return (
     <div className="mx-auto max-w-lg space-y-6">
@@ -312,6 +351,55 @@ export function SalaryPage() {
           </ul>
         </div>
       </div>
+
+      {payslips.length > 0 && (
+        <div className="space-y-4">
+          <div className="flex items-center gap-2 pt-2">
+            <History size={16} className="text-gray-400" />
+            <h2 className="text-base font-semibold text-gray-900 dark:text-gray-100">Payslip history</h2>
+          </div>
+          <div className="grid grid-cols-3 gap-3">
+            <div className="rounded-xl border border-gray-200 bg-white p-3 shadow-sm dark:border-gray-700 dark:bg-gray-800">
+              <p className="text-[11px] text-gray-500 dark:text-gray-400">Net {year}</p>
+              <p className="text-base font-bold text-gray-900 dark:text-gray-100">{fmt(ytdNet)}</p>
+            </div>
+            <div className="rounded-xl border border-gray-200 bg-white p-3 shadow-sm dark:border-gray-700 dark:bg-gray-800">
+              <p className="text-[11px] text-gray-500 dark:text-gray-400">Gross {year}</p>
+              <p className="text-base font-bold text-gray-900 dark:text-gray-100">{fmt(ytdGross)}</p>
+            </div>
+            <div className="rounded-xl border border-gray-200 bg-white p-3 shadow-sm dark:border-gray-700 dark:bg-gray-800">
+              <p className="text-[11px] text-gray-500 dark:text-gray-400">PF {year}</p>
+              <p className="text-base font-bold text-gray-900 dark:text-gray-100">{fmt(pfYtd)}</p>
+            </div>
+          </div>
+          {trend.length > 1 && (
+            <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-700 dark:bg-gray-800">
+              <div className="mb-3 flex items-center gap-1.5 text-sm font-medium text-gray-700 dark:text-gray-300"><TrendingUp size={14} /> Net pay trend</div>
+              <div className="flex items-end gap-2" style={{ height: 96 }}>
+                {trend.map((p) => (
+                  <div key={p.id} className="flex flex-1 flex-col items-center gap-1">
+                    <div className="w-full rounded-t bg-primary-500" style={{ height: `${Math.max(4, (p.net / maxNet) * 80)}px` }} title={fmt(p.net)} />
+                    <span className="text-[10px] text-gray-400">{monthLabel(p.month)}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+          <div className="divide-y divide-gray-100 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm dark:divide-gray-700 dark:border-gray-700 dark:bg-gray-800">
+            {payslips.map((p) => (
+              <div key={p.id} className="flex items-center justify-between px-4 py-2.5">
+                <div>
+                  <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{monthLabel(p.month)}</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">Gross {fmt(p.gross)} · Net {fmt(p.net)}</p>
+                </div>
+                <button type="button" onClick={() => removePayslip(p.id)} aria-label="Delete payslip" className="rounded-lg p-2 text-gray-400 hover:bg-gray-100 hover:text-danger-600 dark:hover:bg-gray-700">
+                  <Trash2 size={15} />
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       <p className="text-center text-xs text-gray-400 dark:text-gray-500">
         Estimates from your entered components — not financial or tax advice.

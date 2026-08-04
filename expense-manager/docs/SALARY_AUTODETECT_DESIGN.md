@@ -9,8 +9,6 @@ See also: `ARCHITECTURE.md` (app overview), `PLAY_STORE_PUBLISHING.md` (release)
 
 ## Milestone A — Salary Intelligence  ✅ shipped (v1)
 
-**Goal:** help users understand their pay — CTC vs in-hand, deduction breakdown.
-
 - **Data model** (`src/shared/types`): `SalaryProfile` (one per profile: employer, payDay, monthly
   `SalaryComponent[]`), `Payslip` (per-month history snapshot).
 - **Storage:** Dexie **v9** — `salaryProfiles` (keyed by `profileId`) + `payslips`. No breaking change
@@ -18,11 +16,12 @@ See also: `ARCHITECTURE.md` (app overview), `PLAY_STORE_PUBLISHING.md` (release)
 - **Hook:** `useSalaryProfile` (self-contained, mirrors `useSavingsGoals`) + `computeSalaryTotals`.
 - **UI:** `features/salary/SalaryPage` — manual breakdown editor (earnings/deductions), headline
   net-in-hand, gross/deductions/annual cards, in-hand vs deductions bar. Reachable from More + sidebar.
+- **A.2 Payslip PDF import ✅:** `payslipScan` (pure, unit-tested) + `payslipParser` (pdf.js, password
+  PDFs) extract Basic/HRA/PF/PT/TDS/Net → pre-fill the editor to confirm. Parsed on-device only.
+- **A.3 Payslip history ✅:** `usePayslips` stores one snapshot per month → YTD net/gross, PF-YTD,
+  net-pay trend chart, and a deletable history list on the Salary screen.
 
-**A.2 (next): Payslip PDF import.** Reuse `pdfStatementParser` (already handles password PDFs) →
-`payslipParser` that extracts Basic/HRA/PF/PT/TDS/Net by label regex → pre-fills the editor for the
-user to confirm. Store a `Payslip` per month → YTD earnings, PF corpus, month-over-month trend.
-Security: parse **on-device only**, discard the file after parsing.
+Milestone A is complete.
 
 ---
 
