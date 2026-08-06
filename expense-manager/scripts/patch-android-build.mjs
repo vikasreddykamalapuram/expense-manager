@@ -108,3 +108,18 @@ console.log(`✓ build.gradle patched (versionCode=${versionCode}, versionName=$
 // Note: Capacitor 8 targets compileSdk/targetSdk 36 natively, so the previous
 // androidx.browser 1.8.0 downgrade (which existed only to keep the project on
 // compileSdk 35) is no longer needed and has been removed.
+
+// Force any lagging Capacitor plugin modules (e.g. send-intent, which has no
+// Capacitor 8 release yet and compiles against SDK 35) to compile against SDK 36,
+// matching the app. Without this, AGP CheckAarMetadata fails because
+// androidx.core 1.17 / activity 1.11 require every module at compileSdk 36.
+const ROOT_BUILD_GRADLE = join(ANDROID_ROOT, 'build.gradle');
+const SDK36_MARKER = '// EM_FORCE_SUBPROJECT_SDK36';
+if (existsSync(ROOT_BUILD_GRADLE)) {
+  let rootGradle = readFileSync(ROOT_BUILD_GRADLE, 'utf8');
+  if (!rootGradle.includes(SDK36_MARKER)) {
+    rootGradle += `\n${SDK36_MARKER}\nsubprojects {\n    afterEvaluate { project ->\n        if (project.hasProperty('android')) {\n            project.android {\n                compileSdkVersion 36\n            }\n        }\n    }\n}\n`;
+    writeFileSync(ROOT_BUILD_GRADLE, rootGradle, 'utf8');
+    console.log('✓ root build.gradle: force subprojects compileSdkVersion 36');
+  }
+}
