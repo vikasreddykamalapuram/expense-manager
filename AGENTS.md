@@ -18,6 +18,10 @@ For MoneyIQ, start with **[`expense-manager/ARCHITECTURE.md`](./expense-manager/
 one-page, mermaid-driven overview of the app's purpose, layered architecture, feature map, sync flow,
 and data model. It's designed so agents get oriented in one small file instead of scanning `src/`.
 
+For **current progress, backlog, and feature designs** — the living tracker any device/IDE/agent should
+resume from — read **[`expense-manager/docs/PROJECT_ROADMAP.md`](./expense-manager/docs/PROJECT_ROADMAP.md)**
+and keep it updated at every milestone.
+
 ## Custom agents
 
 Reusable specialist agents live in **`agents/*.agent.md`** (canonical) and are mirrored to
