@@ -105,39 +105,21 @@ if (gradle !== before) {
 }
 console.log(`✓ build.gradle patched (versionCode=${versionCode}, versionName=${versionName})`);
 
-// 4) Pin androidx.browser to 1.8.0 --------------------------------------------
-// @capacitor/browser 8.x transitively pulls androidx.browser:browser:1.9.0
-// which requires compileSdk 36 (Android 16 preview) + AGP 8.9.1. Our
-// project targets compileSdk 35 + AGP 8.7.2, so force it down. Two prongs
-// for belt-and-suspenders: variables.gradle sets the ext var Capacitor
-// exposes; resolutionStrategy.force in app build.gradle wins even if
-// something else re-declares.
+// Note: Capacitor 8 targets compileSdk/targetSdk 36 natively, so the previous
+// androidx.browser 1.8.0 downgrade (which existed only to keep the project on
+// compileSdk 35) is no longer needed and has been removed.
 
-const VARIABLES_GRADLE = join(ANDROID_ROOT, 'variables.gradle');
-if (existsSync(VARIABLES_GRADLE)) {
-  let vars = readFileSync(VARIABLES_GRADLE, 'utf8');
-  const originalVars = vars;
-  if (/androidxBrowserVersion\s*=/.test(vars)) {
-    vars = vars.replace(/androidxBrowserVersion\s*=\s*'[^']*'/, `androidxBrowserVersion = '1.8.0'`);
-  } else {
-    // Insert inside the ext { ... } block, or append if that shape isn't found.
-    if (/ext\s*\{/.test(vars)) {
-      vars = vars.replace(/ext\s*\{/, `ext {\n    androidxBrowserVersion = '1.8.0'`);
-    } else {
-      vars += `\next {\n    androidxBrowserVersion = '1.8.0'\n}\n`;
-    }
+// Force any lagging Capacitor plugin modules (e.g. send-intent, which has no
+// Capacitor 8 release yet and compiles against SDK 35) to compile against SDK 36,
+// matching the app. Without this, AGP CheckAarMetadata fails because
+// androidx.core 1.17 / activity 1.11 require every module at compileSdk 36.
+const ROOT_BUILD_GRADLE = join(ANDROID_ROOT, 'build.gradle');
+const SDK36_MARKER = '// EM_FORCE_SUBPROJECT_SDK36';
+if (existsSync(ROOT_BUILD_GRADLE)) {
+  let rootGradle = readFileSync(ROOT_BUILD_GRADLE, 'utf8');
+  if (!rootGradle.includes(SDK36_MARKER)) {
+    rootGradle += `\n${SDK36_MARKER}\nsubprojects {\n    afterEvaluate { project ->\n        if (project.hasProperty('android')) {\n            project.android {\n                compileSdkVersion 36\n            }\n        }\n    }\n}\n`;
+    writeFileSync(ROOT_BUILD_GRADLE, rootGradle, 'utf8');
+    console.log('✓ root build.gradle: force subprojects compileSdkVersion 36');
   }
-  if (vars !== originalVars) {
-    writeFileSync(VARIABLES_GRADLE, vars, 'utf8');
-    console.log(`✓ variables.gradle: androidxBrowserVersion = '1.8.0'`);
-  }
-}
-
-// Idempotency marker so re-runs don't duplicate the block.
-const FORCE_MARKER = '// EM_FORCE_BROWSER_1_8';
-let gradle2 = readFileSync(BUILD_GRADLE, 'utf8');
-if (!gradle2.includes(FORCE_MARKER)) {
-  gradle2 += `\n${FORCE_MARKER}\nconfigurations.all {\n    resolutionStrategy {\n        force 'androidx.browser:browser:1.8.0'\n    }\n}\n`;
-  writeFileSync(BUILD_GRADLE, gradle2, 'utf8');
-  console.log(`✓ build.gradle: resolutionStrategy.force androidx.browser 1.8.0`);
 }
