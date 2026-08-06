@@ -36,6 +36,7 @@ const navItems = [
   { path: '/insights', icon: Sparkles, label: 'Insights' },
   { path: '/budgets', icon: Target, label: 'Budgets' },
   { path: '/savings', icon: PiggyBank, label: 'Savings' },
+  { path: '/salary', icon: Wallet, label: 'Salary' },
   { path: '/reports', icon: FileBarChart, label: 'Reports' },
   { path: '/portfolio', icon: TrendingUp, label: 'Portfolio' },
   { path: '/splitwise', icon: Users, label: 'Splitwise' },

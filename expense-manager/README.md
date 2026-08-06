@@ -15,6 +15,10 @@ Build a comprehensive personal finance manager that helps users track income and
 - **Monthly View** — month-by-month breakdown with category analysis and previous month comparison
 - **Settings** — currency selection, date format, data export/import, clear data
 
+### Salary & Income Intelligence
+- **Salary breakdown** — enter your monthly earnings & deductions to see real take-home, in-hand % of gross, and approximate annual CTC. 100% on-device. See the [feature design doc](./docs/SALARY_AUTODETECT_DESIGN.md).
+- **Roadmap (privacy-first, on-device):** payslip PDF import → tax-regime advisor (old vs new) + 80C → opt-in expense auto-detection (share intent · notification listener · Gmail read-only) → net-worth dashboard. Full plan in [`docs/SALARY_AUTODETECT_DESIGN.md`](./docs/SALARY_AUTODETECT_DESIGN.md).
+
 ### Categories
 **Expenses:** Food & Dining, Groceries, Transportation, Shopping, Entertainment, Bills & Utilities, Health & Medical, Education, Travel, Rent/Mortgage, Insurance, Personal Care, Gifts & Donations, Subscriptions, Other
 
