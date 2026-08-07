@@ -5,7 +5,7 @@
 > (status + PR links). Companion docs: `ARCHITECTURE.md` (how the app works),
 > `docs/SALARY_AUTODETECT_DESIGN.md` (salary/tax/auto-detect detail), `AGENTS.md`, `CONTRIBUTING.md`.
 
-_Last updated: 2026-08-06 · Repo: `vikasreddykamalapuram/expense-manager` · Package: `io.github.vikasreddykamalapuram.moneyiq`_
+_Last updated: 2026-08-07 · Repo: `vikasreddykamalapuram/expense-manager` · Package: `io.github.vikasreddykamalapuram.moneyiq`_
 
 ---
 
@@ -19,21 +19,48 @@ _Last updated: 2026-08-06 · Repo: `vikasreddykamalapuram/expense-manager` · Pa
 | #17 | UX: settings tabs wrap · reactive status bar · Add-transaction button |
 | #18 | **Installments (EMI)** support |
 | #19/#20 | **Quick-add** fast-entry screen (keypad + category grid) + inline create for custom categories/accounts |
+| #21 | **Salary Intelligence** (A.1 breakdown · A.2 payslip PDF import · A.3 payslip history/YTD/PF/trend) |
+| #22 | PROJECT_ROADMAP living tracker + Epic E/F designs |
+| #23 | **Target Android SDK 36 (Android 16)** + Pages deploy fix |
 
 ### 🟡 In flight
-| PR | Feature | State |
+| Branch/PR | Feature | State |
 |----|---------|-------|
-| **#21** | **Salary Intelligence** (A.1 breakdown · A.2 payslip PDF import · A.3 payslip history/YTD/PF/trend) | Open — under device testing (debug APK), merge after QA |
+| `vrk/onboarding-catalog` | **E.1 preset account catalog + loan calculator** and **Epic G first-run setup wizard** | In dev on branch — tsc/lint/45 tests/build all green; merge after full device testing |
 
 ### 📋 Designed, not started
 - **B** Tax regime advisor (old vs new) + 80C — see `SALARY_AUTODETECT_DESIGN.md`
 - **C** Auto-detect expenses (share intent · notification listener · Gmail) — see `SALARY_AUTODETECT_DESIGN.md`
 - **D** Net worth + EPF/PPF/NPS + take-home calculator
-- **E** Seamless account onboarding *(designed below)*
+- **E.2–E.4** Statement→auto-account · balance auto-update · RBI Account Aggregator *(see §2)*
 - **F** Splitwise settle-up notifications *(designed below)*
 
+### Infra notes
+- GitHub Pages Actions-deploy backend was congested 08-06 (deploys hung 10 min); self-healed 08-07. `deploy.yml` now has `cancel-in-progress: true`. Temporary `gh-pages` branch fallback used during the outage has been removed.
+- Google Play "developer verification / app registration" (deadline **Sep 30 2026**): no repo action — verify MoneyIQ shows registered in Play Console → Home (Play App Signing covers keys).
+
 ### Play Store status
-- MoneyIQ live on **Internal testing**; moving to **Closed testing** (needs 12 testers / 14 days for production access). Release via `v*.*.*` tag → `android-release.yml`. Sideload test APKs via `android-debug.yml` (`gh workflow run android-debug.yml --ref <branch>`).
+- MoneyIQ live on **Internal testing**; moving to **Closed testing** (needs 12 testers / 14 days for production access). Release via `v*.*.*` tag → `android-release.yml` (now targets **API 36**). Sideload test APKs via `android-debug.yml` (`gh workflow run android-debug.yml --ref <branch>`).
+
+---
+
+## 1a. Epic G — First-run setup wizard  🆕 (in dev on `vrk/onboarding-catalog`)
+
+**Goal:** a guided, skippable first-run flow so a new user's dashboard is useful from day one.
+
+- Route `/welcome` (`src/features/onboarding/`), gated by a data-aware `SetupGuard` in `router.tsx`:
+  new users (no transactions, `moneyiq_setup_complete` unset) are routed in; existing users are never nagged.
+- Steps: **Welcome → Accounts** (reuses E.1 preset catalog) **→ Categories** (review defaults + create custom
+  categories/subcategories via existing `CategoryForm`) **→ Import** (optional deep-links to statement `/import`
+  and payslip `/salary`). "Skip setup" / "Finish" set the completion flag.
+- Re-runnable anytime from **Settings → Data → Re-run setup wizard** (`resetSetup()` → `/welcome`).
+- Flag helpers: `src/features/onboarding/setupStatus.ts` (`moneyiq_setup_complete`).
+
+### E.1 building blocks delivered
+- `src/shared/constants/onboardingCatalog.ts` — tap-to-add presets (banks, cards, wallets, BNPL, loans).
+- `src/shared/utils/loanCalculator.ts` (+ 13 vitest cases) — EMI, amortization, derive repaid/outstanding.
+- `src/features/accounts/components/AccountCatalog.tsx` (tile grid) + `LoanCalculator.tsx` (compute-don't-ask),
+  wired into `AccountForm` (`initial` prefill prop) and `AccountsPage` ("Quick add").
 
 ---
 
