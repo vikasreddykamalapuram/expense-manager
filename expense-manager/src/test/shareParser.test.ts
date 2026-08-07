@@ -45,6 +45,32 @@ describe('parseSharedText', () => {
     const parsed = parseSharedText('Rs 300 debited');
     expect(parsed.note).toBe('Rs 300 debited');
   });
+
+  it('extracts the account last-4 from an A/c reference', () => {
+    const parsed = parseSharedText('INR 1,234.50 debited from A/c XX1234 at BigBasket on 25-Jul-26.');
+    expect(parsed.account).toBe('1234');
+  });
+
+  it('extracts the card last-4 from an "ending" reference', () => {
+    const parsed = parseSharedText('Rs 500 spent on Card ending 5678 at Uber');
+    expect(parsed.account).toBe('5678');
+  });
+
+  it('extracts an ISO date from dd-MMM-yy format', () => {
+    const parsed = parseSharedText('INR 1,234.50 debited from A/c XX1234 at BigBasket on 25-Jul-26.');
+    expect(parsed.date).toBe('2026-07-25');
+  });
+
+  it('extracts an ISO date from dd/mm/yyyy format', () => {
+    const parsed = parseSharedText('Rs 799 paid to Zomato on 03/08/2026');
+    expect(parsed.date).toBe('2026-08-03');
+  });
+
+  it('leaves account/date undefined when absent', () => {
+    const parsed = parseSharedText('Paid ₹500 to Uber');
+    expect(parsed.account).toBeUndefined();
+    expect(parsed.date).toBeUndefined();
+  });
 });
 
 describe('buildAddDeepLink', () => {

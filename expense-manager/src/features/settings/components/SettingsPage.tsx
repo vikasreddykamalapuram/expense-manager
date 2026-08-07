@@ -19,6 +19,7 @@ import { backupService, BackupMetadata } from '../../../shared/services/backupSe
 import { backendSync, backendFullPush, clearBackendSyncState } from '../../../shared/services/supabaseSyncService';
 import { SecuritySettingsPage } from './SecuritySettingsPage';
 import { NotificationSettingsPage } from './NotificationSettingsPage';
+import { AutoDetectSettings } from '../../autodetect/components/AutoDetectSettings';
 
 // ─── Tab definitions ─────────────────────────────────
 
@@ -199,7 +200,12 @@ export function SettingsPage() {
       </div>
 
       {/* Notifications tab */}
-      {activeTab === 'notifications' && <NotificationSettingsPage />}
+      {activeTab === 'notifications' && (
+        <div className="space-y-6">
+          <NotificationSettingsPage />
+          <AutoDetectSettings />
+        </div>
+      )}
 
       {/* Security tab */}
       {activeTab === 'security' && <SecuritySettingsPage />}

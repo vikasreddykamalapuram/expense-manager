@@ -34,6 +34,7 @@ const SavingsGoalsPage = lazyWithRetry(() => import('../features/savings/compone
 const SalaryPage = lazyWithRetry(() => import('../features/salary/components/SalaryPage').then(m => ({ default: m.SalaryPage })));
 const TaxAdvisorPage = lazyWithRetry(() => import('../features/tax/components/TaxAdvisorPage').then(m => ({ default: m.TaxAdvisorPage })));
 const SetupWizard = lazyWithRetry(() => import('../features/onboarding/components/SetupWizard').then(m => ({ default: m.SetupWizard })));
+const DetectedInbox = lazyWithRetry(() => import('../features/autodetect/components/DetectedInbox').then(m => ({ default: m.DetectedInbox })));
 
 function RouteLoader() {
   return (
@@ -132,6 +133,7 @@ export const router = createBrowserRouter([
       lazyRoute('savings', SavingsGoalsPage),
       lazyRoute('salary', SalaryPage),
       lazyRoute('tax', TaxAdvisorPage),
+      lazyRoute('detected', DetectedInbox),
       { path: 'calendar', element: <Navigate to="/transactions?view=calendar" replace /> },
       lazyRoute('settings', SettingsPage),
       lazyRoute('settings/appearance', SettingsPage),

@@ -9,7 +9,8 @@ export interface ParsedShare {
   merchant?: string;
   note?: string;
   type?: 'income' | 'expense';
-  date?: string;
+  date?: string;    // ISO YYYY-MM-DD when a date is detected
+  account?: string; // last 4 digits of the account/card, when detected
 }
 
 /** Bank SMS patterns — Indian banks use "debited/credited by INR 500.00" style. */
@@ -34,6 +35,56 @@ const MERCHANT_PATTERNS: RegExp[] = [
 
 function normalize(numStr: string): number {
   return parseFloat(numStr.replace(/,/g, ''));
+}
+
+// "A/c XX1234", "Card ending 1234", "a/c no. XXXX1234" — capture trailing 4 digits.
+const ACCOUNT_PATTERNS: RegExp[] = [
+  /(?:a\/c|acct|account|card)\s*(?:no\.?|ending|xx+|\*+|x+)?\s*[:#]?\s*[xX*]*([0-9]{4})\b/i,
+  /\bending\s+([0-9]{4})\b/i,
+];
+
+const MONTHS: Record<string, number> = {
+  jan: 1, feb: 2, mar: 3, apr: 4, may: 5, jun: 6,
+  jul: 7, aug: 8, sep: 9, oct: 10, nov: 11, dec: 12,
+};
+
+// "25-Jul-26", "25 Jul 2026", "25/07/2026", "2026-07-25"
+const DATE_PATTERNS: RegExp[] = [
+  /\b([0-9]{1,2})[-/ ]([A-Za-z]{3})[A-Za-z]*[-/ ]([0-9]{2,4})\b/,   // 25-Jul-26
+  /\b([0-9]{1,2})[-/]([0-9]{1,2})[-/]([0-9]{2,4})\b/,               // 25/07/2026
+  /\b([0-9]{4})-([0-9]{2})-([0-9]{2})\b/,                            // 2026-07-25 (ISO)
+];
+
+function pad(n: number): string {
+  return String(n).padStart(2, '0');
+}
+
+function fullYear(y: string): number {
+  const n = parseInt(y, 10);
+  return n < 100 ? 2000 + n : n;
+}
+
+/** Best-effort date extraction → ISO YYYY-MM-DD, or undefined. */
+function extractDate(text: string): string | undefined {
+  // ISO first (unambiguous)
+  const iso = text.match(DATE_PATTERNS[2]);
+  if (iso) return `${iso[1]}-${iso[2]}-${iso[3]}`;
+  // dd-MMM-yy
+  const mon = text.match(DATE_PATTERNS[0]);
+  if (mon) {
+    const m = MONTHS[mon[2].toLowerCase()];
+    if (m) return `${fullYear(mon[3])}-${pad(m)}-${pad(parseInt(mon[1], 10))}`;
+  }
+  // dd/mm/yyyy (assume day-first, Indian convention)
+  const dmy = text.match(DATE_PATTERNS[1]);
+  if (dmy) {
+    const d = parseInt(dmy[1], 10);
+    const m = parseInt(dmy[2], 10);
+    if (d >= 1 && d <= 31 && m >= 1 && m <= 12) {
+      return `${fullYear(dmy[3])}-${pad(m)}-${pad(d)}`;
+    }
+  }
+  return undefined;
 }
 
 export function parseSharedText(raw: string | undefined | null): ParsedShare {
@@ -64,6 +115,17 @@ export function parseSharedText(raw: string | undefined | null): ParsedShare {
       break;
     }
   }
+
+  for (const rx of ACCOUNT_PATTERNS) {
+    const m = text.match(rx);
+    if (m) {
+      result.account = m[1];
+      break;
+    }
+  }
+
+  const date = extractDate(text);
+  if (date) result.date = date;
 
   // If merchant found, use it as the primary note (user can edit).
   if (result.merchant) result.note = result.merchant;

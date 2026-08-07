@@ -22,6 +22,7 @@ import { isNativePlatform } from './platform';
 import { prefs } from './preferences';
 import { notificationService } from './notificationService';
 import { parseSharedText, buildAddDeepLink } from './shareParser';
+import { enqueueDetected, AUTODETECT_ENABLED_KEY } from '../../features/autodetect/detection';
 
 let bootstrapped = false;
 
@@ -122,8 +123,16 @@ async function handlePendingShareIntent(): Promise<void> {
     const text = raw.description || raw.title || raw.url;
     if (!text) return;
     const parsed = parseSharedText(text);
-    const path = buildAddDeepLink(parsed, '/');
-    navigateToDeepLink(path);
+    // Privacy-first: when auto-detect is enabled, route the parsed candidate into
+    // the review queue (user confirms before it's saved) instead of jumping
+    // straight to /add. When disabled, keep the direct prefill behaviour.
+    const autoDetect = await prefs.getBool(AUTODETECT_ENABLED_KEY, false);
+    if (autoDetect && parsed.amount) {
+      enqueueDetected('share', parsed, text);
+      navigateToDeepLink('/detected');
+    } else {
+      navigateToDeepLink(buildAddDeepLink(parsed, '/'));
+    }
     // Clear the queued intent so we don't re-fire on next resume.
     try { SendIntent.finish(); } catch { /* ignore */ }
   } catch { /* ignore — no pending intent */ }
