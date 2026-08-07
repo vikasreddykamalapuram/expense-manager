@@ -30,6 +30,7 @@ const SplitwisePage = lazyWithRetry(() => import('../features/splitwise/componen
 const InsightsHub = lazyWithRetry(() => import('../features/insights/components/InsightsHub').then(m => ({ default: m.InsightsHub })));
 const SavingsGoalsPage = lazyWithRetry(() => import('../features/savings/components/SavingsGoalsPage').then(m => ({ default: m.SavingsGoalsPage })));
 const SalaryPage = lazyWithRetry(() => import('../features/salary/components/SalaryPage').then(m => ({ default: m.SalaryPage })));
+const TaxAdvisorPage = lazyWithRetry(() => import('../features/tax/components/TaxAdvisorPage').then(m => ({ default: m.TaxAdvisorPage })));
 
 function RouteLoader() {
   return (
@@ -98,6 +99,7 @@ export const router = createBrowserRouter([
       { path: 'benchmark', element: <Navigate to="/insights/benchmark" replace /> },
       lazyRoute('savings', SavingsGoalsPage),
       lazyRoute('salary', SalaryPage),
+      lazyRoute('tax', TaxAdvisorPage),
       { path: 'calendar', element: <Navigate to="/transactions?view=calendar" replace /> },
       lazyRoute('settings', SettingsPage),
       lazyRoute('settings/appearance', SettingsPage),

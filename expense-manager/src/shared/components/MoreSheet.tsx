@@ -7,7 +7,7 @@ import { useNavigate } from 'react-router-dom';
 import {
   RefreshCw, Bell, Sparkles, Target,
   PiggyBank, FileBarChart, Users, Landmark, Tag,
-  Settings, X, PlusCircle, Wallet,
+  Settings, X, PlusCircle, Wallet, Scale,
 } from 'lucide-react';
 import { classNames } from '../utils/helpers';
 import { haptic } from '../services/haptics';
@@ -24,6 +24,7 @@ const items: ReadonlyArray<{ path: string; icon: typeof PlusCircle; label: strin
   { path: '/budgets', icon: Target, label: 'Budgets' },
   { path: '/savings', icon: PiggyBank, label: 'Savings' },
   { path: '/salary', icon: Wallet, label: 'Salary' },
+  { path: '/tax', icon: Scale, label: 'Tax' },
   { path: '/reports', icon: FileBarChart, label: 'Reports' },
   { path: '/splitwise', icon: Users, label: 'Splitwise' },
   { path: '/accounts', icon: Landmark, label: 'Accounts' },
