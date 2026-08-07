@@ -1,9 +1,11 @@
-import { Suspense, type ComponentType } from 'react';
+import { Suspense, useEffect, type ComponentType } from 'react';
 import { createBrowserRouter, Navigate, type RouteObject } from 'react-router-dom';
 import { Layout } from '../shared/components/Layout';
 import { Dashboard } from '../features/dashboard/components/Dashboard';
 import { RouteErrorFallback } from '../shared/components/RouteErrorFallback';
 import { lazyWithRetry } from '../shared/utils/lazyWithRetry';
+import { useAppContext } from '../context/AppContext';
+import { isSetupComplete, markSetupComplete } from '../features/onboarding/setupStatus';
 
 // Lazy-loaded routes — lazyWithRetry auto-reloads once when a stale service
 // worker serves an index.html referencing chunk hashes that no longer exist
@@ -31,6 +33,7 @@ const InsightsHub = lazyWithRetry(() => import('../features/insights/components/
 const SavingsGoalsPage = lazyWithRetry(() => import('../features/savings/components/SavingsGoalsPage').then(m => ({ default: m.SavingsGoalsPage })));
 const SalaryPage = lazyWithRetry(() => import('../features/salary/components/SalaryPage').then(m => ({ default: m.SalaryPage })));
 const TaxAdvisorPage = lazyWithRetry(() => import('../features/tax/components/TaxAdvisorPage').then(m => ({ default: m.TaxAdvisorPage })));
+const SetupWizard = lazyWithRetry(() => import('../features/onboarding/components/SetupWizard').then(m => ({ default: m.SetupWizard })));
 
 function RouteLoader() {
   return (
@@ -57,6 +60,30 @@ function OnboardingGuard({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
+/**
+ * Send brand-new users (no data yet, setup not completed) into the first-run
+ * setup wizard. Data-aware so existing users are never nagged — and once they
+ * have any transactions we mark setup complete so the check is a no-op.
+ */
+function SetupGuard({ children }: { children: React.ReactNode }) {
+  const { state } = useAppContext();
+  const setupDone = isSetupComplete();
+
+  useEffect(() => {
+    if (!setupDone && !state.isLoading && state.transactions.length > 0) {
+      markSetupComplete();
+    }
+  }, [setupDone, state.isLoading, state.transactions.length]);
+
+  if (state.isLoading) {
+    return <RouteLoader />;
+  }
+  if (!setupDone && state.transactions.length === 0) {
+    return <Navigate to="/welcome" replace />;
+  }
+  return <>{children}</>;
+}
+
 // BASE_URL is absolute ('/expense-manager/') on GitHub Pages but relative
 // ('./') in the Capacitor build. React Router's basename must be absolute
 // — passing '.' silently renders a blank screen. Collapse any relative
@@ -71,8 +98,13 @@ export const router = createBrowserRouter([
     errorElement: <RouteErrorFallback />,
   },
   {
+    path: '/welcome',
+    element: <OnboardingGuard><Suspense fallback={<RouteLoader />}><SetupWizard /></Suspense></OnboardingGuard>,
+    errorElement: <RouteErrorFallback />,
+  },
+  {
     path: '/',
-    element: <OnboardingGuard><Layout /></OnboardingGuard>,
+    element: <OnboardingGuard><SetupGuard><Layout /></SetupGuard></OnboardingGuard>,
     errorElement: <RouteErrorFallback />,
     children: [
       { index: true, element: <Dashboard /> },
