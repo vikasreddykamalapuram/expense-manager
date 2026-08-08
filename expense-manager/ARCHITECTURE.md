@@ -80,9 +80,10 @@ sequenceDiagram
 src/
   app/         # router, shell bootstrap
   context/     # AppContext (global state via useReducer)
-  features/    # 18 feature folders (accounts, analytics, assistant, auth, budgets,
-               #   categories, dashboard, health, import, insights, recurring,
-               #   reminders, reports, savings, settings, splitwise, stocks, transactions)
+  features/    # 19 feature folders (accounts, analytics, assistant, auth, budgets,
+               #   categories, dashboard, health, import, insights, onboarding, recurring,
+               #   reminders, reports, salary, savings, settings, splitwise, stocks, transactions)
+               #   onboarding/ = first-run setup wizard (route /welcome, SetupGuard, preset account catalog)
   shared/
     components/ services/ hooks/ context/ types/ config/ utils/
   test/        # Vitest (encryption, auth, parsers, projections)

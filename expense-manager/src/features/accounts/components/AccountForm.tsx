@@ -5,26 +5,37 @@ import { Button } from '../../../shared/components/ui/Button';
 import { Input, Select } from '../../../shared/components/ui/Input';
 import { Account, AccountType, BankSubtype, LoanSubtype } from '../../../shared/types';
 import { ACCOUNT_TYPE_META, ACCOUNT_COLORS, POPULAR_INSTITUTIONS, BANK_SUBTYPES, LOAN_SUBTYPES, getAccountKind } from '../../../shared/constants/accounts';
+import { LoanCalculator } from './LoanCalculator';
+
+/** Optional values to pre-fill when creating a new account (e.g. from the preset catalog). */
+export interface AccountFormInitial {
+  name?: string;
+  type?: AccountType;
+  subtype?: BankSubtype | LoanSubtype;
+  institution?: string;
+  color?: string;
+}
 
 interface AccountFormProps {
   editAccount?: Account;
+  initial?: AccountFormInitial;
   onClose: () => void;
   onCreated?: (account: Account) => void;
 }
 
-export function AccountForm({ editAccount, onClose, onCreated }: AccountFormProps) {
+export function AccountForm({ editAccount, initial, onClose, onCreated }: AccountFormProps) {
   const { actions } = useAppContext();
   const isEditing = !!editAccount;
 
-  const [name, setName] = useState(editAccount?.name || '');
-  const [type, setType] = useState<AccountType>(editAccount?.type || 'bank');
-  const [subtype, setSubtype] = useState(editAccount?.subtype || '');
-  const [institution, setInstitution] = useState(editAccount?.institution || '');
+  const [name, setName] = useState(editAccount?.name || initial?.name || '');
+  const [type, setType] = useState<AccountType>(editAccount?.type || initial?.type || 'bank');
+  const [subtype, setSubtype] = useState(editAccount?.subtype || initial?.subtype || '');
+  const [institution, setInstitution] = useState(editAccount?.institution || initial?.institution || '');
   const [customInstitution, setCustomInstitution] = useState('');
   const [openingBalance, setOpeningBalance] = useState(editAccount?.openingBalance.toString() || '0');
   const [creditLimit, setCreditLimit] = useState(editAccount?.creditLimit?.toString() || '');
   const [interestRate, setInterestRate] = useState(editAccount?.interestRate?.toString() || '');
-  const [color, setColor] = useState(editAccount?.color || ACCOUNT_COLORS[0]);
+  const [color, setColor] = useState(editAccount?.color || initial?.color || ACCOUNT_COLORS[0]);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   // Merge popular + custom institutions
@@ -195,6 +206,16 @@ export function AccountForm({ editAccount, onClose, onCreated }: AccountFormProp
             />
           )}
         </>
+      )}
+
+      {/* Loan calculator helper — derive outstanding & rate from a few inputs */}
+      {type === 'loan' && !isEditing && (
+        <LoanCalculator
+          onApply={({ outstanding, interestRate: rate }) => {
+            setOpeningBalance(outstanding.toString());
+            setInterestRate(rate.toString());
+          }}
+        />
       )}
 
       {/* Opening Balance / Outstanding */}

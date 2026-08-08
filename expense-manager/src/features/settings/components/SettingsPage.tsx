@@ -1,8 +1,9 @@
 import { useState, useRef, useEffect, useMemo } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Download, Upload, Trash2, AlertTriangle, FileSpreadsheet, Cloud, CloudOff, LogOut, RefreshCw, CheckCircle2, XCircle, Sun, Moon, Monitor, Palette, Check, RefreshCcw, Smartphone, Shield, Database, Unplug, ArrowUpDown, Wifi, WifiOff, ShieldCheck, Bell, Sliders, HardDrive, Info, FileText, ChevronDown, ChevronUp } from 'lucide-react';
+import { Download, Upload, Trash2, AlertTriangle, FileSpreadsheet, Cloud, CloudOff, LogOut, RefreshCw, CheckCircle2, XCircle, Sun, Moon, Monitor, Palette, Check, RefreshCcw, Smartphone, Shield, Database, Unplug, ArrowUpDown, Wifi, WifiOff, ShieldCheck, Bell, Sliders, HardDrive, Info, FileText, ChevronDown, ChevronUp, Sparkles } from 'lucide-react';
 import type { AccentColor, DarkMode } from '../../../shared/types';
 import { useAppContext } from '../../../context/AppContext';
+import { resetSetup } from '../../onboarding/setupStatus';
 import { useAuth } from '../../../context/AuthContext';
 import { useSync } from '../../../context/SyncContext';
 import { useTheme } from '../../../shared/hooks/useTheme';
@@ -408,6 +409,20 @@ export function SettingsPage() {
       <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-6 shadow-sm">
         <h3 className="mb-4 text-base font-semibold text-gray-900 dark:text-gray-100">Data Management</h3>
         <div className="space-y-4">
+          {/* Setup wizard */}
+          <div>
+            <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-2">Guided setup</p>
+            <Button
+              variant="secondary"
+              icon={<Sparkles size={16} />}
+              onClick={() => { resetSetup(); navigate('/welcome'); }}
+            >
+              Re-run setup wizard
+            </Button>
+            <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+              Walk through adding accounts, categories and imports again.
+            </p>
+          </div>
           {/* Export */}
           <div>
             <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-2">Export</p>
