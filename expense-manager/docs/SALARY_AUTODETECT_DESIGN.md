@@ -25,15 +25,16 @@ Milestone A is complete.
 
 ---
 
-## Milestone B — Tax Regime Advisor (Old vs New) + 80C
+## Milestone B — Tax Regime Advisor (Old vs New) + 80C  ✅ implemented (branch `vrk/tax-advisor`)
 
 **Goal:** compute FY tax under both regimes, recommend the cheaper, show the ₹ delta.
 
-- **Engine:** `taxEngine` (pure local) with **config-driven slabs** (`taxConfig.ts`, per FY) so rates
-  update without code changes. Inputs = salary (from A) + declared deductions.
-- **Deductions modeled:** standard deduction, 80C (PF/ELSS/insurance/PPF), 80D, HRA exemption, home-loan interest, NPS 80CCD(1B).
-- **UI:** side-by-side old vs new, recommendation, "you save ₹X", and an 80C progress tracker (₹1.5L cap).
+- **Engine:** `taxEngine.ts` (pure local, +10 vitest) with **config-driven slabs** (`taxConfig.ts`, FY 2024-25 / 2025-26 / 2026-27) so rates update without code changes. Inputs = gross income (prefilled from salary profile) + declared deductions.
+- **Deductions modeled:** standard deduction, 80C (cap 1.5L), 80D, HRA exemption, home-loan interest (cap 2L), NPS 80CCD(1B) (cap 50k), other. 87A rebate + marginal relief, surcharge bands, 4% cess.
+- **UI:** `features/tax/TaxAdvisorPage` (route `/tax`, in sidebar + More sheet) — side-by-side old vs new, recommendation + "you save ₹X", 80C progress tracker (₹1.5L cap), FY selector.
+- **Persistence:** `useTaxInputs.ts` — on-device localStorage per profile (non-sensitive planning inputs; can be promoted to a synced Dexie table later).
 - **Security:** 100% on-device math. Prominent **"estimate, not tax advice"** disclaimer.
+
 
 ---
 

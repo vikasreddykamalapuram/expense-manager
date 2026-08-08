@@ -3,7 +3,7 @@ import {
   LayoutDashboard, ArrowLeftRight, CalendarDays,
   Settings, Wallet, Menu, X, Landmark, Tag, ChevronDown,
   Plus, LogIn, LogOut, Target, RefreshCw, FileBarChart, TrendingUp, Bell,
-  Cloud, AlertCircle, Users, PanelLeftClose, PanelLeftOpen, Sparkles, PiggyBank,
+  Cloud, AlertCircle, Users, PanelLeftClose, PanelLeftOpen, Sparkles, PiggyBank, Scale,
 } from 'lucide-react';
 import { useState, useRef, useEffect, useMemo } from 'react';
 import { v4 as uuidv4 } from 'uuid';
@@ -37,6 +37,7 @@ const navItems = [
   { path: '/budgets', icon: Target, label: 'Budgets' },
   { path: '/savings', icon: PiggyBank, label: 'Savings' },
   { path: '/salary', icon: Wallet, label: 'Salary' },
+  { path: '/tax', icon: Scale, label: 'Tax' },
   { path: '/reports', icon: FileBarChart, label: 'Reports' },
   { path: '/portfolio', icon: TrendingUp, label: 'Portfolio' },
   { path: '/splitwise', icon: Users, label: 'Splitwise' },
