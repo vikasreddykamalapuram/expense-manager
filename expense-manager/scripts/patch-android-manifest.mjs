@@ -34,6 +34,11 @@ const MAIN_ACTIVITY_DEST = join(MAIN_SRC, 'java', 'io', 'github', 'vikasreddykam
 const WIDGET_LAYOUT_DEST = join(MAIN_SRC, 'res', 'layout', 'widget_expense.xml');
 const WIDGET_INFO_DEST = join(MAIN_SRC, 'res', 'xml', 'expense_widget_info.xml');
 
+const JAVA_PKG_DIR = join(MAIN_SRC, 'java', 'io', 'github', 'vikasreddykamalapuram', 'moneyiq');
+const NOTIF_TEMPLATE_DIR = join(REPO_ROOT, 'android-templates', 'notif');
+const NOTIF_LISTENER_DEST = join(JAVA_PKG_DIR, 'MoneyIqNotificationListener.kt');
+const NOTIF_BRIDGE_DEST = join(JAVA_PKG_DIR, 'NotificationBridgePlugin.kt');
+
 const HOST = 'vikasreddykamalapuram.github.io';
 const PATH_PREFIX = '/expense-manager';
 const SCHEME = 'moneyiq';
@@ -147,6 +152,23 @@ if (!xml.includes('ExpenseWidgetProvider')) {
   console.log('  + widget <receiver>');
 }
 
+// ---------- Notification listener <service> (sibling of MainActivity inside <application>) ----------
+if (!xml.includes('MoneyIqNotificationListener')) {
+  const service = `
+        <service
+            android:name="io.github.vikasreddykamalapuram.moneyiq.MoneyIqNotificationListener"
+            android:label="MoneyIQ transaction detection"
+            android:exported="false"
+            android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE">
+            <intent-filter>
+                <action android:name="android.service.notification.NotificationListenerService" />
+            </intent-filter>
+        </service>
+`;
+  xml = xml.replace(/<\/application>/, `${service}    </application>`);
+  console.log('  + notification-listener <service>');
+}
+
 if (xml !== before) {
   writeFileSync(MANIFEST, xml, 'utf8');
   console.log('✓ AndroidManifest.xml patched');
@@ -178,6 +200,21 @@ for (const [src, dest] of widgetFiles) {
     console.log(`✓ ${dest.replace(REPO_ROOT, '.')}`);
   } else {
     console.warn(`  ! widget file missing at ${src}`);
+  }
+}
+
+// ---------- Copy notification-listener Kotlin files ----------
+const notifFiles = [
+  [join(NOTIF_TEMPLATE_DIR, 'MoneyIqNotificationListener.kt'), NOTIF_LISTENER_DEST],
+  [join(NOTIF_TEMPLATE_DIR, 'NotificationBridgePlugin.kt'), NOTIF_BRIDGE_DEST],
+];
+for (const [src, dest] of notifFiles) {
+  if (existsSync(src)) {
+    mkdirSync(dirname(dest), { recursive: true });
+    copyFileSync(src, dest);
+    console.log(`✓ ${dest.replace(REPO_ROOT, '.')}`);
+  } else {
+    console.warn(`  ! notif file missing at ${src}`);
   }
 }
 

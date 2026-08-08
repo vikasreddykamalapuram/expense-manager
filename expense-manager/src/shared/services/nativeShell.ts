@@ -23,6 +23,7 @@ import { prefs } from './preferences';
 import { notificationService } from './notificationService';
 import { parseSharedText, buildAddDeepLink } from './shareParser';
 import { enqueueDetected, AUTODETECT_ENABLED_KEY } from '../../features/autodetect/detection';
+import { NotificationBridge, NOTIF_SOURCE_KEY } from '../../features/autodetect/notificationBridge';
 
 let bootstrapped = false;
 
@@ -105,12 +106,38 @@ export async function bootstrapNativeShell(): Promise<void> {
   // payment confirmation) into MoneyIQ, parse it and prefill /add.
   try {
     await handlePendingShareIntent();
+    await drainDetectedNotifications();
     App.addListener('appStateChange', ({ isActive }) => {
       // Android delivers the intent when the app is (re)launched; check on
       // every resume so re-shares while backgrounded also work.
-      if (isActive) handlePendingShareIntent().catch(() => { /* ignore */ });
+      if (isActive) {
+        handlePendingShareIntent().catch(() => { /* ignore */ });
+        drainDetectedNotifications().catch(() => { /* ignore */ });
+      }
     });
   } catch { /* ignore */ }
+}
+
+/**
+ * When both the master auto-detect flag and the notification source are on,
+ * drain financial notifications captured on-device, parse them, and add the
+ * candidates to the review queue (user confirms before anything is saved).
+ */
+async function drainDetectedNotifications(): Promise<void> {
+  if (!isNativePlatform()) return;
+  try {
+    const autoDetect = await prefs.getBool(AUTODETECT_ENABLED_KEY, false);
+    const notifSource = await prefs.getBool(NOTIF_SOURCE_KEY, false);
+    if (!autoDetect || !notifSource) return;
+    const { notifications } = await NotificationBridge.getPending();
+    let added = false;
+    for (const n of notifications || []) {
+      const text = [n.title, n.text].filter(Boolean).join(' — ');
+      const parsed = parseSharedText(text);
+      if (parsed.amount && enqueueDetected('notification', parsed, text)) added = true;
+    }
+    if (added) navigateToDeepLink('/detected');
+  } catch { /* ignore — plugin absent or no access */ }
 }
 
 async function handlePendingShareIntent(): Promise<void> {

@@ -2,7 +2,9 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ScanLine, MessageSquare, Bell, Mail, ArrowRight, ShieldCheck } from 'lucide-react';
 import { prefs } from '../../../shared/services/preferences';
+import { isNativePlatform } from '../../../shared/services/platform';
 import { AUTODETECT_ENABLED_KEY } from '../detection';
+import { NotificationBridge, NOTIF_SOURCE_KEY } from '../notificationBridge';
 
 function Toggle({ checked, onChange, disabled }: { checked: boolean; onChange: (v: boolean) => void; disabled?: boolean }) {
   return (
@@ -27,22 +29,37 @@ function Toggle({ checked, onChange, disabled }: { checked: boolean; onChange: (
 
 export function AutoDetectSettings() {
   const navigate = useNavigate();
+  const native = isNativePlatform();
   const [enabled, setEnabled] = useState(false);
+  const [notifOn, setNotifOn] = useState(false);
+  const [notifGranted, setNotifGranted] = useState(false);
 
   useEffect(() => {
     prefs.getBool(AUTODETECT_ENABLED_KEY, false).then(setEnabled);
-  }, []);
+    prefs.getBool(NOTIF_SOURCE_KEY, false).then(setNotifOn);
+    if (native) {
+      NotificationBridge.isEnabled().then((r) => setNotifGranted(r.enabled)).catch(() => setNotifGranted(false));
+    }
+  }, [native]);
 
   const toggle = async (v: boolean) => {
     setEnabled(v);
     await prefs.setBool(AUTODETECT_ENABLED_KEY, v);
   };
 
-  const sources = [
-    { icon: <MessageSquare size={16} />, title: 'Shared messages', desc: 'Share a bank SMS or payment message into MoneyIQ from any app.', status: 'active' as const },
-    { icon: <Bell size={16} />, title: 'Bank notifications', desc: 'Read transaction alerts on-device (requires notification access).', status: 'soon' as const },
-    { icon: <Mail size={16} />, title: 'Gmail (read-only)', desc: 'Scan bank/payment emails for transactions.', status: 'soon' as const },
-  ];
+  const toggleNotif = async (v: boolean) => {
+    setNotifOn(v);
+    await prefs.setBool(NOTIF_SOURCE_KEY, v);
+    // If turning on without system access granted, take the user to the grant screen.
+    if (v && native && !notifGranted) {
+      try { await NotificationBridge.openSettings(); } catch { /* ignore */ }
+    }
+  };
+
+  const recheckGrant = async () => {
+    if (!native) return;
+    try { const r = await NotificationBridge.isEnabled(); setNotifGranted(r.enabled); } catch { /* ignore */ }
+  };
 
   return (
     <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-6 shadow-sm space-y-4">
@@ -63,24 +80,43 @@ export function AutoDetectSettings() {
       </div>
 
       <div className="space-y-2">
-        {sources.map((s) => (
-          <div key={s.title} className="flex items-start gap-3 rounded-lg border border-gray-100 dark:border-gray-700 p-3">
+        {/* Shared messages — always available via the system share sheet */}
+        <SourceRow icon={<MessageSquare size={16} />} title="Shared messages" desc="Share a bank SMS or payment message into MoneyIQ from any app." badge="active" />
+
+        {/* Bank notifications — native only, requires notification access */}
+        <div className="rounded-lg border border-gray-100 dark:border-gray-700 p-3">
+          <div className="flex items-start gap-3">
             <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400">
-              {s.icon}
+              <Bell size={16} />
             </span>
             <div className="min-w-0 flex-1">
-              <div className="flex items-center gap-2">
-                <p className="text-sm font-medium text-gray-800 dark:text-gray-200">{s.title}</p>
-                {s.status === 'active' ? (
-                  <span className="rounded-full bg-success-100 px-1.5 py-0.5 text-[10px] font-medium text-success-700">Active</span>
-                ) : (
-                  <span className="rounded-full bg-gray-100 dark:bg-gray-700 px-1.5 py-0.5 text-[10px] font-medium text-gray-500 dark:text-gray-400">Coming soon</span>
+              <p className="text-sm font-medium text-gray-800 dark:text-gray-200">Bank notifications</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400">
+                Read transaction alerts on-device. Requires one-time notification access.
+              </p>
+              {native && notifOn && !notifGranted && (
+                <button type="button" onClick={recheckGrant} className="mt-1 text-xs font-medium text-primary-600 hover:underline">
+                  Grant access, then tap to re-check
+                </button>
+              )}
+            </div>
+            {native ? (
+              <div className="flex flex-col items-end gap-1">
+                <Toggle checked={notifOn} onChange={toggleNotif} disabled={!enabled} />
+                {notifOn && (
+                  <span className={`text-[10px] font-medium ${notifGranted ? 'text-success-600' : 'text-amber-600'}`}>
+                    {notifGranted ? 'Access granted' : 'Access needed'}
+                  </span>
                 )}
               </div>
-              <p className="text-xs text-gray-500 dark:text-gray-400">{s.desc}</p>
-            </div>
+            ) : (
+              <span className="rounded-full bg-gray-100 dark:bg-gray-700 px-1.5 py-0.5 text-[10px] font-medium text-gray-500 dark:text-gray-400">Android only</span>
+            )}
           </div>
-        ))}
+        </div>
+
+        {/* Gmail — coming soon */}
+        <SourceRow icon={<Mail size={16} />} title="Gmail (read-only)" desc="Scan bank/payment emails for transactions." badge="soon" />
       </div>
 
       <button
@@ -90,6 +126,27 @@ export function AutoDetectSettings() {
       >
         Open review queue <ArrowRight size={14} />
       </button>
+    </div>
+  );
+}
+
+function SourceRow({ icon, title, desc, badge }: { icon: React.ReactNode; title: string; desc: string; badge: 'active' | 'soon' }) {
+  return (
+    <div className="flex items-start gap-3 rounded-lg border border-gray-100 dark:border-gray-700 p-3">
+      <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400">
+        {icon}
+      </span>
+      <div className="min-w-0 flex-1">
+        <div className="flex items-center gap-2">
+          <p className="text-sm font-medium text-gray-800 dark:text-gray-200">{title}</p>
+          {badge === 'active' ? (
+            <span className="rounded-full bg-success-100 px-1.5 py-0.5 text-[10px] font-medium text-success-700">Active</span>
+          ) : (
+            <span className="rounded-full bg-gray-100 dark:bg-gray-700 px-1.5 py-0.5 text-[10px] font-medium text-gray-500 dark:text-gray-400">Coming soon</span>
+          )}
+        </div>
+        <p className="text-xs text-gray-500 dark:text-gray-400">{desc}</p>
+      </div>
     </div>
   );
 }
