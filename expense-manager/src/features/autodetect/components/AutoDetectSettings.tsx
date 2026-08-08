@@ -5,6 +5,7 @@ import { prefs } from '../../../shared/services/preferences';
 import { isNativePlatform } from '../../../shared/services/platform';
 import { AUTODETECT_ENABLED_KEY } from '../detection';
 import { NotificationBridge, NOTIF_SOURCE_KEY } from '../notificationBridge';
+import { GmailScanButton } from './GmailScanButton';
 
 function Toggle({ checked, onChange, disabled }: { checked: boolean; onChange: (v: boolean) => void; disabled?: boolean }) {
   return (
@@ -115,8 +116,26 @@ export function AutoDetectSettings() {
           </div>
         </div>
 
-        {/* Gmail — coming soon */}
-        <SourceRow icon={<Mail size={16} />} title="Gmail (read-only)" desc="Scan bank/payment emails for transactions." badge="soon" />
+        {/* Gmail — read-only scan (incremental scope, on demand) */}
+        <div className="rounded-lg border border-gray-100 dark:border-gray-700 p-3">
+          <div className="flex items-start gap-3">
+            <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400">
+              <Mail size={16} />
+            </span>
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-2">
+                <p className="text-sm font-medium text-gray-800 dark:text-gray-200">Gmail (read-only)</p>
+                <span className="rounded-full bg-success-100 px-1.5 py-0.5 text-[10px] font-medium text-success-700">Active</span>
+              </div>
+              <p className="text-xs text-gray-500 dark:text-gray-400">
+                Scan recent bank/payment emails on demand. We only read message previews — nothing is stored or shared.
+              </p>
+              <div className="mt-2">
+                <GmailScanButton />
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
 
       <button

@@ -6,6 +6,7 @@ import { EmptyState } from '../../../shared/components/ui/EmptyState';
 import { formatCurrency, classNames } from '../../../shared/utils/helpers';
 import { buildAddDeepLink } from '../../../shared/services/shareParser';
 import { useDetectedQueue } from '../useDetectedQueue';
+import { GmailScanButton } from './GmailScanButton';
 import type { DetectedCandidate } from '../detection';
 
 const sourceLabel: Record<DetectedCandidate['source'], string> = {
@@ -42,6 +43,8 @@ export function DetectedInbox() {
           </Button>
         )}
       </div>
+
+      <GmailScanButton />
 
       {count === 0 ? (
         <EmptyState

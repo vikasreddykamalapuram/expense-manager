@@ -80,3 +80,11 @@ If the user enables cloud sync, technically the app collects:
 | Financial info | App functionality | Yes | Yes (E2E, AES-256-GCM) |
 
 Data is NEVER shared with third parties. User can request deletion via in-app Settings.
+
+### Auto-detect (notification listener + Gmail) disclosures
+
+The auto-detect features (share / notification listener / Gmail read-only) parse everything
+**on-device** and transmit nothing, so they add **no new *collected* data types** to the form.
+They do have separate requirements (notification-access declaration; Gmail restricted-scope
+verification/CASA for production, test users for now). See **`playstore/DATA_SAFETY.md`** for the
+full declaration + exact Play Console and Google Cloud steps.
