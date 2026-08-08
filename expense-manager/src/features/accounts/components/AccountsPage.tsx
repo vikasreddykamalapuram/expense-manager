@@ -1,14 +1,16 @@
 import { useState, useMemo } from 'react';
 import {
   Plus, Edit2, Trash2, Landmark, CreditCard, HandCoins, Smartphone,
-  Banknote, TrendingUp, TrendingDown, Wallet, AlertTriangle, LucideIcon,
+  Banknote, TrendingUp, TrendingDown, Wallet, AlertTriangle, LucideIcon, Sparkles,
 } from 'lucide-react';
 import { useAppContext } from '../../../context/AppContext';
 import { Button } from '../../../shared/components/ui/Button';
 import { StatCard } from '../../../shared/components/ui/StatCard';
 import { EmptyState } from '../../../shared/components/ui/EmptyState';
 import { Modal } from '../../../shared/components/ui/Modal';
-import { AccountForm } from './AccountForm';
+import { AccountForm, AccountFormInitial } from './AccountForm';
+import { AccountCatalog } from './AccountCatalog';
+import { AccountPreset } from '../../../shared/constants/onboardingCatalog';
 import { Account, AccountType } from '../../../shared/types';
 import { ACCOUNT_TYPE_META, BANK_SUBTYPES, LOAN_SUBTYPES, computeAccountBalance } from '../../../shared/constants/accounts';
 import { formatCurrency, classNames } from '../../../shared/utils/helpers';
@@ -23,8 +25,23 @@ export function AccountsPage() {
   const { state, actions } = useAppContext();
   const { accounts, transactions, settings } = state;
   const [showForm, setShowForm] = useState(false);
+  const [showCatalog, setShowCatalog] = useState(false);
+  const [presetInitial, setPresetInitial] = useState<AccountFormInitial | null>(null);
   const [editingAccount, setEditingAccount] = useState<Account | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
+
+  const handlePickPreset = (preset: AccountPreset) => {
+    setShowCatalog(false);
+    setEditingAccount(null);
+    setPresetInitial({
+      name: preset.label,
+      type: preset.type,
+      subtype: preset.subtype,
+      institution: preset.institution,
+      color: preset.color,
+    });
+    setShowForm(true);
+  };
 
   const accountBalances = useMemo(() => {
     const map = new Map<string, number>();
@@ -82,9 +99,14 @@ export function AccountsPage() {
             Manage your bank accounts, credit cards, loans, and wallets
           </p>
         </div>
-        <Button icon={<Plus size={18} />} onClick={() => setShowForm(true)}>
-          Add Account
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="secondary" icon={<Sparkles size={18} />} onClick={() => setShowCatalog(true)}>
+            Quick add
+          </Button>
+          <Button icon={<Plus size={18} />} onClick={() => { setPresetInitial(null); setEditingAccount(null); setShowForm(true); }}>
+            Add Account
+          </Button>
+        </div>
       </div>
 
       {/* Summary Cards */}
@@ -118,9 +140,14 @@ export function AccountsPage() {
           title="No accounts yet"
           description="Add your bank accounts, credit cards, and loans to track where your money flows."
           action={
-            <Button icon={<Plus size={18} />} onClick={() => setShowForm(true)}>
-              Add Your First Account
-            </Button>
+            <div className="flex flex-col items-center gap-2 sm:flex-row">
+              <Button variant="secondary" icon={<Sparkles size={18} />} onClick={() => setShowCatalog(true)}>
+                Browse popular banks & cards
+              </Button>
+              <Button icon={<Plus size={18} />} onClick={() => { setPresetInitial(null); setEditingAccount(null); setShowForm(true); }}>
+                Add Your First Account
+              </Button>
+            </div>
           }
         />
       ) : (
@@ -243,21 +270,37 @@ export function AccountsPage() {
         </div>
       )}
 
+      {/* Quick-add catalog Modal */}
+      <Modal
+        isOpen={showCatalog}
+        onClose={() => setShowCatalog(false)}
+        title="Quick add an account"
+        size="lg"
+      >
+        <p className="mb-4 text-sm text-gray-500 dark:text-gray-400">
+          Tap a bank, card, wallet or loan to add it — you'll only need to enter the amount.
+        </p>
+        <AccountCatalog onPick={handlePickPreset} />
+      </Modal>
+
       {/* Add/Edit Modal */}
       <Modal
         isOpen={showForm}
         onClose={() => {
           setShowForm(false);
           setEditingAccount(null);
+          setPresetInitial(null);
         }}
         title={editingAccount ? 'Edit Account' : 'Add Account'}
         size="md"
       >
         <AccountForm
           editAccount={editingAccount || undefined}
+          initial={presetInitial || undefined}
           onClose={() => {
             setShowForm(false);
             setEditingAccount(null);
+            setPresetInitial(null);
           }}
         />
       </Modal>
