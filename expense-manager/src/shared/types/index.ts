@@ -180,7 +180,30 @@ export interface Payslip {
   updatedAt: string;
 }
 
-// ─── Stock/Trading Types ────────────────────────────────
+// ─── Net-worth Holdings (EPF / PPF / NPS / investments) ──
+
+export type HoldingType =
+  | 'epf' | 'ppf' | 'nps'
+  | 'fd' | 'rd'
+  | 'mutual_fund' | 'stocks' | 'gold' | 'real_estate'
+  | 'insurance' | 'other';
+
+/** A manually-tracked asset that contributes to net worth (retirement/investment/etc.). */
+export interface Holding {
+  id: string;
+  name: string;
+  type: HoldingType;
+  currentValue: number;        // current balance / market value
+  annualContribution?: number; // optional, for retirement accounts
+  interestRate?: number;       // optional, % p.a.
+  maturityDate?: string;       // optional YYYY-MM-DD
+  notes?: string;
+  createdAt: string;
+  updatedAt: string;
+  isDeleted?: boolean;
+  deletedAt?: string;
+}
+
 
 export type StockExchange = 'NSE' | 'BSE' | 'MCX' | 'OTHER';
 export type TradeType = 'buy' | 'sell' | 'dividend' | 'bonus' | 'split' | 'ipo';

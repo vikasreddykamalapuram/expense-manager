@@ -1,5 +1,5 @@
 import Dexie, { Table } from 'dexie';
-import { Transaction, Category, Account, Budget, Settings, Profile, RecurringRule, StockTransaction, BillReminder, SplitGroup, SplitMember, SplitExpense, SplitSettlement, SavingsGoal, SalaryProfile, Payslip } from '../types';
+import { Transaction, Category, Account, Budget, Settings, Profile, RecurringRule, StockTransaction, BillReminder, SplitGroup, SplitMember, SplitExpense, SplitSettlement, SavingsGoal, SalaryProfile, Payslip, Holding } from '../types';
 import { loadMapSync, resolveSymbolSync } from './symbolResolver';
 
 // Sync metadata fields added to all syncable records
@@ -95,6 +95,10 @@ export interface DbPayslip extends Payslip, SyncFields {
   profileId: string;
 }
 
+export interface DbHolding extends Holding, SyncFields {
+  profileId: string;
+}
+
 export class ExpenseDatabase extends Dexie {
   transactions!: Table<DbTransaction, string>;
   categories!: Table<DbCategory, string>;
@@ -115,6 +119,7 @@ export class ExpenseDatabase extends Dexie {
   savingsGoals!: Table<DbSavingsGoal, string>;
   salaryProfiles!: Table<DbSalaryProfile, string>;
   payslips!: Table<DbPayslip, string>;
+  holdings!: Table<DbHolding, string>;
 
   constructor() {
     super('MoneyIQDatabase');
@@ -259,6 +264,11 @@ export class ExpenseDatabase extends Dexie {
     this.version(9).stores({
       salaryProfiles: 'profileId',
       payslips: 'id, profileId, [profileId+month], [profileId+updatedAt]',
+    });
+
+    // v10: Net-worth holdings (EPF/PPF/NPS + investments)
+    this.version(10).stores({
+      holdings: 'id, profileId, [profileId+type], [profileId+updatedAt]',
     });
   }
 }
