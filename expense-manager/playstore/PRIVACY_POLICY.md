@@ -1,6 +1,6 @@
 # MoneyIQ — Privacy Policy
 
-_Last updated: 2026-07-29_
+_Last updated: 2026-08-08_
 
 ## Summary
 
@@ -43,6 +43,27 @@ An older backup feature lets you save an AES-256-GCM encrypted snapshot to your 
 
 If enabled, anonymous crash reports may be sent to Sentry to help fix bugs. Reports strip email, IP address, URL query strings, and free-text input. You can disable this at any time.
 
+## Auto-detect transactions (optional, off by default)
+
+MoneyIQ can help you capture transactions faster. Every source below is **opt-in**, runs
+**entirely on your device**, and produces suggestions in an in-app **review queue** —
+**nothing is saved as a transaction, transmitted, or shared until you confirm it.**
+
+- **Shared messages:** when *you* share a bank SMS or payment message into MoneyIQ from
+  another app, we parse it on-device to pre-fill a transaction.
+- **Bank notifications (Android, opt-in):** if you enable it and grant Android "notification
+  access", the app reads transaction-style notifications **on your device** to suggest
+  transactions. It ignores non-financial notifications, keeps only a short in-memory buffer,
+  and never stores or uploads notification content.
+- **Gmail (read-only, opt-in):** if you tap "Scan Gmail" and grant read-only access, the app
+  reads **previews** of recent bank/payment emails **on your device** to suggest transactions.
+  MoneyIQ's use of information received from Google APIs adheres to the
+  [Google API Services User Data Policy](https://developers.google.com/terms/api-services-user-data-policy),
+  including the **Limited Use** requirements: Gmail data is used only on-device for this
+  user-facing feature, is never transferred to others, and is never used for advertising.
+
+You can turn any of these off at any time in Settings → Notifications → Auto-detect.
+
 ## Notifications
 
 The app schedules local notifications on your device for daily reminders and bill due dates. These fire locally — no server is involved.
@@ -54,6 +75,10 @@ The app schedules local notifications on your device for daily reminders and bil
 - **Vibrate:** for haptic feedback.
 - **Post notifications:** to fire bill reminders you configure.
 - **Schedule exact alarms:** to fire reminders on time.
+- **Notification access (optional, Android):** only if you enable "Bank notifications" under
+  Auto-detect. Used on-device to detect transactions; revocable anytime in system settings.
+- **Gmail read-only (optional):** only if you tap "Scan Gmail". Read-only access used on-device
+  to detect transactions; revocable in your Google Account permissions.
 
 ## Data deletion
 
