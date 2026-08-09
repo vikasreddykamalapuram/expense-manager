@@ -71,6 +71,23 @@ describe('parseSharedText', () => {
     expect(parsed.account).toBeUndefined();
     expect(parsed.date).toBeUndefined();
   });
+
+  it('extracts available balance separately from the transaction amount', () => {
+    const sms = 'INR 1,234.50 debited from A/c XX1234 at BigBasket. Avl Bal: INR 45,678.90';
+    const parsed = parseSharedText(sms);
+    expect(parsed.amount).toBe(1234.5);
+    expect(parsed.balance).toBe(45678.9);
+  });
+
+  it('parses "available balance is Rs" phrasing', () => {
+    const parsed = parseSharedText('Rs 500 credited. Available balance is Rs 12000');
+    expect(parsed.balance).toBe(12000);
+  });
+
+  it('leaves balance undefined when no balance keyword present', () => {
+    const parsed = parseSharedText('Rs 500 debited at Uber');
+    expect(parsed.balance).toBeUndefined();
+  });
 });
 
 describe('buildAddDeepLink', () => {

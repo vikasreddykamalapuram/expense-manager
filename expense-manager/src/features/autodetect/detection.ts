@@ -14,6 +14,7 @@ export interface DetectedCandidate {
   note?: string;
   account?: string; // last 4 digits
   date?: string;    // ISO YYYY-MM-DD
+  balance?: number; // reported available/closing balance, if any
   detectedAt: string;
 }
 
@@ -70,6 +71,7 @@ export function enqueueDetected(source: DetectionSource, parsed: ParsedShare, ra
     note: parsed.note,
     account: parsed.account,
     date: parsed.date,
+    balance: parsed.balance,
     detectedAt: new Date().toISOString(),
   };
   write([candidate, ...list]);
