@@ -14,7 +14,7 @@
  * Run after `npx cap sync android`. Safe to run repeatedly — checks for
  * existing entries before adding.
  */
-import { readFileSync, writeFileSync, existsSync, mkdirSync, copyFileSync } from 'node:fs';
+import { readFileSync, writeFileSync, existsSync, mkdirSync, copyFileSync, rmSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -186,6 +186,16 @@ if (existsSync(SHORTCUTS_SRC)) {
 }
 
 // ---------- Copy widget files ----------
+// Capacitor's template generates a Java MainActivity with the same FQCN as our
+// MainActivity.kt. Once the Kotlin plugin is applied (patch-android-build.mjs)
+// both would compile and Gradle would fail with a duplicate class. The Kotlin
+// one is the one we want — it registers the widget + notification plugins.
+const GENERATED_MAIN_ACTIVITY_JAVA = join(JAVA_PKG_DIR, 'MainActivity.java');
+if (existsSync(GENERATED_MAIN_ACTIVITY_JAVA)) {
+  rmSync(GENERATED_MAIN_ACTIVITY_JAVA);
+  console.log('✓ removed generated MainActivity.java (superseded by MainActivity.kt)');
+}
+
 const widgetFiles = [
   [join(WIDGET_TEMPLATE_DIR, 'ExpenseWidgetProvider.kt'), WIDGET_KOTLIN_DEST],
   [join(WIDGET_TEMPLATE_DIR, 'WidgetBridgePlugin.kt'), WIDGET_BRIDGE_DEST],

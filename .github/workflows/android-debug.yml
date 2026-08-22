@@ -76,6 +76,12 @@ jobs:
         working-directory: expense-manager/android
         run: ./gradlew assembleDebug --no-daemon
 
+      # A green Gradle build does NOT prove the native Kotlin shipped: without
+      # the Kotlin plugin, Gradle silently ignores .kt sources. Inspect the real
+      # artifact instead.
+      - name: Verify native Kotlin is in the APK
+        run: node scripts/verify-android-native.mjs
+
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
