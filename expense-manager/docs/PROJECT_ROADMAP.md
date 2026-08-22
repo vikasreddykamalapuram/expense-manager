@@ -5,7 +5,7 @@
 > (status + PR links). Companion docs: `ARCHITECTURE.md` (how the app works),
 > `docs/SALARY_AUTODETECT_DESIGN.md` (salary/tax/auto-detect detail), `AGENTS.md`, `CONTRIBUTING.md`.
 
-_Last updated: 2026-08-07 · Repo: `vikasreddykamalapuram/expense-manager` · Package: `io.github.vikasreddykamalapuram.moneyiq`_
+_Last updated: 2026-08-09 · Repo: `vikasreddykamalapuram/expense-manager` · Package: `io.github.vikasreddykamalapuram.moneyiq`_
 
 ---
 
@@ -22,18 +22,21 @@ _Last updated: 2026-08-07 · Repo: `vikasreddykamalapuram/expense-manager` · Pa
 | #21 | **Salary Intelligence** (A.1 breakdown · A.2 payslip PDF import · A.3 payslip history/YTD/PF/trend) |
 | #22 | PROJECT_ROADMAP living tracker + Epic E/F designs |
 | #23 | **Target Android SDK 36 (Android 16)** + Pages deploy fix |
+| #24 | **E.1** preset account catalog + loan calculator · **Epic G** first-run setup wizard |
+| #25 | **Epic B** Tax Regime Advisor (old vs new) + 80C tracker |
+| #26 | **Epic C** Auto-detect: C.1 share/review-queue · C.2 notification listener (native) · C.3 Gmail read-only + Data Safety/Privacy docs |
 
 ### 🟡 In flight
 | Branch/PR | Feature | State |
 |----|---------|-------|
-| `vrk/onboarding-catalog` | **E.1 preset account catalog + loan calculator** and **Epic G first-run setup wizard** | In dev on branch — tsc/lint/45 tests/build all green; merge after full device testing |
+| `vrk/net-worth` | **Epic D** Net worth + EPF/PPF/NPS holdings + take-home calculator | In dev — Dexie v10 holdings table; tsc/lint/66 tests/build green; merge after device testing |
 
 ### 📋 Designed, not started
-- **B** Tax regime advisor (old vs new) + 80C — see `SALARY_AUTODETECT_DESIGN.md`
-- **C** Auto-detect expenses (share intent · notification listener · Gmail) — see `SALARY_AUTODETECT_DESIGN.md`
-- **D** Net worth + EPF/PPF/NPS + take-home calculator
 - **E.2–E.4** Statement→auto-account · balance auto-update · RBI Account Aggregator *(see §2)*
 - **F** Splitwise settle-up notifications *(designed below)*
+
+### Compliance follow-ups (Epic C)
+- **Notification access** + **Gmail read-only** disclosures: see `playstore/DATA_SAFETY.md`. Data safety unchanged (on-device); Gmail needs Google Cloud consent-screen scope + test users now, OAuth verification + CASA before production.
 
 ### Infra notes
 - GitHub Pages Actions-deploy backend was congested 08-06 (deploys hung 10 min); self-healed 08-07. `deploy.yml` now has `cancel-in-progress: true`. Temporary `gh-pages` branch fallback used during the outage has been removed.
