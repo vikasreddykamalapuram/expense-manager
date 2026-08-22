@@ -5,7 +5,7 @@
 > (status + PR links). Companion docs: `ARCHITECTURE.md` (how the app works),
 > `docs/SALARY_AUTODETECT_DESIGN.md` (salary/tax/auto-detect detail), `AGENTS.md`, `CONTRIBUTING.md`.
 
-_Last updated: 2026-08-09 · Repo: `vikasreddykamalapuram/expense-manager` · Package: `io.github.vikasreddykamalapuram.moneyiq`_
+_Last updated: 2026-08-22 · Repo: `vikasreddykamalapuram/expense-manager` · Package: `io.github.vikasreddykamalapuram.moneyiq`_
 
 ---
 
@@ -25,11 +25,41 @@ _Last updated: 2026-08-09 · Repo: `vikasreddykamalapuram/expense-manager` · Pa
 | #24 | **E.1** preset account catalog + loan calculator · **Epic G** first-run setup wizard |
 | #25 | **Epic B** Tax Regime Advisor (old vs new) + 80C tracker |
 | #26 | **Epic C** Auto-detect: C.1 share/review-queue · C.2 notification listener (native) · C.3 Gmail read-only + Data Safety/Privacy docs |
+| #27 | **Epic D** Net worth + EPF/PPF/NPS holdings + take-home calculator |
+| #28 | **Onboarding v2** — personas, batch account/category add |
+| #29 | **E.2/E.3** Budget intelligence + statement→account + balance auto-update |
+| #30 | Auto-detect: notification captures persist across process death (SharedPreferences, not in-memory) |
+| #31 | **Receipt scanner** (camera/gallery → OCR → parsed transaction review) |
+| #32 | **CSP fix** — unblocked OCR (WASM) and the Gmail API host |
+| #33 | **Android Kotlin compilation fix** + APK artifact verification guard *(see below — this one is important)* |
+
+### 🔴 Landmine fixed in #33 — read before touching the Android build
+Capacitor's Android template is **Java-only**, and nothing in our build applied the Kotlin Gradle
+plugin. Gradle does **not** fail on `.kt` sources when the plugin is missing — it silently ignores
+them. So every APK up to and including **v79 shipped none of the app's native code**, while the
+`AndroidManifest.xml` still declared the listener `<service>` and widget `<receiver>`.
+
+Symptoms this caused (all of which looked like unrelated feature bugs):
+- Auto-detect toggle, **Open system settings** and diagnostics appeared dead — `MainActivity.kt`
+  never compiled, so `registerPlugin()` never ran and every native call rejected (silently swallowed).
+- Notification access could be **granted** and MoneyIQ appeared in Android's list, but nothing was
+  ever captured — Android could not instantiate a class that was not in the APK.
+- Home-screen widget was dead for the same reason.
+
+Now enforced by `scripts/verify-android-native.mjs`, which unzips the built APK, scans
+`classes*.dex` and **fails the build** if any required class is missing. Both Android workflows run
+it after building. A green Gradle build is *not* evidence for this class of bug — always check the
+artifact. (The script was validated against the known-broken v79 APK first.)
+
+> **If you ever regenerate or upgrade the Android platform**, re-run a build and confirm the
+> `Verify native Kotlin is in the APK` step still passes.
+
 
 ### 🟡 In flight
 | Branch/PR | Feature | State |
 |----|---------|-------|
-| `vrk/net-worth` | **Epic D** Net worth + EPF/PPF/NPS holdings + take-home calculator | In dev — Dexie v10 holdings table; tsc/lint/66 tests/build green; merge after device testing |
+| — | **On-device re-test of auto-detect + receipt scan** | Blocked on user testing APK **v81** (`17edf37`) — the first build that actually contains the native Kotlin |
+| — | **Gmail scan finds nothing** | Unexplained. CSP is fixed and the Google client ID *is* baked into the APK (verified in the bundle), and the scan is pure JS so it never depended on the native fix. Needs the exact on-screen message from `describeScan()` in `GmailScanButton` to narrow: no matching mail vs. all already scanned vs. matched but no readable amount vs. 401/403. |
 
 ### 📋 Designed, not started
 - **E.2–E.4** Statement→auto-account · balance auto-update · RBI Account Aggregator *(see §2)*
