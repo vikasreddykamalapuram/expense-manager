@@ -22,7 +22,7 @@ import { isNativePlatform } from './platform';
 import { prefs } from './preferences';
 import { notificationService } from './notificationService';
 import { parseSharedText, buildAddDeepLink } from './shareParser';
-import { enqueueDetected, AUTODETECT_ENABLED_KEY } from '../../features/autodetect/detection';
+import { enqueueDetected, getDetectedQueue, AUTODETECT_ENABLED_KEY } from '../../features/autodetect/detection';
 import { NotificationBridge, NOTIF_SOURCE_KEY } from '../../features/autodetect/notificationBridge';
 
 let bootstrapped = false;
@@ -134,7 +134,13 @@ async function drainDetectedNotifications(): Promise<void> {
     for (const n of notifications || []) {
       const text = [n.title, n.text].filter(Boolean).join(' — ');
       const parsed = parseSharedText(text);
-      if (parsed.amount && enqueueDetected('notification', parsed, text)) added = true;
+      if (!parsed.amount) continue;
+      // enqueueDetected returns the *existing* candidate when it de-dupes, which
+      // is truthy — compare identity so a repeat alert doesn't yank the user to
+      // the review queue with nothing new in it.
+      const before = getDetectedQueue().length;
+      const candidate = enqueueDetected('notification', parsed, text);
+      if (candidate && getDetectedQueue().length > before) added = true;
     }
     if (added) navigateToDeepLink('/detected');
   } catch { /* ignore — plugin absent or no access */ }
