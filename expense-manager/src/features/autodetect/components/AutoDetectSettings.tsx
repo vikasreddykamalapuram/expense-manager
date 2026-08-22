@@ -1,11 +1,16 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ScanLine, MessageSquare, Bell, Mail, ArrowRight, ShieldCheck } from 'lucide-react';
+import { ScanLine, MessageSquare, Bell, Mail, ArrowRight, ShieldCheck, RefreshCw, FlaskConical } from 'lucide-react';
 import { prefs } from '../../../shared/services/preferences';
 import { isNativePlatform } from '../../../shared/services/platform';
-import { AUTODETECT_ENABLED_KEY } from '../detection';
-import { NotificationBridge, NOTIF_SOURCE_KEY } from '../notificationBridge';
+import { parseSharedText } from '../../../shared/services/shareParser';
+import { AUTODETECT_ENABLED_KEY, enqueueDetected } from '../detection';
+import { NotificationBridge, NOTIF_SOURCE_KEY, type NotificationBridgeStatus } from '../notificationBridge';
 import { GmailScanButton } from './GmailScanButton';
+
+/** Representative bank alert used by the self-test to prove the parser works. */
+const SELF_TEST_SMS =
+  'HDFC Bank: Rs.1,250.00 debited from a/c XX4521 on 12-05-26 to SWIGGY. UPI Ref 123456789.';
 
 function Toggle({ checked, onChange, disabled }: { checked: boolean; onChange: (v: boolean) => void; disabled?: boolean }) {
   return (
@@ -34,13 +39,37 @@ export function AutoDetectSettings() {
   const [enabled, setEnabled] = useState(false);
   const [notifOn, setNotifOn] = useState(false);
   const [notifGranted, setNotifGranted] = useState(false);
+  const [status, setStatus] = useState<NotificationBridgeStatus | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [selfTest, setSelfTest] = useState<string | null>(null);
+
+  const refreshStatus = async () => {
+    if (!native) return;
+    setBusy(true);
+    try {
+      const s = await NotificationBridge.getStatus();
+      setStatus(s);
+      setNotifGranted(s.granted);
+    } catch {
+      // Older installed build without getStatus — fall back to the grant check
+      // so the row still reports something truthful instead of staying blank.
+      setStatus(null);
+      try {
+        const r = await NotificationBridge.isEnabled();
+        setNotifGranted(r.enabled);
+      } catch {
+        setNotifGranted(false);
+      }
+    } finally {
+      setBusy(false);
+    }
+  };
 
   useEffect(() => {
     prefs.getBool(AUTODETECT_ENABLED_KEY, false).then(setEnabled);
     prefs.getBool(NOTIF_SOURCE_KEY, false).then(setNotifOn);
-    if (native) {
-      NotificationBridge.isEnabled().then((r) => setNotifGranted(r.enabled)).catch(() => setNotifGranted(false));
-    }
+    void refreshStatus();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [native]);
 
   const toggle = async (v: boolean) => {
@@ -58,8 +87,26 @@ export function AutoDetectSettings() {
   };
 
   const recheckGrant = async () => {
-    if (!native) return;
-    try { const r = await NotificationBridge.isEnabled(); setNotifGranted(r.enabled); } catch { /* ignore */ }
+    await refreshStatus();
+  };
+
+  /**
+   * Runs a known-good bank alert through the real parser and review queue, so a
+   * failure can be attributed to either the parser or the OS notification feed
+   * rather than being an unexplained "nothing happens".
+   */
+  const runSelfTest = () => {
+    const parsed = parseSharedText(SELF_TEST_SMS);
+    if (!parsed.amount) {
+      setSelfTest('Parser failed to read the sample amount — please report this.');
+      return;
+    }
+    const added = enqueueDetected('notification', parsed, SELF_TEST_SMS);
+    setSelfTest(
+      added
+        ? `Parsed ₹${parsed.amount}${parsed.merchant ? ` at ${parsed.merchant}` : ''} — added to the review queue.`
+        : 'Parsed correctly, but this sample is already in the review queue.',
+    );
   };
 
   return (
@@ -101,19 +148,84 @@ export function AutoDetectSettings() {
                 </button>
               )}
             </div>
-            {native ? (
-              <div className="flex flex-col items-end gap-1">
-                <Toggle checked={notifOn} onChange={toggleNotif} disabled={!enabled} />
-                {notifOn && (
-                  <span className={`text-[10px] font-medium ${notifGranted ? 'text-success-600' : 'text-amber-600'}`}>
-                    {notifGranted ? 'Access granted' : 'Access needed'}
-                  </span>
+              {native ? (
+                <div className="flex flex-col items-end gap-1">
+                  <Toggle checked={notifOn} onChange={toggleNotif} disabled={!enabled} />
+                  {notifOn && (
+                    <span className={`text-[10px] font-medium ${notifGranted ? 'text-success-600' : 'text-amber-600'}`}>
+                      {notifGranted ? 'Access granted' : 'Access needed'}
+                    </span>
+                  )}
+                </div>
+              ) : (
+                <span className="rounded-full bg-gray-100 dark:bg-gray-700 px-1.5 py-0.5 text-[10px] font-medium text-gray-500 dark:text-gray-400">Android only</span>
+              )}
+            </div>
+
+            {native && notifOn && (
+              <div className="mt-3 space-y-2 rounded-lg bg-gray-50 dark:bg-gray-900/40 p-3">
+                <div className="flex items-center justify-between">
+                  <p className="text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Diagnostics</p>
+                  <button
+                    type="button"
+                    onClick={recheckGrant}
+                    disabled={busy}
+                    className="inline-flex items-center gap-1 text-xs font-medium text-primary-600 hover:underline disabled:opacity-50"
+                  >
+                    <RefreshCw size={12} className={busy ? 'animate-spin' : undefined} /> Refresh
+                  </button>
+                </div>
+
+                {status ? (
+                  <dl className="grid grid-cols-2 gap-x-3 gap-y-1 text-xs">
+                    <Diag label="Access granted" value={status.granted ? 'Yes' : 'No'} bad={!status.granted} />
+                    <Diag label="Listener running" value={status.connected ? 'Yes' : 'No'} bad={!status.connected} />
+                    <Diag label="Captured (all time)" value={String(status.capturedTotal)} bad={status.capturedTotal === 0} />
+                    <Diag label="Waiting to import" value={String(status.buffered)} />
+                    <Diag
+                      label="Last capture"
+                      value={status.lastCapturedAt ? new Date(status.lastCapturedAt).toLocaleString() : 'Never'}
+                      bad={!status.lastCapturedAt}
+                    />
+                  </dl>
+                ) : (
+                  <p className="text-xs text-gray-500 dark:text-gray-400">
+                    Diagnostics unavailable — update to the latest app build to see capture stats.
+                  </p>
                 )}
+
+                {status && status.granted && !status.connected && (
+                  <p className="text-xs text-amber-600">
+                    Access is granted but Android has not started the listener. Turn notification access off and
+                    on again in system settings, then reopen MoneyIQ.
+                  </p>
+                )}
+                {status && status.connected && status.capturedTotal === 0 && (
+                  <p className="text-xs text-gray-500 dark:text-gray-400">
+                    Listening, but no bank alert has arrived yet. Only notifications containing an amount and a
+                    transaction word (debited, credited, spent…) are captured.
+                  </p>
+                )}
+
+                <div className="flex items-center gap-3 pt-1">
+                  <button
+                    type="button"
+                    onClick={runSelfTest}
+                    className="inline-flex items-center gap-1 text-xs font-medium text-primary-600 hover:underline"
+                  >
+                    <FlaskConical size={12} /> Run self-test
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => { void NotificationBridge.openSettings().catch(() => { /* ignore */ }); }}
+                    className="text-xs font-medium text-primary-600 hover:underline"
+                  >
+                    Open system settings
+                  </button>
+                </div>
+                {selfTest && <p className="text-xs text-gray-600 dark:text-gray-300">{selfTest}</p>}
               </div>
-            ) : (
-              <span className="rounded-full bg-gray-100 dark:bg-gray-700 px-1.5 py-0.5 text-[10px] font-medium text-gray-500 dark:text-gray-400">Android only</span>
             )}
-          </div>
         </div>
 
         {/* Gmail — read-only scan (incremental scope, on demand) */}
@@ -145,6 +257,15 @@ export function AutoDetectSettings() {
       >
         Open review queue <ArrowRight size={14} />
       </button>
+    </div>
+  );
+}
+
+function Diag({ label, value, bad }: { label: string; value: string; bad?: boolean }) {
+  return (
+    <div className="min-w-0">
+      <dt className="truncate text-[10px] uppercase tracking-wide text-gray-400 dark:text-gray-500">{label}</dt>
+      <dd className={`truncate font-medium ${bad ? 'text-amber-600' : 'text-gray-700 dark:text-gray-200'}`}>{value}</dd>
     </div>
   );
 }

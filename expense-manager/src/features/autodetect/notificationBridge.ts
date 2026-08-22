@@ -7,6 +7,19 @@ export interface CapturedNotification {
   postTime: number;
 }
 
+export interface NotificationBridgeStatus {
+  /** User has granted notification access in system settings. */
+  granted: boolean;
+  /** Android has actually bound our listener service (granted != bound). */
+  connected: boolean;
+  /** Captures waiting to be drained right now. */
+  buffered: number;
+  /** Lifetime count of financial notifications captured on this device. */
+  capturedTotal: number;
+  /** Epoch ms of the most recent capture, or 0 if nothing has ever been captured. */
+  lastCapturedAt: number;
+}
+
 export interface NotificationBridgePlugin {
   /** Whether the user has granted notification access to this app. */
   isEnabled(): Promise<{ enabled: boolean }>;
@@ -14,6 +27,8 @@ export interface NotificationBridgePlugin {
   openSettings(): Promise<void>;
   /** Drain financial notifications captured on-device since the last call. */
   getPending(): Promise<{ notifications: CapturedNotification[] }>;
+  /** Diagnostics — lets Settings show whether detection is actually alive. */
+  getStatus(): Promise<NotificationBridgeStatus>;
 }
 
 /**
