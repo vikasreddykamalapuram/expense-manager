@@ -81,6 +81,33 @@ describe('CI verifies the artifact, not just the build result', () => {
     expect(read('../.github/workflows/android-debug.yml')).toContain('verify-android-native.mjs');
     expect(read('../.github/workflows/android-release.yml')).toContain('verify-android-native.mjs');
   });
+
+  it('verifies the AAB too, since that is what Play Store receives', () => {
+    // Checking only the APK would leave the actual shipped artifact unproven.
+    expect(read('../.github/workflows/android-release.yml')).toContain(
+      'android/app/build/outputs/bundle/release',
+    );
+  });
+
+  it('matches dex nested inside an AAB, not just at an APK root', () => {
+    // An AAB stores dex under `base/dex/classes.dex`; a root-anchored pattern
+    // would find nothing and false-fail on a perfectly good bundle.
+    const pattern = verifier.match(/const dexEntries = .*?filter\(\(e\) => (\/.*?\/)\.test/)?.[1];
+    expect(pattern).toBeTruthy();
+    const re = new RegExp(pattern!.slice(1, -1));
+    expect(re.test('classes.dex')).toBe(true);
+    expect(re.test('classes2.dex')).toBe(true);
+    expect(re.test('base/dex/classes.dex')).toBe(true);
+    expect(re.test('base/dex/classes3.dex')).toBe(true);
+    expect(re.test('res/classes.dex.png')).toBe(false);
+  });
+
+  it('does not hardcode an AGP output filename', () => {
+    // `app-release.apk` vs `app-release-unsigned.apk` depends on whether a
+    // signingConfig was injected; resolving the directory avoids that trap.
+    expect(read('../.github/workflows/android-release.yml')).not.toContain('app-release.apk');
+    expect(verifier).toContain('isDirectory()');
+  });
 });
 
 describe('isPluginMissing', () => {

@@ -19,7 +19,7 @@
  * Usage:  node scripts/verify-android-native.mjs [path/to/app.apk]
  * Default: android/app/build/outputs/apk/debug/app-debug.apk
  */
-import { readFileSync, existsSync, readdirSync } from 'node:fs';
+import { readFileSync, existsSync, readdirSync, statSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { inflateRawSync } from 'node:zlib';
@@ -93,26 +93,41 @@ function readEntry(buf, entry) {
 }
 
 // ---------------------------------------------------------------------------
+/** Pick the single .apk/.aab inside a directory, ignoring stray files. */
+function artifactInDir(dir) {
+  if (!existsSync(dir)) return null;
+  const hit = readdirSync(dir).find((f) => f.endsWith('.apk') || f.endsWith('.aab'));
+  return hit ? join(dir, hit) : null;
+}
+
+/**
+ * Accepts a file OR a directory. Passing the directory is preferred in CI:
+ * AGP's output filename varies (app-release.apk vs app-release-unsigned.apk
+ * depending on whether a signingConfig is present), and a hardcoded name turns
+ * a rename into a confusing "no APK found" failure.
+ */
 function resolveArtifact() {
   const fromArg = process.argv[2];
-  if (fromArg) return fromArg;
-  const debugDir = join(REPO_ROOT, 'android', 'app', 'build', 'outputs', 'apk', 'debug');
-  if (existsSync(debugDir)) {
-    const apk = readdirSync(debugDir).find((f) => f.endsWith('.apk'));
-    if (apk) return join(debugDir, apk);
+  if (fromArg) {
+    if (!existsSync(fromArg)) return fromArg; // report the path the caller asked for
+    return statSync(fromArg).isDirectory() ? artifactInDir(fromArg) : fromArg;
   }
-  return null;
+  const out = join(REPO_ROOT, 'android', 'app', 'build', 'outputs');
+  return artifactInDir(join(out, 'apk', 'debug'));
 }
 
 const artifact = resolveArtifact();
 if (!artifact || !existsSync(artifact)) {
-  console.error(`✗ No APK found${artifact ? ` at ${artifact}` : ''}. Build one first, or pass a path.`);
+  console.error(`✗ No APK/AAB found${artifact ? ` at ${artifact}` : ''}. Build one first, or pass a path.`);
   process.exit(1);
 }
 
 console.log(`Verifying native classes in ${artifact}`);
 const zip = readFileSync(artifact);
-const dexEntries = listEntries(zip).filter((e) => /^classes\d*\.dex$/.test(e.name));
+// APKs hold `classes.dex` at the root; AABs nest them per-module under
+// `base/dex/`. The AAB is what Play Store actually receives, so it must be
+// verifiable too — matching only the root form would silently skip it.
+const dexEntries = listEntries(zip).filter((e) => /(^|\/)classes\d*\.dex$/.test(e.name));
 if (dexEntries.length === 0) {
   console.error('✗ No classes*.dex inside the artifact — this is not a built Android app.');
   process.exit(1);

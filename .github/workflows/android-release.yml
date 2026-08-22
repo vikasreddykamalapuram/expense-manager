@@ -108,8 +108,12 @@ jobs:
 
       # Guards against the Kotlin plugin silently dropping out again — Gradle
       # ignores .kt sources rather than failing when it is absent.
-      - name: Verify native Kotlin is in the release APK
-        run: node scripts/verify-android-native.mjs android/app/build/outputs/apk/release/app-release.apk
+      - name: Verify native Kotlin is in the release artifacts
+        run: |
+          # Both, not just the APK: the AAB is what Play Store actually
+          # receives, so it is the one that must be proven correct.
+          node scripts/verify-android-native.mjs android/app/build/outputs/apk/release
+          node scripts/verify-android-native.mjs android/app/build/outputs/bundle/release
 
       - name: Upload AAB
         uses: actions/upload-artifact@v4
