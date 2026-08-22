@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useMemo } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Download, Upload, Trash2, AlertTriangle, FileSpreadsheet, Cloud, CloudOff, LogOut, RefreshCw, CheckCircle2, XCircle, Sun, Moon, Monitor, Palette, Check, RefreshCcw, Smartphone, Shield, Database, Unplug, ArrowUpDown, Wifi, WifiOff, ShieldCheck, Bell, Sliders, HardDrive, Info, FileText, ChevronDown, ChevronUp, Sparkles } from 'lucide-react';
+import { Download, Upload, Trash2, AlertTriangle, FileSpreadsheet, Cloud, CloudOff, LogOut, RefreshCw, CheckCircle2, XCircle, Sun, Moon, Monitor, Palette, Check, RefreshCcw, Smartphone, Shield, Database, Unplug, ArrowUpDown, Wifi, WifiOff, ShieldCheck, Bell, Sliders, HardDrive, Info, FileText, ChevronDown, ChevronUp, Sparkles, ScanLine } from 'lucide-react';
 import type { AccentColor, DarkMode } from '../../../shared/types';
 import { useAppContext } from '../../../context/AppContext';
 import { resetSetup } from '../../onboarding/setupStatus';
@@ -470,6 +470,13 @@ export function SettingsPage() {
               >
                 Bank Statement (PDF)
               </Button>
+              <Button
+                variant="secondary"
+                icon={<ScanLine size={16} />}
+                onClick={() => navigate('/scan-receipt')}
+              >
+                Scan a Receipt
+              </Button>
               <input
                 ref={fileInputRef}
                 type="file"
@@ -479,7 +486,7 @@ export function SettingsPage() {
               />
             </div>
             <p className="mt-1 text-xs text-gray-400 dark:text-gray-500">
-              CSV: Import from other expense tracker apps · JSON: Restore a previous backup · PDF: Parse a bank statement
+              CSV: Import from other expense tracker apps · JSON: Restore a previous backup · PDF: Parse a bank statement · Scan: Photograph a bill to fill a transaction
             </p>
           </div>
 
