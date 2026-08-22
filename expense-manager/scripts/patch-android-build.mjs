@@ -2,6 +2,18 @@
 /**
  * Patches android/app/build.gradle after `npx cap sync android` so that
  *
+ *   0. The Kotlin Android Gradle plugin is applied.
+ *
+ *      Capacitor's Android template is Java-only. Gradle without the Kotlin
+ *      plugin does not fail on `.kt` sources — it silently ignores them. Every
+ *      APK built before this patch therefore shipped WITHOUT MainActivity.kt,
+ *      NotificationBridgePlugin, MoneyIqNotificationListener,
+ *      WidgetBridgePlugin and ExpenseWidgetProvider, while still declaring the
+ *      listener <service> and widget <receiver> in the manifest. Result:
+ *      notification access could be granted but never captured anything, and
+ *      every native call from JS rejected. See verify-android-native.mjs, which
+ *      fails the build if those classes are ever missing from the APK again.
+ *
  *   1. Debug builds are signed with a STABLE keystore committed to the repo
  *      (android-templates/debug.keystore).
  *
@@ -30,6 +42,12 @@ const KEYSTORE_SRC = join(REPO_ROOT, 'android-templates', 'debug.keystore');
 const KEYSTORE_DEST = join(ANDROID_ROOT, 'app', 'debug.keystore');
 const PKG_JSON = join(REPO_ROOT, 'package.json');
 
+// Kotlin toolchain. Capacitor 8 ships Gradle 8.14.3 / AGP 8.13 / JDK 21, so the
+// Kotlin plugin and the JVM target must line up with that or AGP aborts with
+// "Inconsistent JVM-target compatibility". Overridable for a quick CI retry.
+const KOTLIN_VERSION = process.env.KOTLIN_VERSION || '2.2.0';
+const JVM_TARGET = process.env.ANDROID_JVM_TARGET || '21';
+
 if (!existsSync(BUILD_GRADLE)) {
   console.error(`✗ android/app/build.gradle not found. Run "npx cap sync android" first.`);
   process.exit(1);
@@ -55,6 +73,31 @@ const versionName = `${baseVersion}.${runNumber}`;
 // 3) Patch build.gradle ------------------------------------------------------
 let gradle = readFileSync(BUILD_GRADLE, 'utf8');
 const before = gradle;
+
+// 3z) Kotlin — apply the plugin and pin the JVM target.
+//     Must be applied AFTER com.android.application. Without this, Gradle treats
+//     our .kt files as unknown resources and drops them without a warning.
+if (!/apply plugin:\s*['"]kotlin-android['"]/.test(gradle)) {
+  if (/apply plugin:\s*['"]com\.android\.application['"]/.test(gradle)) {
+    gradle = gradle.replace(
+      /(apply plugin:\s*['"]com\.android\.application['"])/,
+      `$1\napply plugin: 'kotlin-android'`,
+    );
+  } else {
+    gradle = `apply plugin: 'kotlin-android'\n${gradle}`;
+  }
+  console.log(`  + apply plugin: kotlin-android`);
+}
+
+// Kotlin defaults to jvmTarget 1.8; AGP compiles Java at 21 (set by
+// capacitor.build.gradle). A mismatch is a hard build failure.
+if (!/kotlinOptions\s*\{/.test(gradle)) {
+  gradle = gradle.replace(
+    /android\s*\{/,
+    `android {\n    kotlinOptions {\n        jvmTarget = '${JVM_TARGET}'\n    }\n`,
+  );
+  console.log(`  + kotlinOptions.jvmTarget = ${JVM_TARGET}`);
+}
 
 // 3a) versionCode
 gradle = gradle.replace(/versionCode\s+\d+/, `versionCode ${versionCode}`);
@@ -117,9 +160,35 @@ const ROOT_BUILD_GRADLE = join(ANDROID_ROOT, 'build.gradle');
 const SDK36_MARKER = '// EM_FORCE_SUBPROJECT_SDK36';
 if (existsSync(ROOT_BUILD_GRADLE)) {
   let rootGradle = readFileSync(ROOT_BUILD_GRADLE, 'utf8');
+  const rootBefore = rootGradle;
+
+  // Kotlin Gradle plugin on the buildscript classpath — required before any
+  // module can `apply plugin: 'kotlin-android'`.
+  if (!rootGradle.includes('kotlin-gradle-plugin')) {
+    const agpClasspath = /(classpath\s+['"]com\.android\.tools\.build:gradle:[^'"]+['"])/;
+    if (agpClasspath.test(rootGradle)) {
+      rootGradle = rootGradle.replace(
+        agpClasspath,
+        `$1\n        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:${KOTLIN_VERSION}"`,
+      );
+    } else {
+      rootGradle = rootGradle.replace(
+        /buildscript\s*\{[\s\S]*?dependencies\s*\{/,
+        (m) => `${m}\n        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:${KOTLIN_VERSION}"`,
+      );
+    }
+    console.log(`✓ root build.gradle: kotlin-gradle-plugin ${KOTLIN_VERSION} on classpath`);
+  }
+
   if (!rootGradle.includes(SDK36_MARKER)) {
     rootGradle += `\n${SDK36_MARKER}\nsubprojects {\n    afterEvaluate { project ->\n        if (project.hasProperty('android')) {\n            project.android {\n                compileSdkVersion 36\n            }\n        }\n    }\n}\n`;
-    writeFileSync(ROOT_BUILD_GRADLE, rootGradle, 'utf8');
     console.log('✓ root build.gradle: force subprojects compileSdkVersion 36');
   }
+
+  if (rootGradle !== rootBefore) {
+    writeFileSync(ROOT_BUILD_GRADLE, rootGradle, 'utf8');
+  }
+} else {
+  console.error('✗ android/build.gradle not found — Kotlin plugin NOT applied.');
+  process.exit(1);
 }

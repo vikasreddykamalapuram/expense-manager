@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ScanLine, MessageSquare, Bell, Mail, ArrowRight, ShieldCheck, RefreshCw, FlaskConical } from 'lucide-react';
+import { ScanLine, MessageSquare, Bell, Mail, ArrowRight, ShieldCheck, RefreshCw, FlaskConical, AlertTriangle } from 'lucide-react';
 import { prefs } from '../../../shared/services/preferences';
 import { isNativePlatform } from '../../../shared/services/platform';
 import { parseSharedText } from '../../../shared/services/shareParser';
 import { AUTODETECT_ENABLED_KEY, enqueueDetected } from '../detection';
 import { NotificationBridge, NOTIF_SOURCE_KEY, type NotificationBridgeStatus } from '../notificationBridge';
+import { isPluginMissing, describeNativeError } from '../nativeErrors';
 import { GmailScanButton } from './GmailScanButton';
 
 /** Representative bank alert used by the self-test to prove the parser works. */
@@ -42,6 +43,7 @@ export function AutoDetectSettings() {
   const [status, setStatus] = useState<NotificationBridgeStatus | null>(null);
   const [busy, setBusy] = useState(false);
   const [selfTest, setSelfTest] = useState<string | null>(null);
+  const [nativeError, setNativeError] = useState<string | null>(null);
 
   const refreshStatus = async () => {
     if (!native) return;
@@ -50,15 +52,20 @@ export function AutoDetectSettings() {
       const s = await NotificationBridge.getStatus();
       setStatus(s);
       setNotifGranted(s.granted);
-    } catch {
+      setNativeError(null);
+    } catch (e) {
       // Older installed build without getStatus — fall back to the grant check
       // so the row still reports something truthful instead of staying blank.
       setStatus(null);
       try {
         const r = await NotificationBridge.isEnabled();
         setNotifGranted(r.enabled);
-      } catch {
+        setNativeError(null);
+      } catch (inner) {
         setNotifGranted(false);
+        // Both calls failing means the native side is absent entirely — say so
+        // rather than leaving the controls looking mysteriously dead.
+        setNativeError(describeNativeError(isPluginMissing(e) ? e : inner));
       }
     } finally {
       setBusy(false);
@@ -82,7 +89,21 @@ export function AutoDetectSettings() {
     await prefs.setBool(NOTIF_SOURCE_KEY, v);
     // If turning on without system access granted, take the user to the grant screen.
     if (v && native && !notifGranted) {
-      try { await NotificationBridge.openSettings(); } catch { /* ignore */ }
+      try {
+        await NotificationBridge.openSettings();
+        setNativeError(null);
+      } catch (e) {
+        setNativeError(describeNativeError(e));
+      }
+    }
+  };
+
+  const openSystemSettings = async () => {
+    try {
+      await NotificationBridge.openSettings();
+      setNativeError(null);
+    } catch (e) {
+      setNativeError(describeNativeError(e));
     }
   };
 
@@ -126,6 +147,16 @@ export function AutoDetectSettings() {
           review queue and are <strong>never saved until you confirm</strong> them. Nothing is uploaded.
         </span>
       </div>
+
+      {native && nativeError && (
+        <div
+          role="alert"
+          className="flex items-start gap-2 rounded-lg border border-amber-300 bg-amber-50 dark:border-amber-700/50 dark:bg-amber-900/20 p-3 text-xs text-amber-800 dark:text-amber-200"
+        >
+          <AlertTriangle size={14} className="mt-0.5 shrink-0" />
+          <span>{nativeError}</span>
+        </div>
+      )}
 
       <div className="space-y-2">
         {/* Shared messages — always available via the system share sheet */}
@@ -217,7 +248,7 @@ export function AutoDetectSettings() {
                   </button>
                   <button
                     type="button"
-                    onClick={() => { void NotificationBridge.openSettings().catch(() => { /* ignore */ }); }}
+                    onClick={() => { void openSystemSettings(); }}
                     className="text-xs font-medium text-primary-600 hover:underline"
                   >
                     Open system settings

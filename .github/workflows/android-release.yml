@@ -106,6 +106,11 @@ jobs:
         run: |
           ./gradlew bundleRelease assembleRelease --no-daemon
 
+      # Guards against the Kotlin plugin silently dropping out again — Gradle
+      # ignores .kt sources rather than failing when it is absent.
+      - name: Verify native Kotlin is in the release APK
+        run: node scripts/verify-android-native.mjs android/app/build/outputs/apk/release/app-release.apk
+
       - name: Upload AAB
         uses: actions/upload-artifact@v4
         with:
