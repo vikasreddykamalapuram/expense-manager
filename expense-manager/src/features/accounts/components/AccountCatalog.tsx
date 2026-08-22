@@ -10,7 +10,12 @@ const iconMap: Record<string, LucideIcon> = {
 };
 
 interface AccountCatalogProps {
-  onPick: (preset: AccountPreset) => void;
+  /** Single-pick handler (opens the form). Used when onToggle is not provided. */
+  onPick?: (preset: AccountPreset) => void;
+  /** Multi-select toggle handler. When provided, tiles become selectable. */
+  onToggle?: (preset: AccountPreset) => void;
+  /** Currently selected preset keys (multi-select mode). */
+  selectedKeys?: Set<string>;
   /** Preset keys already added, shown with a check. */
   addedKeys?: Set<string>;
   /** Restrict to specific group ids (e.g. onboarding). */
@@ -18,11 +23,13 @@ interface AccountCatalogProps {
 }
 
 /**
- * Tap-to-add preset account catalog. Picking a tile hands the preset back to the
- * parent, which opens the account form pre-filled so the user only enters the number.
+ * Preset account catalog. Two modes:
+ *  - single-pick (onPick): tapping a tile opens the pre-filled account form.
+ *  - multi-select (onToggle + selectedKeys): tapping toggles selection for a batch add.
  */
-export function AccountCatalog({ onPick, addedKeys, groupIds }: AccountCatalogProps) {
+export function AccountCatalog({ onPick, onToggle, selectedKeys, addedKeys, groupIds }: AccountCatalogProps) {
   const groups = groupIds ? ACCOUNT_CATALOG.filter((g) => groupIds.includes(g.id)) : ACCOUNT_CATALOG;
+  const selectable = !!onToggle;
 
   return (
     <div className="space-y-5">
@@ -36,12 +43,18 @@ export function AccountCatalog({ onPick, addedKeys, groupIds }: AccountCatalogPr
             {group.presets.map((preset) => {
               const Icon = iconMap[preset.icon] || Landmark;
               const added = addedKeys?.has(preset.key);
+              const selected = selectedKeys?.has(preset.key);
               return (
                 <button
                   key={preset.key}
                   type="button"
-                  onClick={() => onPick(preset)}
-                  className="group relative flex items-center gap-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-3 text-left transition-all hover:border-primary-400 hover:shadow-sm active:scale-[0.98]"
+                  onClick={() => (selectable ? onToggle!(preset) : onPick?.(preset))}
+                  aria-pressed={selectable ? !!selected : undefined}
+                  className={`group relative flex items-center gap-2.5 rounded-xl border bg-white dark:bg-gray-800 p-3 text-left transition-all hover:shadow-sm active:scale-[0.98] ${
+                    selected
+                      ? 'border-primary-500 ring-1 ring-primary-500'
+                      : 'border-gray-200 dark:border-gray-700 hover:border-primary-400'
+                  }`}
                 >
                   <span
                     className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg"
@@ -52,8 +65,8 @@ export function AccountCatalog({ onPick, addedKeys, groupIds }: AccountCatalogPr
                   <span className="min-w-0 flex-1 truncate text-sm font-medium text-gray-800 dark:text-gray-200">
                     {preset.label}
                   </span>
-                  {added && (
-                    <span className="flex h-5 w-5 items-center justify-center rounded-full bg-success-100 text-success-600">
+                  {(added || selected) && (
+                    <span className={`flex h-5 w-5 items-center justify-center rounded-full ${selected ? 'bg-primary-500 text-white' : 'bg-success-100 text-success-600'}`}>
                       <Check size={12} />
                     </span>
                   )}

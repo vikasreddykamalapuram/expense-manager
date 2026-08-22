@@ -115,3 +115,72 @@ export const ACCOUNT_CATALOG: AccountPresetGroup[] = [
 export const ACCOUNT_PRESET_BY_KEY: Record<string, AccountPreset> = Object.fromEntries(
   ACCOUNT_CATALOG.flatMap((g) => g.presets).map((p) => [p.key, p])
 );
+
+/**
+ * Build a ready-to-save Account from a preset with a zero starting balance —
+ * used by the onboarding batch add ("add these accounts, set balances later").
+ */
+export function presetToAccount(
+  preset: AccountPreset,
+  meta: { id: string; kind: 'asset' | 'liability'; icon: string; now: string }
+): {
+  id: string; name: string; type: AccountType; kind: 'asset' | 'liability';
+  subtype?: BankSubtype | LoanSubtype; institution?: string; openingBalance: number;
+  color: string; icon: string; isActive: boolean; createdAt: string; updatedAt: string;
+} {
+  return {
+    id: meta.id,
+    name: preset.label,
+    type: preset.type,
+    kind: meta.kind,
+    subtype: preset.subtype,
+    institution: preset.institution,
+    openingBalance: 0,
+    color: preset.color ?? ACCOUNT_COLORS[0],
+    icon: meta.icon,
+    isActive: true,
+    createdAt: meta.now,
+    updatedAt: meta.now,
+  };
+}
+
+export interface OnboardingPersona {
+  id: string;
+  label: string;
+  icon: string;      // lucide icon name
+  description: string;
+  /** Preset keys pre-selected for this persona. */
+  accountKeys: string[];
+}
+
+/** One-tap starter bundles that pre-select a tailored set of accounts. */
+export const ONBOARDING_PERSONAS: OnboardingPersona[] = [
+  {
+    id: 'salaried',
+    label: 'Salaried',
+    icon: 'Briefcase',
+    description: 'Salary account, a card, UPI wallet',
+    accountKeys: ['bank-salary', 'cc-hdfc', 'wallet-gpay', 'cash-wallet'],
+  },
+  {
+    id: 'freelancer',
+    label: 'Freelancer',
+    icon: 'Laptop',
+    description: 'Current account, card, wallets',
+    accountKeys: ['bank-icici', 'cc-icici', 'wallet-paytm', 'wallet-gpay', 'cash-wallet'],
+  },
+  {
+    id: 'student',
+    label: 'Student',
+    icon: 'GraduationCap',
+    description: 'Savings account, UPI, cash',
+    accountKeys: ['bank-sbi', 'wallet-gpay', 'wallet-phonepe', 'cash-wallet'],
+  },
+  {
+    id: 'family',
+    label: 'Family',
+    icon: 'Users',
+    description: 'Bank, cards, wallet, a loan',
+    accountKeys: ['bank-hdfc', 'cc-hdfc', 'cc-amazon', 'wallet-gpay', 'loan-home', 'cash-wallet'],
+  },
+];
