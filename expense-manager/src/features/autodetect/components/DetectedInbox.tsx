@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ScanLine, Check, X, Trash2, ArrowRight, Landmark, CalendarClock, MessageSquare } from 'lucide-react';
 import { useAppContext } from '../../../context/AppContext';
@@ -5,6 +6,7 @@ import { Button } from '../../../shared/components/ui/Button';
 import { EmptyState } from '../../../shared/components/ui/EmptyState';
 import { formatCurrency, classNames } from '../../../shared/utils/helpers';
 import { buildAddDeepLink } from '../../../shared/services/shareParser';
+import { computeAccountBalance } from '../../../shared/constants/accounts';
 import { useDetectedQueue } from '../useDetectedQueue';
 import { GmailScanButton } from './GmailScanButton';
 import type { DetectedCandidate } from '../detection';
@@ -111,9 +113,65 @@ export function DetectedInbox() {
                   Review &amp; add <ArrowRight size={14} />
                 </Button>
               </div>
+              {c.balance != null && <BalanceUpdateRow balance={c.balance} accountHint={c.account} />}
             </div>
           ))}
         </div>
+      )}
+    </div>
+  );
+}
+
+/**
+ * E.3: when a detected message reports an available balance, let the user apply
+ * it to one of their accounts. We adjust the account's opening balance so its
+ * *current* computed balance equals the reported figure (opening += reported − current).
+ */
+function BalanceUpdateRow({ balance, accountHint }: { balance: number; accountHint?: string }) {
+  const { state, actions } = useAppContext();
+  const { accounts, transactions, settings } = state;
+  const assetAccounts = accounts.filter((a) => a.kind === 'asset');
+  const [accountId, setAccountId] = useState<string>(() => {
+    if (accountHint) {
+      const m = assetAccounts.find((a) => a.name.includes(accountHint));
+      if (m) return m.id;
+    }
+    return assetAccounts[0]?.id || '';
+  });
+  const [done, setDone] = useState(false);
+
+  if (assetAccounts.length === 0) return null;
+
+  const apply = async () => {
+    const acc = accounts.find((a) => a.id === accountId);
+    if (!acc) return;
+    const current = computeAccountBalance(acc, transactions);
+    const newOpening = acc.openingBalance + (balance - current);
+    await actions.updateAccount(acc.id, { openingBalance: newOpening });
+    setDone(true);
+  };
+
+  return (
+    <div className="mt-2 flex items-center gap-2 rounded-lg bg-primary-50/50 dark:bg-primary-900/10 p-2 text-xs">
+      <Landmark size={13} className="shrink-0 text-primary-600" />
+      <span className="text-gray-600 dark:text-gray-300">Balance {formatCurrency(balance, settings)}</span>
+      {done ? (
+        <span className="ml-auto inline-flex items-center gap-1 font-medium text-success-600"><Check size={12} /> Updated</span>
+      ) : (
+        <>
+          <select
+            value={accountId}
+            onChange={(e) => setAccountId(e.target.value)}
+            className="ml-auto rounded-md border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 px-1.5 py-1 text-xs"
+          >
+            {assetAccounts.map((a) => (
+              <option key={a.id} value={a.id}>{a.name}</option>
+            ))}
+          </select>
+          <button type="button" onClick={apply} className="rounded-md bg-primary-600 px-2 py-1 font-medium text-white hover:bg-primary-700">
+            Update
+          </button>
+        </>
       )}
     </div>
   );

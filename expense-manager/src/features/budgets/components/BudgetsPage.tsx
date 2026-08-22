@@ -3,7 +3,7 @@ import { v4 as uuidv4 } from 'uuid';
 import {
   ChevronLeft, ChevronRight, CalendarDays, Target, Plus,
   Pencil, Trash2, AlertTriangle, CheckCircle2, HelpCircle,
-  TrendingUp, TrendingDown,
+  TrendingUp, TrendingDown, Sparkles, Check,
 } from 'lucide-react';
 import { useAppContext } from '../../../context/AppContext';
 import { Budget, Category, Settings, Transaction } from '../../../shared/types';
@@ -12,6 +12,7 @@ import { Button } from '../../../shared/components/ui/Button';
 import { Input, Select } from '../../../shared/components/ui/Input';
 import { EmptyState } from '../../../shared/components/ui/EmptyState';
 import { CategoryIcon } from '../../../shared/components/ui/CategoryIcon';
+import { suggestBudgets } from '../../../shared/services/budgetSuggestions';
 import {
   formatCurrency, classNames, getCurrentMonth, formatMonth,
   getPreviousMonth, getNextMonth,
@@ -102,6 +103,37 @@ export function BudgetsPage() {
   const [selectedMonth, setSelectedMonth] = useState(getCurrentMonth());
   const [modalOpen, setModalOpen] = useState(false);
   const [editingBudget, setEditingBudget] = useState<Budget | null>(null);
+  const [showSuggest, setShowSuggest] = useState(false);
+  const [pickedSuggestions, setPickedSuggestions] = useState<Set<string>>(new Set());
+  const [applyingSuggestions, setApplyingSuggestions] = useState(false);
+
+  const suggestions = useMemo(
+    () => suggestBudgets({ transactions, categories, existingBudgets: budgets, month: selectedMonth }),
+    [transactions, categories, budgets, selectedMonth]
+  );
+
+  const openSuggest = () => {
+    setPickedSuggestions(new Set(suggestions.map((s) => s.categoryId)));
+    setShowSuggest(true);
+  };
+
+  const applySuggestions = async () => {
+    setApplyingSuggestions(true);
+    const now = new Date().toISOString();
+    for (const s of suggestions) {
+      if (!pickedSuggestions.has(s.categoryId)) continue;
+      await actions.setBudget({
+        id: uuidv4(),
+        categoryId: s.categoryId,
+        amount: s.suggested,
+        month: selectedMonth,
+        createdAt: now,
+        updatedAt: now,
+      });
+    }
+    setApplyingSuggestions(false);
+    setShowSuggest(false);
+  };
 
   // Parent expense categories only
   const parentExpenseCategories = useMemo(
@@ -179,9 +211,16 @@ export function BudgetsPage() {
             Plan and track your monthly spending
           </p>
         </div>
-        <Button icon={<Plus size={18} />} onClick={openAddModal}>
-          Set Budget
-        </Button>
+        <div className="flex gap-2">
+          {suggestions.length > 0 && (
+            <Button variant="secondary" icon={<Sparkles size={18} />} onClick={openSuggest}>
+              Suggest budgets
+            </Button>
+          )}
+          <Button icon={<Plus size={18} />} onClick={openAddModal}>
+            Set Budget
+          </Button>
+        </div>
       </div>
 
       {/* Month Selector */}
@@ -406,6 +445,56 @@ export function BudgetsPage() {
         onSave={actions.setBudget}
         settings={settings}
       />
+
+      {/* Smart budget suggestions */}
+      <Modal isOpen={showSuggest} onClose={() => setShowSuggest(false)} title="Suggested budgets" size="md">
+        <p className="mb-3 text-sm text-gray-500 dark:text-gray-400">
+          Based on your average spend over the last 3 months. Pick the ones to apply for {formatMonth(selectedMonth)}.
+        </p>
+        <div className="max-h-80 space-y-2 overflow-y-auto">
+          {suggestions.map((s) => {
+            const cat = categories.find((c) => c.id === s.categoryId);
+            const on = pickedSuggestions.has(s.categoryId);
+            return (
+              <button
+                key={s.categoryId}
+                type="button"
+                onClick={() =>
+                  setPickedSuggestions((prev) => {
+                    const next = new Set(prev);
+                    if (next.has(s.categoryId)) next.delete(s.categoryId); else next.add(s.categoryId);
+                    return next;
+                  })
+                }
+                className={classNames(
+                  'flex w-full items-center justify-between rounded-xl border p-3 text-left transition-colors',
+                  on ? 'border-primary-500 bg-primary-50/50 dark:bg-primary-900/10' : 'border-gray-200 dark:border-gray-700'
+                )}
+              >
+                <div className="flex items-center gap-2.5">
+                  <span className={classNames('flex h-5 w-5 items-center justify-center rounded-full', on ? 'bg-primary-500 text-white' : 'border border-gray-300 dark:border-gray-600')}>
+                    {on && <Check size={12} />}
+                  </span>
+                  {cat && <CategoryIcon icon={cat.icon} color={cat.color} size={16} className="!p-1.5" />}
+                  <div>
+                    <p className="text-sm font-medium text-gray-800 dark:text-gray-200">{cat?.name || 'Category'}</p>
+                    <p className="text-xs text-gray-400 dark:text-gray-500">
+                      avg {formatCurrency(Math.round(s.basis), settings)}/mo · {s.monthsWithData}mo data
+                    </p>
+                  </div>
+                </div>
+                <span className="text-sm font-bold text-gray-900 dark:text-gray-100">{formatCurrency(s.suggested, settings)}</span>
+              </button>
+            );
+          })}
+        </div>
+        <div className="mt-4 flex justify-end gap-3">
+          <Button variant="secondary" onClick={() => setShowSuggest(false)}>Cancel</Button>
+          <Button disabled={pickedSuggestions.size === 0 || applyingSuggestions} onClick={applySuggestions}>
+            {applyingSuggestions ? 'Applying…' : `Apply ${pickedSuggestions.size} budget${pickedSuggestions.size === 1 ? '' : 's'}`}
+          </Button>
+        </div>
+      </Modal>
     </div>
   );
 }

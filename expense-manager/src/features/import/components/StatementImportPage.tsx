@@ -1,9 +1,9 @@
-import { useState, useCallback, useMemo, useRef } from 'react';
+import { useState, useCallback, useMemo, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { v4 as uuidv4 } from 'uuid';
 import {
   FileUp, Upload, CheckCircle2, AlertTriangle, ChevronRight,
-  ChevronLeft, Check, Info, FileSpreadsheet, Loader2, Lightbulb,
+  ChevronLeft, Check, Info, FileSpreadsheet, Loader2, Lightbulb, Landmark,
 } from 'lucide-react';
 import { Button } from '../../../shared/components/ui/Button';
 import { Select } from '../../../shared/components/ui/Input';
@@ -17,7 +17,8 @@ import {
   type BankFormat,
 } from '../../../shared/services/statementParser';
 import { parsePdfStatement } from '../../../shared/services/pdfStatementParser';
-import type { Transaction, Settings } from '../../../shared/types';
+import type { Transaction, Settings, Account } from '../../../shared/types';
+import { ACCOUNT_COLORS } from '../../../shared/constants/accounts';
 import { suggestCategoryForImport, type CategorySuggestion } from '../../../shared/services/autoCategorize';
 
 // ─── Wizard Steps ───────────────────────────────────────
@@ -58,6 +59,45 @@ export function StatementImportPage() {
   const [isImporting, setIsImporting] = useState<boolean>(false);
   const [parsing, setParsing] = useState<boolean>(false);
   const [dragOver, setDragOver] = useState<boolean>(false);
+
+  // E.2: auto-match the parsed statement to an existing account (by last-4 or bank).
+  useEffect(() => {
+    if (!parseResult || selectedAccountId) return;
+    const last4 = parseResult.accountNumber;
+    const bank = parseResult.bankName?.toLowerCase();
+    const match = state.accounts.find(
+      (a) =>
+        a.kind === 'asset' &&
+        ((last4 && a.name.includes(last4)) ||
+          (bank && (a.institution?.toLowerCase() === bank || a.name.toLowerCase().includes(bank))))
+    );
+    if (match) setSelectedAccountId(match.id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [parseResult]);
+
+  // E.2: create a new account from the detected bank/last-4 and assign the import to it.
+  const createAccountFromStatement = useCallback(async () => {
+    if (!parseResult) return;
+    const bank = parseResult.bankName || 'Bank';
+    const last4 = parseResult.accountNumber;
+    const now = new Date().toISOString();
+    const account: Account = {
+      id: uuidv4(),
+      name: last4 ? `${bank} ••${last4}` : bank,
+      type: 'bank',
+      kind: 'asset',
+      subtype: 'savings',
+      institution: parseResult.bankName,
+      openingBalance: 0,
+      color: ACCOUNT_COLORS[0],
+      icon: 'Landmark',
+      isActive: true,
+      createdAt: now,
+      updatedAt: now,
+    };
+    await actions.addAccount(account);
+    setSelectedAccountId(account.id);
+  }, [parseResult, actions]);
   const [pdfPassword, setPdfPassword] = useState<string>('');
   const [showPasswordPrompt, setShowPasswordPrompt] = useState<boolean>(false);
   const [pendingPdfFile, setPendingPdfFile] = useState<File | null>(null);
@@ -478,6 +518,7 @@ export function StatementImportPage() {
             handleDrop={handleDrop}
             handleFileInput={handleFileInput}
             fileInputRef={fileInputRef}
+            onCreateAccount={createAccountFromStatement}
           />
         )}
 
@@ -541,6 +582,7 @@ interface UploadStepProps {
   handleDrop: (e: React.DragEvent<HTMLDivElement>) => void;
   handleFileInput: (e: React.ChangeEvent<HTMLInputElement>) => void;
   fileInputRef: React.RefObject<HTMLInputElement>;
+  onCreateAccount?: () => void;
 }
 
 function UploadStep({
@@ -548,7 +590,7 @@ function UploadStep({
   selectedAccountId, setSelectedAccountId,
   accountOptions, fileName, parseResult, parsing,
   dragOver, setDragOver,
-  handleDrop, handleFileInput, fileInputRef,
+  handleDrop, handleFileInput, fileInputRef, onCreateAccount,
 }: UploadStepProps) {
   return (
     <div className="p-6 space-y-6">
@@ -625,6 +667,30 @@ function UploadStep({
               </ul>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* E.2: detected account → create/link */}
+      {parseResult && (parseResult.bankName || parseResult.accountNumber) && (
+        <div className="flex flex-wrap items-center gap-3 rounded-lg bg-primary-50 dark:bg-primary-900/20 border border-primary-200 dark:border-primary-800 p-3 text-xs">
+          <Landmark className="h-4 w-4 shrink-0 text-primary-600" />
+          <span className="text-gray-700 dark:text-gray-300">
+            Detected {parseResult.bankName || 'account'}
+            {parseResult.accountNumber ? ` ••${parseResult.accountNumber}` : ''}
+          </span>
+          {selectedAccountId ? (
+            <span className="ml-auto font-medium text-success-600">Assigned to selected account</span>
+          ) : (
+            onCreateAccount && (
+              <button
+                type="button"
+                onClick={onCreateAccount}
+                className="ml-auto rounded-md bg-primary-600 px-2.5 py-1 font-medium text-white hover:bg-primary-700"
+              >
+                Create this account
+              </button>
+            )
+          )}
         </div>
       )}
 

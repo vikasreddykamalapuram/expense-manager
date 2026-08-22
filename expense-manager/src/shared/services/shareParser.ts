@@ -11,6 +11,7 @@ export interface ParsedShare {
   type?: 'income' | 'expense';
   date?: string;    // ISO YYYY-MM-DD when a date is detected
   account?: string; // last 4 digits of the account/card, when detected
+  balance?: number; // available/closing balance, when the message reports one
 }
 
 /** Bank SMS patterns — Indian banks use "debited/credited by INR 500.00" style. */
@@ -26,6 +27,11 @@ const AMOUNT_PATTERNS: RegExp[] = [
 
 const DEBIT_KEYWORDS = /(debited|spent|paid|purchase|withdrawn|charged|txn|transaction|deducted)/i;
 const CREDIT_KEYWORDS = /(credited|received|refund|deposited|salary|cashback)/i;
+
+// "Avl Bal: INR 12,345.67" / "available balance is Rs 5000" / "closing balance 1,00,000"
+const BALANCE_PATTERNS: RegExp[] = [
+  /(?:avl\.?\s*bal|available\s*balance|a\/c\s*bal(?:ance)?|closing\s*balance|bal(?:ance)?)\s*[:\-is]*\s*(?:INR|Rs\.?|₹)?\s*([0-9][0-9,]*(?:\.[0-9]{1,2})?)/i,
+];
 
 // "at MERCHANT" / "to MERCHANT" / "@ MERCHANT"
 const MERCHANT_PATTERNS: RegExp[] = [
@@ -126,6 +132,17 @@ export function parseSharedText(raw: string | undefined | null): ParsedShare {
 
   const date = extractDate(text);
   if (date) result.date = date;
+
+  for (const rx of BALANCE_PATTERNS) {
+    const m = text.match(rx);
+    if (m) {
+      const n = normalize(m[1]);
+      if (!isNaN(n) && n >= 0) {
+        result.balance = n;
+        break;
+      }
+    }
+  }
 
   // If merchant found, use it as the primary note (user can edit).
   if (result.merchant) result.note = result.merchant;
