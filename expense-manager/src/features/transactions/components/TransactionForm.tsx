@@ -31,10 +31,23 @@ interface TransactionFormProps {
   initialType?: 'income' | 'expense' | 'transfer';
   prefillAmount?: string;
   prefillNote?: string;
+  prefillDate?: string;
+  prefillPaymentMethod?: PaymentMethod;
+  /** Receipt image to attach once the transaction has an id (e.g. from a scan). */
+  prefillReceiptFile?: File | null;
   onClose?: () => void;
 }
 
-export function TransactionForm({ editTransaction, initialType, prefillAmount, prefillNote, onClose }: TransactionFormProps) {
+export function TransactionForm({
+  editTransaction,
+  initialType,
+  prefillAmount,
+  prefillNote,
+  prefillDate,
+  prefillPaymentMethod,
+  prefillReceiptFile,
+  onClose,
+}: TransactionFormProps) {
   const { state, actions } = useAppContext();
   const navigate = useNavigate();
   const isEditing = !!editTransaction;
@@ -43,11 +56,13 @@ export function TransactionForm({ editTransaction, initialType, prefillAmount, p
   const [type, setType] = useState<'income' | 'expense' | 'transfer'>(editTransaction?.type || initialType || 'expense');
   const [amount, setAmount] = useState(editTransaction?.amount.toString() || prefillAmount || '');
   const [categoryId, setCategoryId] = useState(editTransaction?.categoryId || '');
-  const [date, setDate] = useState(editTransaction?.date || getToday());
+  const [date, setDate] = useState(editTransaction?.date || prefillDate || getToday());
   const [notes, setNotes] = useState(editTransaction?.notes || prefillNote || '');
   const [accountId, setAccountId] = useState(editTransaction?.accountId || '');
   const [toAccountId, setToAccountId] = useState(editTransaction?.toAccountId || '');
-  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod | ''>(editTransaction?.paymentMethod || '');
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod | ''>(
+    editTransaction?.paymentMethod || prefillPaymentMethod || ''
+  );
   const [isRecurring, setIsRecurring] = useState(editTransaction?.isRecurring || false);
   const [recurringFrequency, setRecurringFrequency] = useState(
     editTransaction?.recurringFrequency || 'monthly'
@@ -59,9 +74,9 @@ export function TransactionForm({ editTransaction, initialType, prefillAmount, p
   const [newCategoryParentId, setNewCategoryParentId] = useState<string | undefined>();
   const [showAccountForm, setShowAccountForm] = useState(false);
   const [accountFormTarget, setAccountFormTarget] = useState<'source' | 'destination'>('source');
-  const [pendingReceiptFile, setPendingReceiptFile] = useState<File | null>(null);
+  const [pendingReceiptFile, setPendingReceiptFile] = useState<File | null>(prefillReceiptFile ?? null);
   const [receiptId, setReceiptId] = useState<string | undefined>(editTransaction?.receiptId);
-  const pendingReceiptRef = useRef<File | null>(null);
+  const pendingReceiptRef = useRef<File | null>(prefillReceiptFile ?? null);
 
   // Auto-categorization state
   const [suggestions, setSuggestions] = useState<CategorySuggestion[]>([]);

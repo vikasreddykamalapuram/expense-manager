@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { X } from 'lucide-react';
+import type { PaymentMethod } from '../../../shared/types';
+import { takeScannedReceipt } from '../../import/receiptHandoff';
 import { TransactionForm } from './TransactionForm';
 import { QuickAddTransaction } from './QuickAddTransaction';
 
@@ -19,8 +21,17 @@ export function AddTransactionPage() {
 
   const prefillAmount = searchParams.get('amount') || undefined;
   const prefillNote = searchParams.get('note') || undefined;
+  const prefillDate = searchParams.get('date') || undefined;
+  const prefillPaymentMethod = (searchParams.get('method') as PaymentMethod | null) || undefined;
+
+  // A receipt scan hands its image over out-of-band (a File can't ride in a
+  // URL). Claim it once on mount so a later visit to /add can't reuse it.
+  const [scannedReceipt] = useState<File | null>(() => takeScannedReceipt());
 
   const [mode, setMode] = useState<'quick' | 'classic'>(() => {
+    // The quick keypad has no date or payment-method field, so a scan would
+    // silently drop what it just read. Force the full form in that case.
+    if (scannedReceipt || prefillDate || prefillPaymentMethod) return 'classic';
     try { return localStorage.getItem(ADD_MODE_KEY) === 'classic' ? 'classic' : 'quick'; } catch { return 'quick'; }
   });
   const chooseMode = (m: 'quick' | 'classic') => {
@@ -83,6 +94,9 @@ export function AddTransactionPage() {
             initialType={initialType}
             prefillAmount={prefillAmount}
             prefillNote={prefillNote}
+            prefillDate={prefillDate}
+            prefillPaymentMethod={prefillPaymentMethod}
+            prefillReceiptFile={scannedReceipt}
             onClose={handleClose}
           />
         )}

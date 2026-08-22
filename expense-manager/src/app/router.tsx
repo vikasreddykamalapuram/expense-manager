@@ -21,6 +21,7 @@ const SettingsPage = lazyWithRetry(() => import('../features/settings/components
 const BudgetsPage = lazyWithRetry(() => import('../features/budgets/components/BudgetsPage').then(m => ({ default: m.BudgetsPage })));
 const ReportsPage = lazyWithRetry(() => import('../features/reports/components/ReportsPage').then(m => ({ default: m.ReportsPage })));
 const StatementImportPage = lazyWithRetry(() => import('../features/import/components/StatementImportPage').then(m => ({ default: m.StatementImportPage })));
+const ScanReceiptPage = lazyWithRetry(() => import('../features/import/components/ScanReceiptPage').then(m => ({ default: m.ScanReceiptPage })));
 const RecurringPage = lazyWithRetry(() => import('../features/recurring/components/RecurringPage').then(m => ({ default: m.RecurringPage })));
 const BillRemindersPage = lazyWithRetry(() => import('../features/reminders/components/BillRemindersPage').then(m => ({ default: m.BillRemindersPage })));
 const PortfolioPage = lazyWithRetry(() => import('../features/stocks/components/PortfolioPage').then(m => ({ default: m.PortfolioPage })));
@@ -125,6 +126,7 @@ export const router = createBrowserRouter([
       lazyRoute('accounts', AccountsPage),
       lazyRoute('categories', CategoriesPage),
       lazyRoute('import', StatementImportPage),
+      lazyRoute('scan-receipt', ScanReceiptPage),
       lazyRoute('splitwise', SplitwisePage),
       lazyRoute('insights', InsightsHub),
       lazyRoute('insights/health', InsightsHub),
