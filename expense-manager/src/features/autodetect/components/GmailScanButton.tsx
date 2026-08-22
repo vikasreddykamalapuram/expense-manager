@@ -2,7 +2,28 @@ import { useState } from 'react';
 import { useGoogleLogin } from '@react-oauth/google';
 import { Mail, Loader2 } from 'lucide-react';
 import { isGoogleConfigured } from '../../../shared/config/auth';
-import { scanGmail, GMAIL_READONLY_SCOPE } from '../gmailScan';
+import { scanGmail, GMAIL_READONLY_SCOPE, type GmailScanResult } from '../gmailScan';
+
+/**
+ * Say precisely what happened. "Nothing found" is useless feedback when the
+ * real reason could be no matching mail, all mail already scanned, or mail that
+ * matched but had no readable amount.
+ */
+function describeScan(res: GmailScanResult): string {
+  if (res.added > 0) {
+    return `Added ${res.added} transaction${res.added === 1 ? '' : 's'} to review.`;
+  }
+  if (res.scanned === 0) {
+    return 'No transaction emails found in the last 30 days.';
+  }
+  if (res.alreadySeen === res.scanned) {
+    return `All ${res.scanned} matching emails were scanned already — nothing new.`;
+  }
+  if (res.withAmount === 0) {
+    return `Checked ${res.scanned - res.alreadySeen} email${res.scanned - res.alreadySeen === 1 ? '' : 's'}, but none had a readable amount.`;
+  }
+  return `Found ${res.withAmount} amount${res.withAmount === 1 ? '' : 's'}, all already in your review queue.`;
+}
 
 interface GmailScanButtonProps {
   className?: string;
@@ -23,14 +44,21 @@ export function GmailScanButton({ className, onScanned }: GmailScanButtonProps) 
     onSuccess: async (token) => {
       try {
         const res = await scanGmail(token.access_token);
-        setStatus(
-          res.added > 0
-            ? `Added ${res.added} transaction${res.added === 1 ? '' : 's'} to review.`
-            : `Scanned ${res.scanned} email${res.scanned === 1 ? '' : 's'} — nothing new found.`
-        );
+        setStatus(describeScan(res));
         onScanned?.(res.added);
-      } catch {
-        setStatus('Could not scan Gmail. Please try again.');
+      } catch (err) {
+        // Distinguish "Google said no" from "the request never left the app",
+        // because the fixes are completely different.
+        const msg = err instanceof Error ? err.message : '';
+        if (msg.includes('403')) {
+          setStatus('Gmail access was refused. Re-grant permission and try again.');
+        } else if (msg.includes('401')) {
+          setStatus('Gmail sign-in expired. Tap to scan again.');
+        } else if (msg.startsWith('Gmail API')) {
+          setStatus(`Gmail returned an error (${msg.replace('Gmail API ', '')}). Try again shortly.`);
+        } else {
+          setStatus('Could not reach Gmail. Check your connection and try again.');
+        }
       } finally {
         setBusy(false);
       }

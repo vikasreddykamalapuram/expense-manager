@@ -93,8 +93,18 @@ export function ScanReceiptPage() {
       const result = await scanReceiptImage(picked, setProgress);
       setRawText(result.text);
       setParsed(result.parsed);
-    } catch {
-      setError('Could not read this image. Check your connection — the text recogniser downloads once on first use.');
+      if (!result.text.trim()) {
+        setError('No text could be read from this image. Try a sharper, well-lit photo with the whole bill in frame.');
+      }
+    } catch (err) {
+      // Surface the real reason. A silent or generic failure here is what makes
+      // this feature feel broken rather than merely unlucky.
+      const detail = err instanceof Error ? err.message : String(err);
+      setError(
+        /wasm|csp|content security/i.test(detail)
+          ? `The text recogniser could not start on this device. (${detail.slice(0, 120)})`
+          : `Could not read this image. The recogniser downloads once on first use, so check your connection. (${detail.slice(0, 120)})`,
+      );
     } finally {
       setProgress(null);
     }
