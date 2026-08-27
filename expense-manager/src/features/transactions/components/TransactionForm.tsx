@@ -493,34 +493,17 @@ export function TransactionForm({
             }}
           />
         ) : (
+          // No transaction id yet, so the file is held here and saved after the
+          // insert. Defer mode keeps the same camera/gallery UI without writing
+          // a blob that nothing could ever reference.
           <ReceiptCapture
-            transactionId="pending"
-            receiptId={undefined}
-            onReceiptSaved={() => {
-              // For new transactions, we capture the file via the hidden input approach
+            deferSave
+            pendingFile={pendingReceiptFile}
+            onFileSelected={(file) => {
+              setPendingReceiptFile(file);
+              pendingReceiptRef.current = file;
             }}
-            onReceiptDeleted={() => setReceiptId(undefined)}
           />
-        )}
-        {/* For new transactions, use a simpler file input that stores file for post-save */}
-        {!isEditing && (
-          <div className="mt-2">
-            <input
-              type="file"
-              accept="image/jpeg,image/png,image/webp,image/heic,image/heif"
-              className="block w-full text-sm text-gray-500 dark:text-gray-400 file:mr-3 file:rounded-lg file:border-0 file:bg-primary-50 file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-primary-700 dark:file:bg-primary-900/30 dark:file:text-primary-400 hover:file:bg-primary-100"
-              onChange={(e) => {
-                const file = e.target.files?.[0] || null;
-                setPendingReceiptFile(file);
-                pendingReceiptRef.current = file;
-              }}
-            />
-            {pendingReceiptFile && (
-              <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                📎 {pendingReceiptFile.name} ({(pendingReceiptFile.size / 1024).toFixed(0)} KB)
-              </p>
-            )}
-          </div>
         )}
       </div>
 
