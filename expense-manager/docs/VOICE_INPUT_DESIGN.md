@@ -310,8 +310,12 @@ plus the native guard on any Android change.
    restricting the UI would have thrown away working behaviour for no safety gain.
 
 ### Still open (for V.2)
-- Does Web Speech work inside our Capacitor WebView? MDN reports `webview_android: "mirror"`, which
-  means *inferred, not tested* — hence the V.2.0 spike.
+- ~~Does Web Speech work inside our Capacitor WebView?~~ **Answered (V.2.0): no.** The on-device
+  `available()`/`install()` API is bound only by `ChromeContentBrowserClient` and backed by SODA,
+  neither of which is compiled into Android WebView. WebView *does* ship the legacy cloud path
+  (`AwSpeechRecognitionManagerDelegate`, which returns `allowed = true`) — which is exactly what our
+  probe refuses. Android voice therefore needs `SpeechRecognizer.createOnDeviceSpeechRecognizer()`
+  behind a native plugin.
 - Whether iOS `hi-IN` supports `requiresOnDeviceRecognition`; must be read from
   `supportsOnDeviceRecognition` at runtime.
 
