@@ -5,11 +5,24 @@ import { receiptService } from '../services/receiptService';
 import { ReceiptViewer } from './ReceiptViewer';
 
 interface ReceiptCaptureProps {
-  transactionId: string;
+  /** Transaction to attach to. Omit in defer mode — there is no id yet. */
+  transactionId?: string;
   receiptId?: string;
   onReceiptSaved?: (receiptId: string) => void;
   onReceiptDeleted?: () => void;
   compact?: boolean;
+  /**
+   * Hand the chosen file to the parent instead of persisting it here.
+   *
+   * A transaction being created has no id yet, so saving at pick time would
+   * write the blob under a placeholder and orphan it: the row is unreachable
+   * from any transaction and nothing ever collects it. The parent holds the
+   * File and saves it once the transaction has a real id.
+   */
+  deferSave?: boolean;
+  /** The file the parent is holding, so we can preview it. */
+  pendingFile?: File | null;
+  onFileSelected?: (file: File | null) => void;
 }
 
 export function ReceiptCapture({
@@ -18,9 +31,13 @@ export function ReceiptCapture({
   onReceiptSaved,
   onReceiptDeleted,
   compact = false,
+  deferSave = false,
+  pendingFile = null,
+  onFileSelected,
 }: ReceiptCaptureProps) {
   const { state } = useAppContext();
   const [thumbnailUrl, setThumbnailUrl] = useState<string | null>(null);
+  const [pendingUrl, setPendingUrl] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showOptions, setShowOptions] = useState(false);
@@ -44,11 +61,33 @@ export function ReceiptCapture({
     };
   }, [receiptId]);
 
+  // Preview the not-yet-saved file straight from memory.
+  useEffect(() => {
+    if (!pendingFile) {
+      setPendingUrl(null);
+      return;
+    }
+    const url = URL.createObjectURL(pendingFile);
+    setPendingUrl(url);
+    return () => URL.revokeObjectURL(url);
+  }, [pendingFile]);
+
   const handleFileSelected = async (file: File) => {
     setError(null);
     const validationError = receiptService.validateFile(file);
     if (validationError) {
       setError(validationError);
+      return;
+    }
+
+    if (deferSave) {
+      onFileSelected?.(file);
+      setShowOptions(false);
+      return;
+    }
+
+    if (!transactionId) {
+      setError('Cannot attach a receipt yet.');
       return;
     }
 
@@ -125,6 +164,37 @@ export function ReceiptCapture({
           }}
         />
       </>
+    );
+  }
+
+  // Chosen but not yet saved — preview it so the user gets confirmation that
+  // the photo was accepted, even though it lands in the database later.
+  if (deferSave && pendingFile && pendingUrl) {
+    return (
+      <div className="flex items-center gap-3">
+        <img
+          src={pendingUrl}
+          alt="Receipt"
+          className={`shrink-0 rounded-lg border border-gray-200 object-cover dark:border-gray-600 ${
+            compact ? 'h-10 w-10' : 'h-16 w-16'
+          }`}
+        />
+        {!compact && (
+          <div className="flex flex-col gap-1">
+            <span className="text-xs text-gray-500 dark:text-gray-400">
+              Attaches when you save ({(pendingFile.size / 1024).toFixed(0)} KB)
+            </span>
+            <button
+              type="button"
+              onClick={() => onFileSelected?.(null)}
+              className="flex items-center gap-1 text-xs text-danger-600 transition-colors hover:text-danger-700"
+            >
+              <Trash2 size={12} />
+              Remove
+            </button>
+          </div>
+        )}
+      </div>
     );
   }
 
