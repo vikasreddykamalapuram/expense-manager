@@ -332,14 +332,15 @@ describe('parseVoiceTransaction — Hindi / Hinglish', () => {
     const r = parse('paanch sau rupaye sabzi pe cash se kharch kiye');
     expect(r.type).toBe('expense');
     expect(r.amount).toBe(500);
-    expect(r.categoryId).toBe('groceries');
+    // "sabzi" is vegetables specifically, not groceries in general.
+    expect(r.categoryId).toBe('groceries-fruits-veg');
     expect(r.paymentMethod).toBe('cash');
   });
 
   it('parses a Devanagari expense', () => {
     const r = parse('कल पेट्रोल पर 2000 रुपये कार्ड से');
     expect(r.amount).toBe(2000);
-    expect(r.categoryId).toBe('transportation');
+    expect(r.categoryId).toBe('transport-fuel');
     expect(r.paymentMethod).toBe('card');
     expect(r.date).toBe('2026-08-25');
   });
@@ -351,10 +352,57 @@ describe('parseVoiceTransaction — Hindi / Hinglish', () => {
   });
 
   it('maps Hindi category words', () => {
-    expect(parse('300 dawai ke liye kharch').categoryId).toBe('health');
-    expect(parse('kiraya 15000 diya').categoryId).toBe('household');
-    expect(parse('bijli ka bill 1200').categoryId).toBe('bills-utilities');
+    expect(parse('300 dawai ke liye kharch').categoryId).toBe('health-medicine');
+    expect(parse('kiraya 15000 diya').categoryId).toBe('household-rent');
+    expect(parse('bijli ka bill 1200').categoryId).toBe('bills-electricity');
     expect(parse('500 khana kharch').categoryId).toBe('food-dining');
+  });
+
+  /**
+   * The point of the hint table: the same spend should land in the same place
+   * whichever language it was spoken in. English gets there by matching the
+   * category *name* ("medicine" → Medicine / Pharmacy); Hindi has no name to
+   * match, so without a subcategory hint it used to stop one level up.
+   */
+  it('reaches the same subcategory in Hindi as in English', () => {
+    const pairs: [string, string][] = [
+      ['paid 300 for medicine', '300 dawai ke liye'],
+      ['spent 2000 on petrol', '2000 का पेट्रोल'],
+      ['paid 15000 rent', 'kiraya 15000 diya'],
+      ['paid 1200 electricity bill', 'bijli ka bill 1200'],
+      ['spent 700 on movies', '700 ki movie dekhi'],
+      ['spent 500 on salon', '500 salon mein'],
+    ];
+    for (const [english, hindi] of pairs) {
+      expect(parse(hindi).categoryId).toBe(parse(english).categoryId);
+    }
+  });
+
+  it('falls back to the parent when the subcategory was deleted', () => {
+    const withoutFuel = categories.filter((c) => c.id !== 'transport-fuel');
+    const r = parseVoiceTransaction('कल पेट्रोल पर 2000 रुपये', {
+      categories: withoutFuel,
+      accounts,
+      today: TODAY,
+    });
+    expect(r.categoryId).toBe('transportation');
+  });
+
+  it('never returns an id the user does not have', () => {
+    const sparse: Category[] = [
+      { id: 'only', name: 'Only', type: 'expense', icon: 'X', color: '#000', isCustom: false },
+    ];
+    const r = parseVoiceTransaction('300 dawai ke liye', {
+      categories: sparse,
+      accounts,
+      today: TODAY,
+    });
+    expect(r.categoryId).toBeUndefined();
+  });
+
+  it('lets a specific word beat the bare word "bill"', () => {
+    expect(parse('hospital ka bill 5000').categoryId).toBe('health-hospital');
+    expect(parse('bill 500 pay kiya').categoryId).toBe('bills-utilities');
   });
 
   it('handles Devanagari digits inside an utterance', () => {

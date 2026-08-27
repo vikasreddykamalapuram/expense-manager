@@ -341,25 +341,95 @@ function detectAmount(text: string): { amount?: number; span?: Span } {
  * keywords are intentionally absent — `autoCategorize` already covers those and
  * learns from the user's own history.
  *
- * A mapping only takes effect when the target category actually exists in the
- * user's list, so a customised category set can never produce a dangling id.
+ * These target *subcategories* wherever one exists, because English already
+ * reaches that depth through partial word matching above: "medicine" resolves
+ * to Medicine / Pharmacy via the category name, while "दवाई" has no name to
+ * match and previously stopped at Health & Medical. Same sentence, coarser
+ * result, purely because of the language it was spoken in.
+ *
+ * `fallback` is the parent to use when the subcategory is absent from the
+ * user's list — a mapping only ever takes effect when its target actually
+ * exists, so a customised category set can never produce a dangling id.
+ *
+ * Order matters: the first hint that matches wins, so specific words come
+ * before the generic ones they contain.
  */
-const LANGUAGE_CATEGORY_HINTS: { source: string; categoryId: string }[] = [
-  { source: 'sabzi|सब्ज़ी|सब्जी|kirana|किराना|ration|राशन|grocery|groceries|dukaan|सामान', categoryId: 'groceries' },
-  { source: 'khana|khaana|खाना|nashta|नाश्ता|chai|चाय|coffee|restaurant|hotel|होटल|dhaba|ढाबा|swiggy|zomato|lunch|dinner|breakfast', categoryId: 'food-dining' },
-  { source: 'petrol|पेट्रोल|diesel|डीज़ल|fuel|auto|ऑटो|rickshaw|रिक्शा|ola|uber|cab|taxi|metro|मेट्रो|bus|बस|train|ट्रेन|parking|पार्किंग|toll', categoryId: 'transportation' },
-  { source: 'bijli|बिजली|electricity|paani|पानी|water\\s+bill|gas|गैस|recharge|रिचार्ज|internet|इंटरनेट|wifi|broadband|mobile\\s+bill|bill', categoryId: 'bills-utilities' },
-  { source: 'dawai|दवाई|davai|medicine|दवा|doctor|डॉक्टर|hospital|अस्पताल|clinic|chemist|pharmacy|ilaj|इलाज', categoryId: 'health' },
-  { source: 'kiraya|किराया|rent|makan\\s*malik|maid|मेड|bai|बाई', categoryId: 'household' },
-  { source: 'kapde|कपड़े|kapda|clothes|clothing|shopping|शॉपिंग|amazon|flipkart|myntra|joote|जूते', categoryId: 'shopping' },
-  { source: 'movie|मूवी|cinema|सिनेमा|film|फिल्म|netflix|prime\\s+video|hotstar|concert|game', categoryId: 'entertainment' },
-  { source: 'school|स्कूल|fees|फीस|tuition|ट्यूशन|college|कॉलेज|padhai|पढ़ाई|course|book|किताब', categoryId: 'education' },
-  { source: 'salon|सैलून|haircut|gym|जिम|parlour|parlor', categoryId: 'personal-care' },
+const LANGUAGE_CATEGORY_HINTS: { source: string; categoryId: string; fallback?: string }[] = [
+  // Food
+  { source: 'swiggy|zomato|takeaway|parcel|home\\s*delivery', categoryId: 'food-takeaway', fallback: 'food-dining' },
+  { source: 'restaurant|रेस्टोरेंट|hotel|होटल|dhaba|ढाबा', categoryId: 'food-restaurants', fallback: 'food-dining' },
+  { source: 'chai|चाय|coffee|कॉफ़ी|कॉफी|nashta|नाश्ता|samosa|समोसा|snacks', categoryId: 'food-coffee-snacks', fallback: 'food-dining' },
+  { source: 'khana|khaana|खाना|lunch|dinner|breakfast|bhojan|भोजन', categoryId: 'food-dining' },
+
+  // Groceries
+  { source: 'sabzi|सब्ज़ी|सब्जी|sabji|vegetables?|fruits?|फल', categoryId: 'groceries-fruits-veg', fallback: 'groceries' },
+  { source: 'doodh|दूध|milk|dairy|bread|ब्रेड|bakery', categoryId: 'groceries-dairy', fallback: 'groceries' },
+  { source: 'kirana|किराना|ration|राशन|grocery|groceries|dukaan|सामान', categoryId: 'groceries-general', fallback: 'groceries' },
+
+  // Transport — a specific mode before the catch-all.
+  { source: 'petrol|पेट्रोल|diesel|डीज़ल|डीजल|fuel|ईंधन', categoryId: 'transport-fuel', fallback: 'transportation' },
+  { source: 'auto|ऑटो|rickshaw|रिक्शा|ola|uber|cab|taxi|टैक्सी', categoryId: 'transport-taxi', fallback: 'transportation' },
+  { source: 'metro|मेट्रो', categoryId: 'transport-public', fallback: 'transportation' },
+  { source: 'bus|बस', categoryId: 'transport-bus', fallback: 'transportation' },
+  { source: 'train|ट्रेन|rail|रेल', categoryId: 'transport-train', fallback: 'transportation' },
+  { source: 'flight|फ़्लाइट|फ्लाइट|airfare|hawai\\s*jahaz', categoryId: 'transport-flight', fallback: 'transportation' },
+  { source: 'parking|पार्किंग|toll|टोल', categoryId: 'transport-parking', fallback: 'transportation' },
+
+  // Bills — note the bare word "bill" is deliberately last in the whole table,
+  // so "hospital bill" reaches Hospital rather than stopping at Utilities.
+  { source: 'bijli|बिजली|electricity', categoryId: 'bills-electricity', fallback: 'bills-utilities' },
+  { source: 'paani|पानी|water\\s+bill', categoryId: 'bills-water', fallback: 'bills-utilities' },
+  { source: 'gas|गैस|cylinder|सिलेंडर|lpg', categoryId: 'bills-gas', fallback: 'bills-utilities' },
+  { source: 'internet|इंटरनेट|wifi|broadband|ब्रॉडबैंड', categoryId: 'bills-internet', fallback: 'bills-utilities' },
+  { source: 'recharge|रिचार्ज|mobile\\s+bill|phone\\s+bill|postpaid|prepaid', categoryId: 'bills-phone', fallback: 'bills-utilities' },
+
+  // Health
+  { source: 'dawai|दवाई|davai|medicine|दवा|chemist|pharmacy|मेडिकल', categoryId: 'health-medicine', fallback: 'health' },
+  { source: 'doctor|डॉक्टर|clinic|क्लिनिक|consultation', categoryId: 'health-doctor', fallback: 'health' },
+  { source: 'lab\\s*test|blood\\s*test|jaanch|जांच|जाँच|diagnostic|x-?ray', categoryId: 'health-lab-tests', fallback: 'health' },
+  { source: 'hospital|अस्पताल', categoryId: 'health-hospital', fallback: 'health' },
+  { source: 'ilaj|इलाज', categoryId: 'health' },
+
+  // Household
+  { source: 'kiraya|किराया|rent|makan\\s*malik|मकान\\s*मालिक', categoryId: 'household-rent', fallback: 'household' },
+  { source: 'maid|मेड|bai|बाई|kaamwali|कामवाली', categoryId: 'household-maid', fallback: 'household' },
+  { source: 'marammat|मरम्मत|plumber|electrician|maintenance', categoryId: 'household-maintenance', fallback: 'household' },
+  { source: 'furniture|फर्नीचर', categoryId: 'household-furniture', fallback: 'household' },
+
+  // Shopping
+  { source: 'kapde|कपड़े|kapda|कपड़ा|clothes|clothing|joote|जूते', categoryId: 'shopping-clothing', fallback: 'shopping' },
+  { source: 'amazon|flipkart|myntra|ajio|meesho', categoryId: 'shopping-online', fallback: 'shopping' },
+  { source: 'laptop|लैपटॉप|headphone|charger|चार्जर', categoryId: 'shopping-electronics', fallback: 'shopping' },
+  { source: 'shopping|शॉपिंग', categoryId: 'shopping' },
+
+  // Entertainment
+  { source: 'movie|मूवी|cinema|सिनेमा|film|फिल्म|multiplex', categoryId: 'entertainment-movies', fallback: 'entertainment' },
+  { source: 'netflix|prime\\s+video|hotstar|spotify', categoryId: 'entertainment-streaming', fallback: 'entertainment' },
+  { source: 'concert|कॉन्सर्ट', categoryId: 'entertainment-events', fallback: 'entertainment' },
+  { source: 'game|गेम', categoryId: 'entertainment' },
+
+  // Education
+  { source: 'kitab|किताब|book|stationery', categoryId: 'education-books', fallback: 'education' },
+  { source: 'course|कोर्स|udemy|coursera', categoryId: 'education-courses', fallback: 'education' },
+  { source: 'school|स्कूल|fees|फीस|tuition|ट्यूशन|college|कॉलेज|padhai|पढ़ाई', categoryId: 'education-tuition', fallback: 'education' },
+
+  // Personal care
+  { source: 'salon|सैलून|haircut|parlour|parlor|पार्लर', categoryId: 'personal-salon', fallback: 'personal-care' },
+  { source: 'gym|जिम|fitness', categoryId: 'personal-gym', fallback: 'personal-care' },
+
   { source: 'insurance|बीमा|bima|premium|policy', categoryId: 'insurance' },
   { source: 'gift|गिफ्ट|donation|दान|daan|chanda|चंदा', categoryId: 'gifts-donations' },
+
+  // Income. "salary" itself stays on the parent so the Hindi and English paths
+  // agree — the English word matches the category *name* before hints run.
+  { source: 'bonus|बोनस|incentive', categoryId: 'salary-bonus', fallback: 'salary' },
+  { source: 'reimburse\\w*|रीइम्बर्स\\w*', categoryId: 'salary-reimbursement', fallback: 'salary' },
   { source: 'salary|सैलरी|tankhwah|तनख्वाह|tankhah|payroll', categoryId: 'salary' },
   { source: 'interest|ब्याज|byaj', categoryId: 'interest' },
   { source: 'refund|रिफंड|wapas\\s+mile', categoryId: 'refunds' },
+
+  // Generic, therefore last.
+  { source: 'bill', categoryId: 'bills-utilities' },
 ];
 
 function detectCategory(
@@ -391,11 +461,13 @@ function detectCategory(
   }
   if (best) return best.id;
 
-  // Language hints, only when the target category is present.
+  // Language hints, only when the target category is present. A hint aimed at a
+  // subcategory degrades to its parent rather than being dropped, so deleting
+  // "Fuel / Petrol" costs precision but never the match.
   for (const hint of LANGUAGE_CATEGORY_HINTS) {
-    if (testWordish(text, hint.source) && pool.some((c) => c.id === hint.categoryId)) {
-      return hint.categoryId;
-    }
+    if (!testWordish(text, hint.source)) continue;
+    if (pool.some((c) => c.id === hint.categoryId)) return hint.categoryId;
+    if (hint.fallback && pool.some((c) => c.id === hint.fallback)) return hint.fallback;
   }
 
   return undefined;
