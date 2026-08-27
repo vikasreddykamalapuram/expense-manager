@@ -60,6 +60,7 @@ artifact. (The script was validated against the known-broken v79 APK first.)
 |----|---------|-------|
 | — | **On-device re-test of auto-detect + receipt scan** | Blocked on user testing APK **v81** (`17edf37`) — the first build that actually contains the native Kotlin |
 | — | **Gmail scan finds nothing** | Unexplained. CSP is fixed and the Google client ID *is* baked into the APK (verified in the bundle), and the scan is pure JS so it never depended on the native fix. Needs the exact on-screen message from `describeScan()` in `GmailScanButton` to narrow: no matching mail vs. all already scanned vs. matched but no readable amount vs. 401/403. |
+| `vrk/voice-input-v0` | **Epic V — voice transaction entry (English + Hindi)** | **V.0 (parser) done**: `voiceParser.ts` + `hindiNumbers.ts` + 59 tests, nothing imports them yet, so runtime is untouched. Design in `docs/VOICE_INPUT_DESIGN.md`. V.1 (web) next. |
 
 ### 📋 Designed, not started
 - **E.2–E.4** Statement→auto-account · balance auto-update · RBI Account Aggregator *(see §2)*
@@ -161,8 +162,62 @@ flowchart LR
 
 ---
 
+---
+
+## 3a. Epic V — Voice transaction entry (English + Hindi)  🆕
+
+Full design: **`docs/VOICE_INPUT_DESIGN.md`**. Speak a sentence — "spent 450 on groceries at DMart
+yesterday using UPI" or "paanch sau rupaye sabzi pe cash se kharch kiye" — and get a pre-filled,
+reviewable transaction.
+
+### The constraint that drives every decision
+Play **Data safety** already declares that financial parsing is on-device and nothing raw is
+uploaded. Audio must therefore **never leave the device**, and the failure mode to avoid is a
+*silent cloud fallback* that would make a truthful declaration false without anyone noticing.
+
+| Target | Engine | On-device? |
+|---|---|---|
+| Web, Chrome 139+ | Web Speech with `processLocally: true` | ✅ spec-enforced |
+| Web, older Chrome / Safari / Firefox | Web Speech (vendor cloud) | ❌ not offered |
+| Android native | `createOnDeviceSpeechRecognizer()` (API 33+) | ✅ |
+| `@capacitor-community/speech-recognition` | `createSpeechRecognizer()` — cloud | ❌ **rejected** |
+| iOS | `SFSpeechRecognizer` + `requiresOnDeviceRecognition` | ✅ locale-dependent |
+
+We write our own `SpeechBridgePlugin.kt` because the community plugin (a) uses the cloud recognizer
+with no on-device option, (b) exposes a single `language` string so Hinglish
+(`EXTRA_ENABLE_LANGUAGE_SWITCH`) is impossible, and (c) has a broken `getSupportedLanguages()` on
+Android 13+ — exactly where on-device recognition lives. A third Kotlin plugin is the established
+pattern here (`NotificationBridgePlugin`, `WidgetBridgePlugin`) and inherits `verify-android-native.mjs`.
+
+### Phases — each independently shippable and revertable
+| Phase | Scope | Risk |
+|---|---|---|
+| **V.0 ✅ done** | `voiceParser.ts` + `hindiNumbers.ts` + 59 tests. Pure functions, **imported by nothing** | none |
+| **V.1** | Engine interface + capability probe + capture/review UI; extend `/add` prefill with `category`+`account` | low — mic renders only if the probe finds an on-device engine, so Android is untouched |
+| **V.2.0** | Throwaway spike: does Web Speech actually work in *our* WebView? MDN reports `webview_android: "mirror"`, which means *inferred, not tested* | none |
+| **V.2** | `SpeechBridgePlugin.kt`, `RECORD_AUDIO`, guard entry, prominent disclosure, 4 compliance docs | medium — native |
+| **V.3** | Hinglish via `EXTRA_ENABLE_LANGUAGE_SWITCH` + language-pack download | low |
+| **V.4** | iOS — **blocked**, no iOS shell yet | — |
+
+**V.2 acceptance test: voice must work in aeroplane mode.** That is the proof recognition is
+on-device, rather than a claim.
+
+### Compliance notes
+- `RECORD_AUDIO` is a Dangerous permission but needs **no special Play declaration form** (unlike
+  SMS/Call Log). It does need **prominent in-app disclosure before the system prompt**, plus a
+  working alternative (typing). "Audio: not collected" stays truthful because nothing is transmitted.
+- iOS needs **both** `NSMicrophoneUsageDescription` *and* `NSSpeechRecognitionUsageDescription` —
+  missing either crashes on first use and fails Guideline 5.1.1.
+- Not biometric data: GDPR Art. 9 covers voice only when processed *to uniquely identify a person*.
+  Speech-to-text for data entry is not identification.
+- Raw audio is never stored — the industry norm for finance apps.
+
+---
+
 ## 4. Global security & privacy principles (all epics)
 - **Local-first, on-device** parsing/compute; raw financial text/files never uploaded.
+- **Voice/audio never leaves the device**, and never falls back to a cloud recogniser: use only
+  engines that *enforce* on-device processing. Raw audio is never stored.
 - **Opt-in** per data source (notifications, AA, contacts) with clear disclosure + easy revoke.
 - Secrets (email/SMS/AA provider keys) live **server-side only** (Supabase Edge Functions).
 - Cloud sync stays **E2E-encrypted**; sensitive numbers in the encrypted local DB.
@@ -175,6 +230,7 @@ flowchart LR
 4. **C** Auto-detect (share → notification listener → Gmail) → unlocks **E.3** balance auto-update.
 5. **F.1/F.2** Splitwise push + email reminders.
 6. **D** Net worth; **E.4** Account Aggregator; **F.3** SMS.
+7. **V.1** Voice input on web (V.0 parser already merged), then the V.2.0 WebView spike before any native work.
 
 ## 6. How to resume (any device / agent)
 1. Read this file + `ARCHITECTURE.md`.
