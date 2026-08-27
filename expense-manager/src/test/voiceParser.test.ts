@@ -261,6 +261,70 @@ describe('parseVoiceTransaction — accounts', () => {
   });
 });
 
+// ─── Accounts: several cards ─────────────────────────────────────────────────
+
+/**
+ * The realistic wallet. Reported from a device: "used ICICI Emerald credit
+ * card" resolved to whichever credit card happened to be first in the list,
+ * because whole-name matching failed and the fallback picked one anyway.
+ */
+const multiCard: Account[] = [
+  account({ id: 'cc-hdfc', name: 'HDFC Regalia Credit Card', type: 'credit_card', kind: 'liability', institution: 'HDFC Bank' }),
+  account({ id: 'cc-icici', name: 'ICICI Emerald Credit Card', type: 'credit_card', kind: 'liability', institution: 'ICICI Bank' }),
+  account({ id: 'cc-axis', name: 'Axis Magnus Credit Card', type: 'credit_card', kind: 'liability', institution: 'Axis Bank' }),
+  account({ id: 'acc-icici-sb', name: 'ICICI Savings', type: 'bank', institution: 'ICICI Bank' }),
+];
+
+const parseCards = (text: string) =>
+  parseVoiceTransaction(text, { categories, accounts: multiCard, today: TODAY });
+
+describe('parseVoiceTransaction — picking between several cards', () => {
+  it('picks the card the user actually named', () => {
+    expect(parseCards('spent 2000 using ICICI Emerald credit card').accountId).toBe('cc-icici');
+  });
+
+  it('matches on the distinctive word alone, without the full account name', () => {
+    expect(parseCards('spent 2000 on Emerald').accountId).toBe('cc-icici');
+  });
+
+  it('survives the recogniser mangling a proper noun by one letter', () => {
+    expect(parseCards('spent 2000 using emrald credit card').accountId).toBe('cc-icici');
+  });
+
+  it('prefers the card over the savings account of the same bank', () => {
+    expect(parseCards('spent 2000 on ICICI credit card').accountId).toBe('cc-icici');
+  });
+
+  it('still picks the savings account when no card is implied', () => {
+    expect(parseCards('paid 500 from ICICI Savings').accountId).toBe('acc-icici-sb');
+  });
+
+  it('refuses to guess which card when only "credit card" was said', () => {
+    const r = parseCards('spent 2000 on credit card');
+    expect(r.accountId).toBeUndefined();
+    expect(r.ambiguities.join(' ')).toContain('3');
+  });
+
+  it('flags the tie instead of choosing when two accounts match equally', () => {
+    const twins: Account[] = [
+      account({ id: 'a', name: 'Emerald One', type: 'credit_card', kind: 'liability' }),
+      account({ id: 'b', name: 'Emerald Two', type: 'credit_card', kind: 'liability' }),
+    ];
+    const r = parseVoiceTransaction('spent 100 on Emerald', {
+      categories,
+      accounts: twins,
+      today: TODAY,
+    });
+    expect(r.accountId).toBeUndefined();
+    expect(r.ambiguities.join(' ')).toContain('Emerald One');
+  });
+
+  it('does not match an unrelated short word by fuzzy distance', () => {
+    expect(parseCards('spent 2000 on Axis Magnum credit card').accountId).toBe('cc-axis');
+    expect(parseCards('spent 300 on tea').accountId).toBeUndefined();
+  });
+});
+
 // ─── Hindi and Hinglish ──────────────────────────────────────────────────────
 
 describe('parseVoiceTransaction — Hindi / Hinglish', () => {
