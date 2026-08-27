@@ -28,8 +28,12 @@ export function BottomNav({ onOpenMore }: BottomNavProps) {
       aria-label="Primary mobile navigation"
       className={classNames(
         'fixed inset-x-0 bottom-0 z-30 lg:hidden',
-        'border-t border-gray-200 bg-white/95 backdrop-blur-lg',
-        'dark:border-gray-700 dark:bg-gray-800/95',
+        // Opaque rather than translucent+blurred: at 95% opacity the blur was
+        // imperceptible, but backdrop-filter on a permanently-visible fixed
+        // element forces a full-width GPU compositing layer that has been seen
+        // to kill the renderer on some Android drivers.
+        'border-t border-gray-200 bg-white',
+        'dark:border-gray-700 dark:bg-gray-800',
         'pb-[env(safe-area-inset-bottom)]',
       )}
     >
