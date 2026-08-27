@@ -35,11 +35,32 @@ export function PWAUpdatePrompt() {
   }, []);
 
   const handleUpdate = () => {
+    setShowUpdate(false);
+
+    // Reload only once, and only after the new worker is actually in control.
+    // Reloading immediately after postMessage races the activation: the page
+    // comes back under the old worker while the new one is still swapping the
+    // precache underneath it, which leaves stale chunk references behind.
+    let reloaded = false;
+    const reloadOnce = () => {
+      if (reloaded) return;
+      reloaded = true;
+      window.location.reload();
+    };
+
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.addEventListener('controllerchange', reloadOnce, { once: true });
+    }
+
+    // With registerType 'autoUpdate' the new worker skips waiting by itself, so
+    // there is usually nothing waiting to message — post only when there is.
     if (registration?.waiting) {
       registration.waiting.postMessage({ type: 'SKIP_WAITING' });
     }
-    setShowUpdate(false);
-    window.location.reload();
+
+    // If the worker already controls the page, controllerchange never fires.
+    // Don't leave the user stuck on a dismissed prompt.
+    window.setTimeout(reloadOnce, 3000);
   };
 
   if (!showUpdate) return null;
