@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
-import { X } from 'lucide-react';
+import { X, Mic, ScanLine } from 'lucide-react';
 import type { PaymentMethod } from '../../../shared/types';
 import { takeScannedReceipt } from '../../import/receiptHandoff';
 import { TransactionForm } from './TransactionForm';
@@ -60,6 +60,14 @@ export function AddTransactionPage() {
     else navigate('/transactions');
   };
 
+  // Only offer the hands-free shortcuts on a *fresh* add. If we arrived here
+  // carrying prefilled fields (from voice or a scan), navigating away would
+  // throw that work away.
+  const hasPrefill = Boolean(
+    scannedReceipt || prefillAmount || prefillNote || prefillDate ||
+    prefillPaymentMethod || prefillCategoryId || prefillAccountId || prefillToAccountId,
+  );
+
   return (
     <div className="mx-auto max-w-lg space-y-6">
       <div className="flex items-start justify-between gap-3">
@@ -76,6 +84,30 @@ export function AddTransactionPage() {
           <X className="h-5 w-5" />
         </button>
       </div>
+      {/* Hands-free shortcuts. Deliberately NOT gated on the speech probe: if the
+          entry point disappears when voice is unavailable, the user cannot tell
+          "unsupported" from "missing". /voice-add explains the reason itself. */}
+      {!hasPrefill && (
+        <div className="flex flex-wrap gap-2">
+          <button
+            type="button"
+            onClick={() => navigate('/voice-add')}
+            className="inline-flex items-center gap-1.5 rounded-full border border-gray-200 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 transition-colors hover:border-primary-300 hover:text-primary-700 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:text-primary-300"
+          >
+            <Mic className="h-4 w-4" />
+            Speak it
+          </button>
+          <button
+            type="button"
+            onClick={() => navigate('/scan-receipt')}
+            className="inline-flex items-center gap-1.5 rounded-full border border-gray-200 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 transition-colors hover:border-primary-300 hover:text-primary-700 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:text-primary-300"
+          >
+            <ScanLine className="h-4 w-4" />
+            Scan a receipt
+          </button>
+        </div>
+      )}
+
       {/* Entry-mode toggle — Quick (fast keypad) vs Classic (full form) */}
       <div className="flex gap-1 rounded-lg bg-gray-100 p-1 text-sm dark:bg-gray-800">
         {(['quick', 'classic'] as const).map((m) => (
