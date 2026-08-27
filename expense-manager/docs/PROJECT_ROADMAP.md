@@ -60,7 +60,7 @@ artifact. (The script was validated against the known-broken v79 APK first.)
 |----|---------|-------|
 | — | **On-device re-test of auto-detect + receipt scan** | Blocked on user testing APK **v81** (`17edf37`) — the first build that actually contains the native Kotlin |
 | — | **Gmail scan finds nothing** | Unexplained. CSP is fixed and the Google client ID *is* baked into the APK (verified in the bundle), and the scan is pure JS so it never depended on the native fix. Needs the exact on-screen message from `describeScan()` in `GmailScanButton` to narrow: no matching mail vs. all already scanned vs. matched but no readable amount vs. 401/403. |
-| `vrk/voice-input-v1` | **Epic V — voice transaction entry (English + Hindi)** | **V.0 + V.1 done**: parser (`voiceParser.ts`, `hindiNumbers.ts`) plus the web layer — `speechEngine.ts` (on-device-only probe/sessions), `/voice-add`, `VoiceReview`, FAB "Speak" action. 80 voice tests; 201 total. Design in `docs/VOICE_INPUT_DESIGN.md`. **V.2.0 WebView spike next.** |
+| `vrk/voice-input-v1` | **Epic V — voice transaction entry (English + Hindi)** | **V.0, V.1, V.2.0 done** (#36, #37). Parser + web layer merged; the WebView spike is settled from Chromium source: the on-device Web Speech API is absent in WebView, so **V.2 must be a native plugin**. Voice is therefore live on desktop/Chrome but correctly hidden inside the Android app. **V.2 (native Kotlin) is next.** |
 
 ### 📋 Designed, not started
 - **E.2–E.4** Statement→auto-account · balance auto-update · RBI Account Aggregator *(see §2)*
@@ -194,10 +194,33 @@ pattern here (`NotificationBridgePlugin`, `WidgetBridgePlugin`) and inherits `ve
 |---|---|---|
 | **V.0 ✅ done** | `voiceParser.ts` + `hindiNumbers.ts` + 59 tests. Pure functions, **imported by nothing** | none |
 | **V.1 ✅ done** | `speechEngine.ts` (probe + on-device-only sessions), `/voice-add` page, `VoiceReview`, FAB "Speak" action, `/add` prefill extended with `category`/`account`/`toAccount`. 21 more tests | low — realised: mic renders only when the probe finds an on-device engine, and the whole feature is a 22 KB lazy chunk |
-| **V.2.0** | Throwaway spike: does Web Speech actually work in *our* WebView? MDN reports `webview_android: "mirror"`, which means *inferred, not tested* | none |
+| **V.2.0 ✅ done — settled by source analysis, no build needed** | **Result: Web Speech's on-device API does not exist in the Android WebView.** See "V.2.0 spike result" below | none |
 | **V.2** | `SpeechBridgePlugin.kt`, `RECORD_AUDIO`, guard entry, prominent disclosure, 4 compliance docs | medium — native |
 | **V.3** | Hinglish via `EXTRA_ENABLE_LANGUAGE_SWITCH` + language-pack download | low |
 | **V.4** | iOS — **blocked**, no iOS shell yet | — |
+
+### V.2.0 spike result — why V.2 *must* be native
+Chromium source (not docs — MDN reports `"mirror"` for every WebView entry, which means
+*inferred, never tested*):
+
+1. `SpeechRecognition.available()` / `.install()` are bound only by `ChromeContentBrowserClient`
+   (`chrome/browser/`). Android WebView is built from `content/` + `android_webview/` and does
+   **not** compile `chrome/browser/`. Searching `android_webview` for the binder returns nothing.
+2. They are backed by **SODA** (`components/soda/`), delivered by the component updater — a
+   desktop/ChromeOS component. `soda_util.cc` has no Android branch, and WebView has no component
+   updater.
+3. WebView **does** ship `AwSpeechRecognitionManagerDelegate`, and its `CheckRenderFrameType`
+   returns `allowed = true`.
+
+Point 3 is the trap, and the reason the fail-closed design earned its keep: **legacy
+`webkitSpeechRecognition` may well work in our WebView via the cloud.** A naive implementation would
+therefore have appeared to "just work" in the Android app while silently uploading audio — breaking
+the Play Data Safety declaration with no visible symptom. Our probe rejects it as `no-local-api`
+because the on-device `available()` static is absent, so the mic simply never renders.
+
+**Consequence:** V.1 is correct but inert inside the app; on-device Android voice requires
+`SpeechRecognizer.createOnDeviceSpeechRecognizer()` (API 33+) behind a native plugin. There is no
+web-only shortcut.
 
 **V.2 acceptance test: voice must work in aeroplane mode.** That is the proof recognition is
 on-device, rather than a claim.
@@ -230,7 +253,7 @@ on-device, rather than a claim.
 4. **C** Auto-detect (share → notification listener → Gmail) → unlocks **E.3** balance auto-update.
 5. **F.1/F.2** Splitwise push + email reminders.
 6. **D** Net worth; **E.4** Account Aggregator; **F.3** SMS.
-7. **V.2.0 WebView spike** — does Web Speech actually work in our Capacitor WebView? (V.0 parser and V.1 web layer are merged.) Then V.2 native.
+7. **V.2 native Android voice** — `SpeechBridgePlugin.kt` using `createOnDeviceSpeechRecognizer()`. The V.2.0 spike proved there is no web-only route inside the WebView.
 
 ## 6. How to resume (any device / agent)
 1. Read this file + `ARCHITECTURE.md`.
