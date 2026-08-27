@@ -403,37 +403,165 @@ function detectCategory(
 
 // ─── Account ─────────────────────────────────────────────────────────────────
 
+/**
+ * Words that occur in so many account names they cannot single one out.
+ * "ICICI Emerald Credit Card" and "HDFC Regalia Credit Card" share three of
+ * their four words; only "icici"/"emerald" and "hdfc"/"regalia" pick a side.
+ */
+const GENERIC_ACCOUNT_TOKENS = new Set([
+  'credit', 'debit', 'card', 'bank', 'account', 'acc', 'savings', 'saving',
+  'current', 'wallet', 'cash', 'loan', 'emi', 'my', 'the', 'of', 'ltd',
+  'limited', 'co', 'and',
+  'क्रेडिट', 'डेबिट', 'कार्ड', 'बैंक', 'खाता', 'अकाउंट', 'नकद', 'वॉलेट',
+]);
+
+/** Spoken phrases that identify a kind of account rather than a specific one. */
+const ACCOUNT_TYPE_PHRASES: Record<string, string> = {
+  credit_card: 'credit\\s*card|क्रेडिट\\s*कार्ड',
+  cash: 'cash|नकद|नक़द',
+};
+
+const TOKEN_SPLIT = new RegExp(`[^${WORD_CHARS}]+`, 'u');
+
+function tokenizeAccountText(value: string): string[] {
+  return value.toLowerCase().split(TOKEN_SPLIT).filter(Boolean);
+}
+
+/**
+ * True when two tokens differ by at most one insertion, deletion or
+ * substitution. Walks both strings once instead of building a Levenshtein
+ * matrix, since we only ever care whether the distance exceeds one.
+ */
+function withinOneEdit(a: string, b: string): boolean {
+  let i = 0;
+  let j = 0;
+  let edits = 0;
+  while (i < a.length && j < b.length) {
+    if (a[i] === b[j]) {
+      i += 1;
+      j += 1;
+      continue;
+    }
+    edits += 1;
+    if (edits > 1) return false;
+    if (a.length === b.length) {
+      i += 1;
+      j += 1;
+    } else if (a.length > b.length) {
+      i += 1;
+    } else {
+      j += 1;
+    }
+  }
+  return edits + (a.length - i) + (b.length - j) <= 1;
+}
+
+/**
+ * Recognisers render unfamiliar proper nouns approximately — "Emerald" comes
+ * back as "emrald", "Regalia" as "regaliya". One edit is forgiven on a longish
+ * token; below six characters we stay strict, because at that length a single
+ * edit starts joining genuinely unrelated words ("cash"/"cast").
+ */
+function tokenMatches(spoken: string, target: string): boolean {
+  if (spoken === target) return true;
+  if (target.length < 6) return false;
+  if (Math.abs(spoken.length - target.length) > 1) return false;
+  return withinOneEdit(spoken, target);
+}
+
+/**
+ * How strongly one account answers "which account was that?".
+ *
+ * The distinctive-token count is the real signal. The two bonuses only break
+ * ties between accounts that are already equally distinctive: a verbatim name
+ * keeps "ICICI Credit Card" ahead of a plain "ICICI", and a spoken type phrase
+ * keeps the credit card ahead of the savings account of the same bank.
+ */
+function scoreAccount(account: Account, spoken: string[], text: string): number {
+  const distinctive = [
+    ...new Set(
+      tokenizeAccountText(`${account.name} ${account.institution ?? ''}`).filter(
+        (t) => !GENERIC_ACCOUNT_TOKENS.has(t),
+      ),
+    ),
+  ];
+  if (distinctive.length === 0) return 0;
+
+  const hits = distinctive.filter((target) =>
+    spoken.some((word) => tokenMatches(word, target)),
+  ).length;
+  if (hits === 0) return 0;
+
+  let score = hits;
+  if (text.toLowerCase().includes(account.name.toLowerCase())) score += 1;
+
+  const phrase = ACCOUNT_TYPE_PHRASES[account.type];
+  if (phrase && testWordish(text, phrase)) score += 0.5;
+
+  return score;
+}
+
+/**
+ * Resolves the spoken account, or explains why it could not.
+ *
+ * Matching is token-based rather than whole-name: an account named "ICICI
+ * Emerald Credit Card" has to be findable from "ICICI Emerald", because a
+ * recogniser will not reproduce a four-word name exactly. The previous
+ * all-or-nothing substring test failed such utterances and then fell through to
+ * the first credit card in the list, quietly booking the spend against the
+ * wrong card. When the evidence genuinely does not single one out we now return
+ * nothing and say so, since a blank field the user fills in beats a confident
+ * wrong answer they may not notice.
+ */
 function detectAccount(
   text: string,
   accounts: Account[],
   method?: PaymentMethod,
-): string | undefined {
+): { accountId?: string; ambiguity?: string } {
   const pool = accounts.filter((a) => a.isActive && !a.isDeleted);
-  const lower = text.toLowerCase();
+  if (pool.length === 0) return {};
 
-  // Longest name first so "ICICI Credit Card" beats "ICICI".
-  const byName = pool
-    .filter((a) => lower.includes(a.name.toLowerCase()))
-    .sort((a, b) => b.name.length - a.name.length)[0];
-  if (byName) return byName.id;
+  const spoken = tokenizeAccountText(text);
+  const scored = pool
+    .map((account) => ({ account, score: scoreAccount(account, spoken, text) }))
+    .filter((s) => s.score > 0)
+    .sort((a, b) => b.score - a.score);
 
-  const byInstitution = pool.find(
-    (a) => a.institution && lower.includes(a.institution.toLowerCase()),
-  );
-  if (byInstitution) return byInstitution.id;
+  if (scored.length > 0) {
+    const best = scored.filter((s) => s.score === scored[0].score);
+    if (best.length === 1) return { accountId: best[0].account.id };
+    return {
+      ambiguity: `That could be ${best.map((s) => s.account.name).join(' or ')} — pick the right one.`,
+    };
+  }
 
-  if (testWordish(text, 'credit\\s*card')) {
-    const cc = pool.find((a) => a.type === 'credit_card');
-    if (cc) return cc.id;
+  // Nothing distinctive was said, so fall back on the kind of account — but
+  // only when that identifies exactly one. With several cards, "credit card"
+  // narrows the field without choosing, and guessing would be indistinguishable
+  // from knowing.
+  const byPhrase = (type: string) => {
+    const phrase = ACCOUNT_TYPE_PHRASES[type];
+    return phrase && testWordish(text, phrase) ? pool.filter((a) => a.type === type) : [];
+  };
+
+  const cards = byPhrase('credit_card');
+  if (cards.length === 1) return { accountId: cards[0].id };
+  if (cards.length > 1) {
+    return {
+      ambiguity: `You said "credit card" but you have ${cards.length} — choose which one.`,
+    };
   }
 
   // "paid cash" implies the cash account even when it isn't named.
   if (method === 'cash') {
-    const cash = pool.find((a) => a.type === 'cash');
-    if (cash) return cash.id;
+    const cash = pool.filter((a) => a.type === 'cash');
+    if (cash.length === 1) return { accountId: cash[0].id };
+    if (cash.length > 1) {
+      return { ambiguity: `You said "cash" but you have ${cash.length} cash accounts — choose one.` };
+    }
   }
 
-  return undefined;
+  return {};
 }
 
 // ─── Merchant & note ─────────────────────────────────────────────────────────
@@ -525,7 +653,8 @@ export function parseVoiceTransaction(
   }
 
   const categoryId = detectCategory(text, ctx.categories, type);
-  const accountId = detectAccount(text, ctx.accounts, payment.method);
+  const account = detectAccount(text, ctx.accounts, payment.method);
+  if (account.ambiguity) ambiguities.push(account.ambiguity);
   const merchant = detectMerchant(transcript);
 
   return {
@@ -533,7 +662,7 @@ export function parseVoiceTransaction(
     type,
     amount,
     categoryId,
-    accountId,
+    accountId: account.accountId,
     paymentMethod: payment.method,
     date: dateResult ? dateResult.date : toIso(today),
     notes: buildNote(transcript, merchant, consumed),
