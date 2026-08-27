@@ -38,6 +38,8 @@ const JAVA_PKG_DIR = join(MAIN_SRC, 'java', 'io', 'github', 'vikasreddykamalapur
 const NOTIF_TEMPLATE_DIR = join(REPO_ROOT, 'android-templates', 'notif');
 const NOTIF_LISTENER_DEST = join(JAVA_PKG_DIR, 'MoneyIqNotificationListener.kt');
 const NOTIF_BRIDGE_DEST = join(JAVA_PKG_DIR, 'NotificationBridgePlugin.kt');
+const VOICE_TEMPLATE_DIR = join(REPO_ROOT, 'android-templates', 'voice');
+const VOICE_BRIDGE_DEST = join(JAVA_PKG_DIR, 'SpeechBridgePlugin.kt');
 
 const HOST = 'vikasreddykamalapuram.github.io';
 const PATH_PREFIX = '/expense-manager';
@@ -60,6 +62,7 @@ const permissions = [
   'android.permission.POST_NOTIFICATIONS',
   'android.permission.SCHEDULE_EXACT_ALARM',
   'android.permission.RECEIVE_BOOT_COMPLETED',
+  'android.permission.RECORD_AUDIO',
 ];
 
 for (const perm of permissions) {
@@ -70,6 +73,21 @@ for (const perm of permissions) {
     );
     console.log(`  + permission ${perm}`);
   }
+}
+
+// ---------- Package visibility for the on-device recogniser ----------
+// Android 11+ filters package queries. Without declaring the RecognitionService
+// intent, SpeechRecognizer.isOnDeviceRecognitionAvailable() can report false on
+// a device that is perfectly capable, silently disabling voice input.
+if (!xml.includes('android.speech.RecognitionService')) {
+  const queries =
+    '    <queries>\n' +
+    '        <intent>\n' +
+    '            <action android:name="android.speech.RecognitionService" />\n' +
+    '        </intent>\n' +
+    '    </queries>\n';
+  xml = xml.replace(/<application\b/, `${queries.trimStart()}    <application`);
+  console.log('  + <queries> android.speech.RecognitionService');
 }
 
 // ---------- Deep-link + share intent filters (injected into MainActivity) ----------
@@ -225,6 +243,20 @@ for (const [src, dest] of notifFiles) {
     console.log(`✓ ${dest.replace(REPO_ROOT, '.')}`);
   } else {
     console.warn(`  ! notif file missing at ${src}`);
+  }
+}
+
+// ---------- Copy on-device speech Kotlin files ----------
+const voiceFiles = [
+  [join(VOICE_TEMPLATE_DIR, 'SpeechBridgePlugin.kt'), VOICE_BRIDGE_DEST],
+];
+for (const [src, dest] of voiceFiles) {
+  if (existsSync(src)) {
+    mkdirSync(dirname(dest), { recursive: true });
+    copyFileSync(src, dest);
+    console.log(`✓ ${dest.replace(REPO_ROOT, '.')}`);
+  } else {
+    console.warn(`  ! voice file missing at ${src}`);
   }
 }
 

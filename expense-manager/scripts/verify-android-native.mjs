@@ -34,6 +34,7 @@ const REQUIRED = [
   'io/github/vikasreddykamalapuram/moneyiq/MoneyIqNotificationListener',
   'io/github/vikasreddykamalapuram/moneyiq/WidgetBridgePlugin',
   'io/github/vikasreddykamalapuram/moneyiq/ExpenseWidgetProvider',
+  'io/github/vikasreddykamalapuram/moneyiq/SpeechBridgePlugin',
 ];
 
 /**
