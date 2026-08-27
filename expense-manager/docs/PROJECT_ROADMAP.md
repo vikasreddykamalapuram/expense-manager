@@ -60,7 +60,7 @@ artifact. (The script was validated against the known-broken v79 APK first.)
 |----|---------|-------|
 | — | **On-device re-test of auto-detect + receipt scan** | Blocked on user testing APK **v81** (`17edf37`) — the first build that actually contains the native Kotlin |
 | — | **Gmail scan finds nothing** | Unexplained. CSP is fixed and the Google client ID *is* baked into the APK (verified in the bundle), and the scan is pure JS so it never depended on the native fix. Needs the exact on-screen message from `describeScan()` in `GmailScanButton` to narrow: no matching mail vs. all already scanned vs. matched but no readable amount vs. 401/403. |
-| `vrk/voice-input-v0` | **Epic V — voice transaction entry (English + Hindi)** | **V.0 (parser) done**: `voiceParser.ts` + `hindiNumbers.ts` + 59 tests, nothing imports them yet, so runtime is untouched. Design in `docs/VOICE_INPUT_DESIGN.md`. V.1 (web) next. |
+| `vrk/voice-input-v1` | **Epic V — voice transaction entry (English + Hindi)** | **V.0 + V.1 done**: parser (`voiceParser.ts`, `hindiNumbers.ts`) plus the web layer — `speechEngine.ts` (on-device-only probe/sessions), `/voice-add`, `VoiceReview`, FAB "Speak" action. 80 voice tests; 201 total. Design in `docs/VOICE_INPUT_DESIGN.md`. **V.2.0 WebView spike next.** |
 
 ### 📋 Designed, not started
 - **E.2–E.4** Statement→auto-account · balance auto-update · RBI Account Aggregator *(see §2)*
@@ -193,7 +193,7 @@ pattern here (`NotificationBridgePlugin`, `WidgetBridgePlugin`) and inherits `ve
 | Phase | Scope | Risk |
 |---|---|---|
 | **V.0 ✅ done** | `voiceParser.ts` + `hindiNumbers.ts` + 59 tests. Pure functions, **imported by nothing** | none |
-| **V.1** | Engine interface + capability probe + capture/review UI; extend `/add` prefill with `category`+`account` | low — mic renders only if the probe finds an on-device engine, so Android is untouched |
+| **V.1 ✅ done** | `speechEngine.ts` (probe + on-device-only sessions), `/voice-add` page, `VoiceReview`, FAB "Speak" action, `/add` prefill extended with `category`/`account`/`toAccount`. 21 more tests | low — realised: mic renders only when the probe finds an on-device engine, and the whole feature is a 22 KB lazy chunk |
 | **V.2.0** | Throwaway spike: does Web Speech actually work in *our* WebView? MDN reports `webview_android: "mirror"`, which means *inferred, not tested* | none |
 | **V.2** | `SpeechBridgePlugin.kt`, `RECORD_AUDIO`, guard entry, prominent disclosure, 4 compliance docs | medium — native |
 | **V.3** | Hinglish via `EXTRA_ENABLE_LANGUAGE_SWITCH` + language-pack download | low |
@@ -230,7 +230,7 @@ on-device, rather than a claim.
 4. **C** Auto-detect (share → notification listener → Gmail) → unlocks **E.3** balance auto-update.
 5. **F.1/F.2** Splitwise push + email reminders.
 6. **D** Net worth; **E.4** Account Aggregator; **F.3** SMS.
-7. **V.1** Voice input on web (V.0 parser already merged), then the V.2.0 WebView spike before any native work.
+7. **V.2.0 WebView spike** — does Web Speech actually work in our Capacitor WebView? (V.0 parser and V.1 web layer are merged.) Then V.2 native.
 
 ## 6. How to resume (any device / agent)
 1. Read this file + `ARCHITECTURE.md`.

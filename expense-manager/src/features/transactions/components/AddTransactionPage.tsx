@@ -23,6 +23,9 @@ export function AddTransactionPage() {
   const prefillNote = searchParams.get('note') || undefined;
   const prefillDate = searchParams.get('date') || undefined;
   const prefillPaymentMethod = (searchParams.get('method') as PaymentMethod | null) || undefined;
+  const prefillCategoryId = searchParams.get('category') || undefined;
+  const prefillAccountId = searchParams.get('account') || undefined;
+  const prefillToAccountId = searchParams.get('toAccount') || undefined;
 
   // A receipt scan hands its image over out-of-band (a File can't ride in a
   // URL). Claim it once on mount so a later visit to /add can't reuse it.
@@ -31,7 +34,18 @@ export function AddTransactionPage() {
   const [mode, setMode] = useState<'quick' | 'classic'>(() => {
     // The quick keypad has no date or payment-method field, so a scan would
     // silently drop what it just read. Force the full form in that case.
-    if (scannedReceipt || prefillDate || prefillPaymentMethod) return 'classic';
+    // Voice adds category/account to the same problem: the keypad has chips for
+    // those but no way to seed them, so any prefill at all goes to the form.
+    if (
+      scannedReceipt ||
+      prefillDate ||
+      prefillPaymentMethod ||
+      prefillCategoryId ||
+      prefillAccountId ||
+      prefillToAccountId
+    ) {
+      return 'classic';
+    }
     try { return localStorage.getItem(ADD_MODE_KEY) === 'classic' ? 'classic' : 'quick'; } catch { return 'quick'; }
   });
   const chooseMode = (m: 'quick' | 'classic') => {
@@ -96,6 +110,9 @@ export function AddTransactionPage() {
             prefillNote={prefillNote}
             prefillDate={prefillDate}
             prefillPaymentMethod={prefillPaymentMethod}
+            prefillCategoryId={prefillCategoryId}
+            prefillAccountId={prefillAccountId}
+            prefillToAccountId={prefillToAccountId}
             prefillReceiptFile={scannedReceipt}
             onClose={handleClose}
           />

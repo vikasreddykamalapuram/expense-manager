@@ -5,10 +5,11 @@
  */
 
 import { useState, useEffect, useRef } from 'react';
-import { Plus, TrendingDown, TrendingUp, ArrowLeftRight } from 'lucide-react';
+import { Plus, TrendingDown, TrendingUp, ArrowLeftRight, Mic } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { classNames } from '../../utils/helpers';
 import { haptic } from '../../services/haptics';
+import { useVoiceAvailability, canOfferVoice, getVoiceLanguage } from '../../hooks/useVoiceAvailability';
 
 interface FABAction {
   label: string;
@@ -22,6 +23,12 @@ export function FloatingActionButton() {
   const navigate = useNavigate();
   const location = useLocation();
   const fabRef = useRef<HTMLDivElement>(null);
+
+  // Passive capability check — never prompts for the microphone. The Speak
+  // action only appears where speech can be recognised on-device.
+  const [voiceLang] = useState(getVoiceLanguage);
+  const voiceAvailability = useVoiceAvailability(voiceLang);
+  const showVoice = canOfferVoice(voiceAvailability);
 
   // Hide FAB on pages where it's not useful
   const hiddenPaths = ['/add', '/login', '/onboarding'];
@@ -47,6 +54,14 @@ export function FloatingActionButton() {
   if (shouldHide) return null;
 
   const actions: FABAction[] = [
+    ...(showVoice
+      ? [{
+          label: 'Speak',
+          icon: <Mic size={20} />,
+          color: 'bg-primary-600 hover:bg-primary-700 shadow-primary-500/30',
+          onClick: () => navigate('/voice-add'),
+        }]
+      : []),
     {
       label: 'Expense',
       icon: <TrendingDown size={20} />,
