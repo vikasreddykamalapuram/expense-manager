@@ -5,6 +5,7 @@ import {
   normalizeDigits,
 } from '../shared/services/hindiNumbers';
 import { parseVoiceTransaction } from '../shared/services/voiceParser';
+import { buildVoiceDeepLink } from '../features/voice/voiceHandoff';
 import { Account, Category } from '../shared/types';
 import {
   EXPENSE_CATEGORIES,
@@ -454,5 +455,59 @@ describe('parseVoiceTransaction — custom category sets', () => {
     });
     expect(r.categoryId).toBeUndefined();
     expect(r.accountId).toBeUndefined();
+  });
+});
+
+
+// ─── Offering to create what was heard ───────────────────────────────────────
+
+describe('parseVoiceTransaction — unmatched names', () => {
+  it('offers the account name it heard when nothing matches', () => {
+    const r = parse('paid 500 using Zenith Platinum');
+    expect(r.accountId).toBeUndefined();
+    expect(r.suggestedAccountName).toBe('Zenith Platinum');
+    expect(r.ambiguities.join(' ')).toContain('Zenith Platinum');
+  });
+
+  it('stops the captured name at a word that cannot be part of one', () => {
+    expect(parse('paid 500 using Zenith Platinum yesterday').suggestedAccountName)
+      .toBe('Zenith Platinum');
+  });
+
+  it('reads the Hindi word order, where the marker comes last', () => {
+    expect(parse('Zenith Platinum se 500 kharch kiye').suggestedAccountName)
+      .toBe('Zenith Platinum');
+  });
+
+  it('stays quiet when the account was actually matched', () => {
+    const r = parse('paid 500 from HDFC Savings');
+    expect(r.accountId).toBe('acc-hdfc');
+    expect(r.suggestedAccountName).toBeUndefined();
+  });
+
+  it('never offers to create an account from a generic word', () => {
+    expect(parse('paid 500 using the card').suggestedAccountName).toBeUndefined();
+  });
+
+  it('offers a category name when nothing matches', () => {
+    const r = parse('spent 700 on cricket coaching');
+    expect(r.categoryId).toBeUndefined();
+    expect(r.suggestedCategoryName).toBe('Cricket Coaching');
+  });
+
+  it('stays quiet when the category was actually matched', () => {
+    const r = parse('spent 450 on groceries');
+    expect(r.categoryId).toBeTruthy();
+    expect(r.suggestedCategoryName).toBeUndefined();
+  });
+
+  it('never offers to create a category from a vague word', () => {
+    expect(parse('spent 300 on something').suggestedCategoryName).toBeUndefined();
+  });
+
+  it('carries the suggestions into the add-transaction link', () => {
+    const link = buildVoiceDeepLink(parse('paid 500 using Zenith Platinum'));
+    expect(link).toContain('newAccount=Zenith+Platinum');
+    expect(buildVoiceDeepLink(parse('paid 500 from HDFC Savings'))).not.toContain('newAccount');
   });
 });
