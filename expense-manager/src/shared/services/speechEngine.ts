@@ -20,7 +20,24 @@
  * If either check fails we report `unsupported` and the UI never renders a
  * microphone at all. Typing stays the complete, unrestricted path — voice is
  * only ever an accelerator.
+ *
+ * Inside the Android shell none of the above is possible: WebView does not bind
+ * the local-availability probes but *does* still serve the legacy cloud
+ * recogniser, so the web API there would silently upload audio. Every public
+ * function in this module therefore delegates to the native on-device engine
+ * when running in that shell. See nativeSpeech.ts.
  */
+import {
+  shouldUseNativeSpeech,
+  probeNativeVoice,
+  installNativeVoice,
+  startNativeVoiceSession,
+} from './nativeSpeech';
+import {
+  describeVoiceError,
+  type VoiceErrorCode as SharedVoiceErrorCode,
+  type VoiceError as SharedVoiceError,
+} from './voiceErrors';
 
 /** Values returned by the static `SpeechRecognition.available()` probe. */
 type AvailabilityStatus = 'unavailable' | 'downloadable' | 'downloading' | 'available';
@@ -84,23 +101,8 @@ export type VoiceAvailability =
   | { status: 'downloading' }
   | { status: 'unsupported'; reason: VoiceUnsupportedReason };
 
-export type VoiceErrorCode =
-  | 'permission-denied'
-  | 'no-speech'
-  | 'no-microphone'
-  | 'language-unavailable'
-  | 'went-remote'
-  | 'aborted'
-  | 'start-failed'
-  | 'unknown';
-
-export interface VoiceError {
-  code: VoiceErrorCode;
-  /** Ready to show to a user. */
-  message: string;
-  /** Raw platform code, for diagnostics. */
-  detail?: string;
-}
+export type VoiceErrorCode = SharedVoiceErrorCode;
+export type VoiceError = SharedVoiceError;
 
 export interface VoiceLanguage {
   code: string;
@@ -144,6 +146,10 @@ export async function probeVoiceLanguage(
   lang: string,
   ctor: SpeechRecognitionCtor | null = getRecognitionCtor(),
 ): Promise<VoiceAvailability> {
+  // In the Android shell the web probes do not exist, so asking them would
+  // report "unsupported" on a device that can in fact recognise locally.
+  if (shouldUseNativeSpeech()) return probeNativeVoice(lang);
+
   // Web Speech requires a secure context. Bail out early with a precise reason
   // rather than letting `start()` throw something opaque later.
   if (typeof window !== 'undefined' && window.isSecureContext === false) {
@@ -183,6 +189,7 @@ export async function installVoiceLanguage(
   lang: string,
   ctor: SpeechRecognitionCtor | null = getRecognitionCtor(),
 ): Promise<boolean> {
+  if (shouldUseNativeSpeech()) return installNativeVoice(lang);
   if (!ctor || typeof ctor.install !== 'function') return false;
   try {
     return await ctor.install({ langs: [lang], processLocally: true });
@@ -192,38 +199,7 @@ export async function installVoiceLanguage(
 }
 
 function describeError(raw: string, message?: string): VoiceError {
-  switch (raw) {
-    case 'not-allowed':
-    case 'service-not-allowed':
-      return {
-        code: 'permission-denied',
-        detail: raw,
-        message:
-          'Microphone access was blocked. Allow it in your browser or system settings, or type the transaction instead.',
-      };
-    case 'no-speech':
-      return { code: 'no-speech', detail: raw, message: 'I did not hear anything. Tap the mic and try again.' };
-    case 'audio-capture':
-      return { code: 'no-microphone', detail: raw, message: 'No microphone was found on this device.' };
-    case 'language-not-supported':
-      return {
-        code: 'language-unavailable',
-        detail: raw,
-        message: 'This language is not available for on-device recognition here. Try English (India).',
-      };
-    case 'network':
-      // On a processLocally session this should be impossible. If it happens,
-      // the engine reached for a server — say so plainly instead of retrying.
-      return {
-        code: 'went-remote',
-        detail: raw,
-        message: 'Recognition tried to use a network service, so it was stopped. Voice input needs an on-device engine.',
-      };
-    case 'aborted':
-      return { code: 'aborted', detail: raw, message: 'Listening was cancelled.' };
-    default:
-      return { code: 'unknown', detail: raw, message: message || 'Speech recognition failed. Please type instead.' };
-  }
+  return describeVoiceError(raw, message);
 }
 
 export interface VoiceSessionHandlers {
@@ -255,6 +231,8 @@ export function startVoiceSession(
   handlers: VoiceSessionHandlers,
   ctor: SpeechRecognitionCtor | null = getRecognitionCtor(),
 ): VoiceSession {
+  if (shouldUseNativeSpeech()) return startNativeVoiceSession(lang, handlers);
+
   let finished = false;
   let cancelled = false;
   let finalText = '';
