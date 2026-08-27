@@ -33,6 +33,10 @@ interface TransactionFormProps {
   prefillNote?: string;
   prefillDate?: string;
   prefillPaymentMethod?: PaymentMethod;
+  /** Category/account resolved upstream (e.g. by voice input). */
+  prefillCategoryId?: string;
+  prefillAccountId?: string;
+  prefillToAccountId?: string;
   /** Receipt image to attach once the transaction has an id (e.g. from a scan). */
   prefillReceiptFile?: File | null;
   onClose?: () => void;
@@ -45,6 +49,9 @@ export function TransactionForm({
   prefillNote,
   prefillDate,
   prefillPaymentMethod,
+  prefillCategoryId,
+  prefillAccountId,
+  prefillToAccountId,
   prefillReceiptFile,
   onClose,
 }: TransactionFormProps) {
@@ -53,13 +60,20 @@ export function TransactionForm({
   const isEditing = !!editTransaction;
   const { accounts, categories } = state;
 
+  // Prefills arrive in a URL, so they are untrusted. Drop any id that does not
+  // resolve — a dangling id would pass validation and save a transaction
+  // pointing at a category or account that does not exist.
+  const seedCategoryId = categories.some((c) => c.id === prefillCategoryId) ? prefillCategoryId : undefined;
+  const seedAccountId = accounts.some((a) => a.id === prefillAccountId) ? prefillAccountId : undefined;
+  const seedToAccountId = accounts.some((a) => a.id === prefillToAccountId) ? prefillToAccountId : undefined;
+
   const [type, setType] = useState<'income' | 'expense' | 'transfer'>(editTransaction?.type || initialType || 'expense');
   const [amount, setAmount] = useState(editTransaction?.amount.toString() || prefillAmount || '');
-  const [categoryId, setCategoryId] = useState(editTransaction?.categoryId || '');
+  const [categoryId, setCategoryId] = useState(editTransaction?.categoryId || seedCategoryId || '');
   const [date, setDate] = useState(editTransaction?.date || prefillDate || getToday());
   const [notes, setNotes] = useState(editTransaction?.notes || prefillNote || '');
-  const [accountId, setAccountId] = useState(editTransaction?.accountId || '');
-  const [toAccountId, setToAccountId] = useState(editTransaction?.toAccountId || '');
+  const [accountId, setAccountId] = useState(editTransaction?.accountId || seedAccountId || '');
+  const [toAccountId, setToAccountId] = useState(editTransaction?.toAccountId || seedToAccountId || '');
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod | ''>(
     editTransaction?.paymentMethod || prefillPaymentMethod || ''
   );
@@ -80,7 +94,9 @@ export function TransactionForm({
 
   // Auto-categorization state
   const [suggestions, setSuggestions] = useState<CategorySuggestion[]>([]);
-  const [userPickedCategory, setUserPickedCategory] = useState(!!editTransaction?.categoryId);
+  // A prefilled category counts as a deliberate choice: without this the
+  // auto-categoriser would fire on the prefilled note and overwrite it.
+  const [userPickedCategory, setUserPickedCategory] = useState(!!editTransaction?.categoryId || !!seedCategoryId);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const triggerSuggestions = useCallback(

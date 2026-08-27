@@ -292,11 +292,26 @@ plus the native guard on any Android change.
 
 ---
 
-## 8. Open questions for review
+## 8. Open questions — resolved in V.1
 
-1. **Web PWA scope.** Chrome 139+ only, or wait and ship voice as Android-first? Chrome-only
-   means many web users never see the button.
-2. **If on-device Hindi is unavailable on a device** — hide voice, or offer English-only?
-3. **Default language** — `en-IN` (better code-mixing, returns numerals) vs `hi-IN`.
-4. **Entry point** — mic on the Quick-add screen, on the dashboard FAB, or both?
-5. **Scope of v1** — expenses only, or income and transfers too?
+1. **Web PWA scope.** → **Chrome 139+ only, and that is fine.** The probe is passive, so on every
+   other browser the microphone simply never appears; nothing degrades and nothing misleads. Waiting
+   for wider support would have delayed the parser work that Android also needs.
+2. **If on-device Hindi is unavailable on a device** → **fall back to offering English, never to the
+   cloud.** `probeVoiceLanguage` is per-language, so Hindi can be missing while English still works.
+   The `no-local-model` message says so explicitly.
+3. **Default language** → **`en-IN`**. Indian-English recognisers handle code-mixed speech better and
+   emit numerals rather than number words, which removes a whole class of parsing risk. Hindi is one
+   tap away and the choice is remembered (`moneyiq_voice_lang`).
+4. **Entry point** → **the FAB speed-dial** (a fourth "Speak" action), because that is where a user
+   already reaches to add a transaction on mobile — which is where voice earns its keep. The action
+   is rendered only when the probe reports an on-device engine.
+5. **Scope of v1** → **income and transfers too.** The parser already handled all three types, so
+   restricting the UI would have thrown away working behaviour for no safety gain.
+
+### Still open (for V.2)
+- Does Web Speech work inside our Capacitor WebView? MDN reports `webview_android: "mirror"`, which
+  means *inferred, not tested* — hence the V.2.0 spike.
+- Whether iOS `hi-IN` supports `requiresOnDeviceRecognition`; must be read from
+  `supportsOnDeviceRecognition` at runtime.
+

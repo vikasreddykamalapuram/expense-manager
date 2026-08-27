@@ -22,6 +22,7 @@ const BudgetsPage = lazyWithRetry(() => import('../features/budgets/components/B
 const ReportsPage = lazyWithRetry(() => import('../features/reports/components/ReportsPage').then(m => ({ default: m.ReportsPage })));
 const StatementImportPage = lazyWithRetry(() => import('../features/import/components/StatementImportPage').then(m => ({ default: m.StatementImportPage })));
 const ScanReceiptPage = lazyWithRetry(() => import('../features/import/components/ScanReceiptPage').then(m => ({ default: m.ScanReceiptPage })));
+const VoiceAddPage = lazyWithRetry(() => import('../features/voice/components/VoiceAddPage').then(m => ({ default: m.VoiceAddPage })));
 const RecurringPage = lazyWithRetry(() => import('../features/recurring/components/RecurringPage').then(m => ({ default: m.RecurringPage })));
 const BillRemindersPage = lazyWithRetry(() => import('../features/reminders/components/BillRemindersPage').then(m => ({ default: m.BillRemindersPage })));
 const PortfolioPage = lazyWithRetry(() => import('../features/stocks/components/PortfolioPage').then(m => ({ default: m.PortfolioPage })));
@@ -127,6 +128,7 @@ export const router = createBrowserRouter([
       lazyRoute('categories', CategoriesPage),
       lazyRoute('import', StatementImportPage),
       lazyRoute('scan-receipt', ScanReceiptPage),
+      lazyRoute('voice-add', VoiceAddPage),
       lazyRoute('splitwise', SplitwisePage),
       lazyRoute('insights', InsightsHub),
       lazyRoute('insights/health', InsightsHub),
