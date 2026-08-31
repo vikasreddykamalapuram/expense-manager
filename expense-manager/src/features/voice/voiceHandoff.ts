@@ -18,5 +18,7 @@ export function buildVoiceDeepLink(parsed: ParsedVoiceTransaction): string {
   if (parsed.categoryId) params.set('category', parsed.categoryId);
   if (parsed.accountId) params.set('account', parsed.accountId);
   if (parsed.toAccountId) params.set('toAccount', parsed.toAccountId);
+  if (parsed.suggestedAccountName) params.set('newAccount', parsed.suggestedAccountName);
+  if (parsed.suggestedCategoryName) params.set('newCategory', parsed.suggestedCategoryName);
   return `/add?${params.toString()}`;
 }

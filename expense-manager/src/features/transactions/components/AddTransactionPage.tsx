@@ -26,6 +26,8 @@ export function AddTransactionPage() {
   const prefillCategoryId = searchParams.get('category') || undefined;
   const prefillAccountId = searchParams.get('account') || undefined;
   const prefillToAccountId = searchParams.get('toAccount') || undefined;
+  const prefillNewAccountName = searchParams.get('newAccount') || undefined;
+  const prefillNewCategoryName = searchParams.get('newCategory') || undefined;
 
   // A receipt scan hands its image over out-of-band (a File can't ride in a
   // URL). Claim it once on mount so a later visit to /add can't reuse it.
@@ -42,7 +44,9 @@ export function AddTransactionPage() {
       prefillPaymentMethod ||
       prefillCategoryId ||
       prefillAccountId ||
-      prefillToAccountId
+      prefillToAccountId ||
+      prefillNewAccountName ||
+      prefillNewCategoryName
     ) {
       return 'classic';
     }
@@ -65,7 +69,8 @@ export function AddTransactionPage() {
   // throw that work away.
   const hasPrefill = Boolean(
     scannedReceipt || prefillAmount || prefillNote || prefillDate ||
-    prefillPaymentMethod || prefillCategoryId || prefillAccountId || prefillToAccountId,
+    prefillPaymentMethod || prefillCategoryId || prefillAccountId || prefillToAccountId ||
+    prefillNewAccountName || prefillNewCategoryName,
   );
 
   return (
@@ -145,6 +150,8 @@ export function AddTransactionPage() {
             prefillCategoryId={prefillCategoryId}
             prefillAccountId={prefillAccountId}
             prefillToAccountId={prefillToAccountId}
+            prefillNewAccountName={prefillNewAccountName}
+            prefillNewCategoryName={prefillNewCategoryName}
             prefillReceiptFile={scannedReceipt}
             onClose={handleClose}
           />

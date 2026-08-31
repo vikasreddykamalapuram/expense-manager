@@ -36,6 +36,13 @@ export interface ParsedVoiceTransaction {
    * "kal" meaning either yesterday or tomorrow.
    */
   ambiguities: string[];
+  /**
+   * A name the user appears to have spoken that matches nothing they own, so
+   * the form can offer to create it. Never acted on automatically — a misheard
+   * proper noun would otherwise become permanent master data.
+   */
+  suggestedAccountName?: string;
+  suggestedCategoryName?: string;
 }
 
 export interface VoiceParserContext {
@@ -636,7 +643,81 @@ function detectAccount(
   return {};
 }
 
-// ─── Merchant & note ─────────────────────────────────────────────────────────
+// ─── Names the user owns nothing for ─────────────────────────────────────────
+
+/**
+ * Words that cannot be part of a name, so a captured phrase stops at the first
+ * one. Without this, "from HDFC yesterday" would suggest creating an account
+ * called "HDFC Yesterday".
+ */
+const PHRASE_STOP_WORDS = new Set([
+  'on', 'for', 'from', 'using', 'with', 'by', 'at', 'and', 'to', 'in', 'of', 'via',
+  'my', 'mera', 'meri', 'the', 'a', 'an',
+  'yesterday', 'today', 'tomorrow', 'kal', 'aaj', 'parso', 'morning', 'evening', 'night',
+  'last', 'this', 'next', 'week', 'month', 'year',
+  'rupees', 'rupee', 'rupaye', 'rupaya', 'rs', 'inr',
+  'paid', 'spent', 'kharch', 'diya', 'kiya', 'kiye', 'se', 'pe', 'par', 'ke', 'liye',
+  'account', 'card', 'wallet', 'upi', 'cash', 'bank',
+]);
+
+const NAME_WORD = "[A-Za-z][A-Za-z0-9&'.-]*";
+
+/** Capture up to four words following one of `lead`, stopping at a stop word. */
+function phraseAfter(text: string, lead: string): string | undefined {
+  const re = new RegExp(`\\b(?:${lead})\\s+((?:${NAME_WORD}\\s+){0,3}${NAME_WORD})`, 'i');
+  const m = re.exec(text);
+  return m ? trimToName(m[1]) : undefined;
+}
+
+/** Hindi puts the marker last — "ICICI card se" rather than "with ICICI card". */
+function phraseBefore(text: string, trail: string): string | undefined {
+  const re = new RegExp(`((?:${NAME_WORD}\\s+){0,3}${NAME_WORD})\\s+(?:${trail})\\b`, 'i');
+  const m = re.exec(text);
+  return m ? trimToName(m[1]) : undefined;
+}
+
+function trimToName(raw: string): string | undefined {
+  const kept: string[] = [];
+  for (const word of raw.split(/\s+/)) {
+    if (PHRASE_STOP_WORDS.has(word.toLowerCase())) break;
+    kept.push(word);
+  }
+  if (kept.length === 0) return undefined;
+  // Title case so the creation form opens with a name worth keeping, while the
+  // user can still correct it before anything is written.
+  return kept
+    .map((w) => (w.length <= 3 && w === w.toUpperCase() ? w : w[0].toUpperCase() + w.slice(1)))
+    .join(' ');
+}
+
+/**
+ * A name only counts as "worth offering" when it carries something specific.
+ * "paid with card" must never suggest creating an account called "Card".
+ */
+function isDistinctive(name: string, generic: Set<string>): boolean {
+  const tokens = name.toLowerCase().split(TOKEN_SPLIT).filter(Boolean);
+  return tokens.some((t) => t.length >= 3 && !generic.has(t));
+}
+
+function suggestAccountName(text: string): string | undefined {
+  const candidate =
+    phraseAfter(text, 'from|using|with|through|via|on\\s+my') ??
+    phraseBefore(text, 'se');
+  if (!candidate || !isDistinctive(candidate, GENERIC_ACCOUNT_TOKENS)) return undefined;
+  return candidate;
+}
+
+const GENERIC_CATEGORY_TOKENS = new Set([
+  'something', 'stuff', 'things', 'thing', 'some', 'it', 'that', 'this',
+]);
+
+function suggestCategoryName(text: string): string | undefined {
+  const candidate = phraseAfter(text, 'on|for') ?? phraseBefore(text, 'ke\\s+liye|pe|par');
+  if (!candidate || !isDistinctive(candidate, GENERIC_CATEGORY_TOKENS)) return undefined;
+  return candidate;
+}
+
+
 
 /**
  * Conservative merchant extraction — we would rather return nothing than a
@@ -729,6 +810,19 @@ export function parseVoiceTransaction(
   if (account.ambiguity) ambiguities.push(account.ambiguity);
   const merchant = detectMerchant(transcript);
 
+  // Nothing matched, but a name was clearly spoken. Offer it rather than
+  // silently dropping it — and only offer, because creating master data from a
+  // possibly-misheard proper noun would quietly fragment every future report.
+  const suggestedAccountName =
+    !account.accountId && !account.ambiguity ? suggestAccountName(text) : undefined;
+  if (suggestedAccountName) {
+    ambiguities.push(`No account matches "${suggestedAccountName}" — you can add it on the next screen.`);
+  }
+  const suggestedCategoryName = !categoryId ? suggestCategoryName(text) : undefined;
+  if (suggestedCategoryName) {
+    ambiguities.push(`No category matches "${suggestedCategoryName}" — you can add it on the next screen.`);
+  }
+
   return {
     transcript,
     type,
@@ -740,5 +834,7 @@ export function parseVoiceTransaction(
     notes: buildNote(transcript, merchant, consumed),
     merchant,
     ambiguities,
+    suggestedAccountName,
+    suggestedCategoryName,
   };
 }

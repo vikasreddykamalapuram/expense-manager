@@ -11,16 +11,18 @@ interface CategoryFormProps {
   editCategory?: Category;
   defaultType?: 'income' | 'expense';
   defaultParentId?: string;
+  /** Seeds the name field, e.g. with a phrase heard by voice input. */
+  defaultName?: string;
   onClose: () => void;
   onCreated?: (categoryId: string) => void;
 }
 
-export function CategoryForm({ editCategory, defaultType, defaultParentId, onClose, onCreated }: CategoryFormProps) {
+export function CategoryForm({ editCategory, defaultType, defaultParentId, defaultName, onClose, onCreated }: CategoryFormProps) {
   const { state, actions } = useAppContext();
   const { categories } = state;
   const isEditing = !!editCategory;
 
-  const [name, setName] = useState(editCategory?.name || '');
+  const [name, setName] = useState(editCategory?.name || defaultName || '');
   const [type, setType] = useState<'income' | 'expense'>(editCategory?.type || defaultType || 'expense');
   const [parentId, setParentId] = useState(editCategory?.parentId || defaultParentId || '');
   const [icon, setIcon] = useState(editCategory?.icon || CATEGORY_ICON_OPTIONS[0]);

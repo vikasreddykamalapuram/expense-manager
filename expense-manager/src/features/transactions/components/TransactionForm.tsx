@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { v4 as uuidv4 } from 'uuid';
-import { ArrowDownCircle, ArrowUpCircle, ArrowLeftRight, Lightbulb } from 'lucide-react';
+import { ArrowDownCircle, ArrowUpCircle, ArrowLeftRight, Lightbulb, Plus, X } from 'lucide-react';
 import { useAppContext } from '../../../context/AppContext';
 import { Button } from '../../../shared/components/ui/Button';
 import { Input, Select } from '../../../shared/components/ui/Input';
@@ -37,6 +37,12 @@ interface TransactionFormProps {
   prefillCategoryId?: string;
   prefillAccountId?: string;
   prefillToAccountId?: string;
+  /**
+   * A name heard by voice that matched nothing the user owns. Surfaced as an
+   * offer to create it — never created automatically.
+   */
+  prefillNewAccountName?: string;
+  prefillNewCategoryName?: string;
   /** Receipt image to attach once the transaction has an id (e.g. from a scan). */
   prefillReceiptFile?: File | null;
   onClose?: () => void;
@@ -52,6 +58,8 @@ export function TransactionForm({
   prefillCategoryId,
   prefillAccountId,
   prefillToAccountId,
+  prefillNewAccountName,
+  prefillNewCategoryName,
   prefillReceiptFile,
   onClose,
 }: TransactionFormProps) {
@@ -87,6 +95,8 @@ export function TransactionForm({
   const [showCategoryForm, setShowCategoryForm] = useState(false);
   const [newCategoryParentId, setNewCategoryParentId] = useState<string | undefined>();
   const [showAccountForm, setShowAccountForm] = useState(false);
+  const [pendingNewAccountName, setPendingNewAccountName] = useState(prefillNewAccountName);
+  const [pendingNewCategoryName, setPendingNewCategoryName] = useState(prefillNewCategoryName);
   const [accountFormTarget, setAccountFormTarget] = useState<'source' | 'destination'>('source');
   const [pendingReceiptFile, setPendingReceiptFile] = useState<File | null>(prefillReceiptFile ?? null);
   const [receiptId, setReceiptId] = useState<string | undefined>(editTransaction?.receiptId);
@@ -357,6 +367,18 @@ export function TransactionForm({
         )}
       </div>
 
+      {pendingNewAccountName && !accountId && (
+        <HeardNameNotice
+          heard={pendingNewAccountName}
+          noun="account"
+          onAdd={() => {
+            setAccountFormTarget('source');
+            setShowAccountForm(true);
+          }}
+          onDismiss={() => setPendingNewAccountName(undefined)}
+        />
+      )}
+
       {/* Category (not for transfers) — Two-level picker */}
       {type !== 'transfer' && (
         <div className="space-y-3">
@@ -406,6 +428,18 @@ export function TransactionForm({
             </div>
           )}
         </div>
+      )}
+
+      {type !== 'transfer' && pendingNewCategoryName && !categoryId && (
+        <HeardNameNotice
+          heard={pendingNewCategoryName}
+          noun="category"
+          onAdd={() => {
+            setNewCategoryParentId(selectedParentId || undefined);
+            setShowCategoryForm(true);
+          }}
+          onDismiss={() => setPendingNewCategoryName(undefined)}
+        />
       )}
 
       {/* Payment Method */}
@@ -593,9 +627,12 @@ export function TransactionForm({
       <CategoryForm
         defaultType={type === 'income' ? 'income' : 'expense'}
         defaultParentId={newCategoryParentId}
+        defaultName={pendingNewCategoryName}
         onClose={() => setShowCategoryForm(false)}
         onCreated={(newCatId) => {
           setCategoryId(newCatId);
+          setUserPickedCategory(true);
+          setPendingNewCategoryName(undefined);
           setShowCategoryForm(false);
         }}
       />
@@ -608,6 +645,7 @@ export function TransactionForm({
       title="New Account"
     >
       <AccountForm
+        initial={pendingNewAccountName ? { name: pendingNewAccountName } : undefined}
         onClose={() => setShowAccountForm(false)}
         onCreated={(account: Account) => {
           if (accountFormTarget === 'destination') {
@@ -615,10 +653,56 @@ export function TransactionForm({
           } else {
             setAccountId(account.id);
           }
+          setPendingNewAccountName(undefined);
           setShowAccountForm(false);
         }}
       />
     </Modal>
     </>
+  );
+}
+
+/**
+ * Voice heard a name that matches nothing the user owns. We show it and offer
+ * to create it, rather than creating it outright: speech recognition renders
+ * proper nouns approximately, and a misheard name saved as master data would
+ * quietly split one account or category into two across every future report.
+ * Nothing is written until the user submits the real creation form.
+ */
+function HeardNameNotice({
+  heard,
+  noun,
+  onAdd,
+  onDismiss,
+}: {
+  heard: string;
+  noun: 'account' | 'category';
+  onAdd: () => void;
+  onDismiss: () => void;
+}) {
+  return (
+    <div className="flex items-start gap-3 rounded-lg border border-amber-200 bg-amber-50 p-3 dark:border-amber-800/60 dark:bg-amber-900/20">
+      <div className="min-w-0 flex-1">
+        <p className="text-sm text-amber-900 dark:text-amber-200">
+          Heard <span className="font-semibold">&ldquo;{heard}&rdquo;</span>, but no {noun} matches it.
+        </p>
+        <button
+          type="button"
+          onClick={onAdd}
+          className="mt-2 inline-flex items-center gap-1 rounded-md bg-amber-600 px-2.5 py-1 text-xs font-semibold text-white transition-colors hover:bg-amber-700"
+        >
+          <Plus className="h-3.5 w-3.5" />
+          Add {noun} &ldquo;{heard}&rdquo;
+        </button>
+      </div>
+      <button
+        type="button"
+        onClick={onDismiss}
+        aria-label={`Dismiss ${noun} suggestion`}
+        className="rounded p-1 text-amber-700 transition-colors hover:bg-amber-100 dark:text-amber-300 dark:hover:bg-amber-800/40"
+      >
+        <X className="h-4 w-4" />
+      </button>
+    </div>
   );
 }
