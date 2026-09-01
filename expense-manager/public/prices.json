@@ -762,13 +762,13 @@
     },
     "M&M": {
       "symbol": "M&M",
-      "price": 3242,
-      "previousClose": 3321,
-      "open": 3242,
-      "dayHigh": 3370.15,
-      "dayLow": 3223.8,
-      "change": -79,
-      "changePercent": -2.38
+      "price": 3259,
+      "previousClose": 3282,
+      "open": 3259,
+      "dayHigh": 3368,
+      "dayLow": 3223,
+      "change": -23,
+      "changePercent": -0.7
     },
     "MANAPPURAM": {
       "symbol": "MANAPPURAM",
@@ -1272,13 +1272,13 @@
     },
     "^BSESN": {
       "symbol": "^BSESN",
-      "price": 76838.63,
+      "price": 76944.28,
       "previousClose": 77264.5,
-      "open": 76838.63,
+      "open": 76944.28,
       "dayHigh": 77231.87,
       "dayLow": 76656.12,
-      "change": -425.87,
-      "changePercent": -0.55
+      "change": -320.22,
+      "changePercent": -0.41
     },
     "^NSEI": {
       "symbol": "^NSEI",
@@ -1291,7 +1291,7 @@
       "changePercent": -0.5
     }
   },
-  "fetchedAt": "2026-09-01T10:09:21.643Z",
+  "fetchedAt": "2026-09-01T12:00:55.086Z",
   "marketStatus": "closed",
   "stats": {
     "total": 132,
