@@ -53,12 +53,12 @@
     "ALKEM": {
       "symbol": "ALKEM",
       "price": 5300,
-      "previousClose": 5329.5,
+      "previousClose": 5353.4,
       "open": 5300,
-      "dayHigh": 5358,
-      "dayLow": 5277,
-      "change": -29.5,
-      "changePercent": -0.55
+      "dayHigh": 5353,
+      "dayLow": 5270,
+      "change": -53.4,
+      "changePercent": -1
     },
     "AMBUJACEM": {
       "symbol": "AMBUJACEM",
@@ -1172,13 +1172,13 @@
     },
     "TRENT": {
       "symbol": "TRENT",
-      "price": 2855,
-      "previousClose": 2879.9,
-      "open": 2855,
-      "dayHigh": 2911.9,
-      "dayLow": 2855,
-      "change": -24.9,
-      "changePercent": -0.86
+      "price": 2850.2,
+      "previousClose": 2880,
+      "open": 2850.2,
+      "dayHigh": 2910.55,
+      "dayLow": 2850.2,
+      "change": -29.8,
+      "changePercent": -1.03
     },
     "UJJIVANSFB": {
       "symbol": "UJJIVANSFB",
@@ -1291,7 +1291,7 @@
       "changePercent": -0.5
     }
   },
-  "fetchedAt": "2026-09-01T12:00:55.086Z",
+  "fetchedAt": "2026-09-01T13:30:55.104Z",
   "marketStatus": "closed",
   "stats": {
     "total": 132,
