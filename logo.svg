@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="120" height="120" viewBox="0 0 120 120">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#4F46E5"/>
+      <stop offset="100%" style="stop-color:#7C3AED"/>
+    </linearGradient>
+  </defs>
+  <rect width="120" height="120" rx="24" fill="url(#bg)"/>
+  <!-- Wallet icon -->
+  <rect x="28" y="38" width="64" height="44" rx="8" fill="none" stroke="white" stroke-width="4"/>
+  <path d="M28 52 h64" stroke="white" stroke-width="4"/>
+  <rect x="72" y="56" width="16" height="12" rx="4" fill="white" opacity="0.9"/>
+  <circle cx="80" cy="62" r="2.5" fill="#4F46E5"/>
+  <!-- Coin/chart accent -->
+  <circle cx="88" y="34" r="12" fill="#FCD34D" opacity="0.9"/>
+  <path d="M85 34 l3-4 3 6 3-2" stroke="#92400E" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+</svg>

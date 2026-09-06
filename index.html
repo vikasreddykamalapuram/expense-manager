@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval' https://accounts.google.com https://apis.google.com https://login.microsoftonline.com https://cdn.jsdelivr.net; worker-src 'self' blob:; style-src 'self' 'unsafe-inline' https://accounts.google.com; img-src 'self' data: blob: https://*.googleusercontent.com https://*.microsoft.com; connect-src 'self' blob: https://accounts.google.com https://oauth2.googleapis.com https://www.googleapis.com https://gmail.googleapis.com https://login.microsoftonline.com https://graph.microsoft.com https://*.supabase.co wss://*.supabase.co https://cdn.jsdelivr.net; frame-src https://accounts.google.com https://login.microsoftonline.com; font-src 'self' data:; object-src 'none'; base-uri 'self'; form-action 'self';" />
+    <meta name="X-Content-Type-Options" content="nosniff" />
+    <meta name="referrer" content="strict-origin-when-cross-origin" />
+    <title>MoneyIQ — Personal Finance Manager</title>
+
+    <!-- PWA Meta Tags -->
+    <meta name="theme-color" content="#2563eb" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="MoneyIQ" />
+    <meta name="description" content="Track expenses, income, budgets and financial goals with smart analytics" />
+    <meta name="mobile-web-app-capable" content="yes" />
+
+    <!-- Manifest -->
+    <link rel="manifest" href="/expense-manager/manifest.json" />
+
+    <!-- Apple Touch Icons -->
+    <link rel="apple-touch-icon" href="/expense-manager/icons/icon-152x152.png" />
+    <link rel="apple-touch-icon" sizes="192x192" href="/expense-manager/icons/icon-192x192.png" />
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" sizes="32x32" href="/expense-manager/icons/icon-96x96.png" />
+    <!-- GitHub Pages SPA redirect handler: restores path from 404.html query string -->
+    <script>
+      (function(l) {
+        if (l.search[1] === '/') {
+          var decoded = l.search.slice(1).split('&').map(function(s) {
+            return s.replace(/~and~/g, '&')
+          }).join('?');
+          window.history.replaceState(null, null,
+            l.pathname.slice(0, -1) + decoded + l.hash
+          );
+        }
+      }(window.location))
+    </script>
+    <script type="module" crossorigin src="/expense-manager/assets/index-DWCqclB_.js"></script>
+    <link rel="modulepreload" crossorigin href="/expense-manager/assets/vendor-react-inTQPK-t.js">
+    <link rel="modulepreload" crossorigin href="/expense-manager/assets/vendor-auth-B4GOmALM.js">
+    <link rel="modulepreload" crossorigin href="/expense-manager/assets/vendor-dexie-Yf0KBbDF.js">
+    <link rel="stylesheet" crossorigin href="/expense-manager/assets/index-D8ldB7zd.css">
+  <script id="vite-plugin-pwa:register-sw" src="/expense-manager/registerSW.js"></script></head>
+  <body>
+    <div id="root"></div>
+    <!-- Static links for Google verification bot (hidden once React mounts) -->
+    <noscript>
+      <p><a href="privacy.html">Privacy Policy</a> · <a href="terms.html">Terms of Service</a></p>
+    </noscript>
+    <div id="policy-links" style="position:fixed;bottom:0;left:0;right:0;text-align:center;padding:8px;font-size:11px;color:#9ca3af;background:#fff;">
+      <a href="privacy.html" style="color:#6b7280;text-decoration:underline;">Privacy Policy</a> ·
+      <a href="terms.html" style="color:#6b7280;text-decoration:underline;">Terms of Service</a>
+    </div>
+    <script>
+      // Hide static links once React app renders
+      var observer = new MutationObserver(function() {
+        if (document.getElementById('root') && document.getElementById('root').children.length > 0) {
+          var el = document.getElementById('policy-links');
+          if (el) el.style.display = 'none';
+          observer.disconnect();
+        }
+      });
+      observer.observe(document.getElementById('root'), { childList: true });
+    </script>
+  </body>
+</html>
