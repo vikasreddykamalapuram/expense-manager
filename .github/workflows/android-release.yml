@@ -21,6 +21,14 @@ on:
         description: 'versionName override (e.g. 3.1.0). Leave blank to use package.json.'
         required: false
 
+# Deliberately NOT cancel-in-progress. A release build is signed with the
+# upload key and its versionCode comes from the run number; cancelling one
+# midway wastes the build and burns a version code that Play Console will
+# never accept again.
+concurrency:
+  group: android-release-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
   build-release:
     runs-on: ubuntu-latest

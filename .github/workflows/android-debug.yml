@@ -14,8 +14,19 @@ on:
     branches: [master]
     paths:
       - 'expense-manager/**'
+      # A ~15-minute Gradle build cannot be broken by prose. Subtract the
+      # documentation and store-listing paths from the include above.
+      - '!expense-manager/**/*.md'
+      - '!expense-manager/docs/**'
+      - '!expense-manager/playstore/**'
       - '.github/workflows/android-debug.yml'
   workflow_dispatch:
+
+# Pushing three times to a branch used to leave three full Gradle builds
+# running. Only the newest one can still be relevant, so supersede the rest.
+concurrency:
+  group: android-debug-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   build-debug-apk:

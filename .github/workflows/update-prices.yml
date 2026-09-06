@@ -18,6 +18,13 @@ on:
 permissions:
   contents: write
 
+# Two scheduled runs must never overlap: both commit to master, so a slow run
+# racing the next one produces a push rejection or a lost update. Not
+# cancel-in-progress — a half-finished price commit is worse than a late one.
+concurrency:
+  group: update-prices
+  cancel-in-progress: false
+
 defaults:
   run:
     working-directory: expense-manager
@@ -25,6 +32,12 @@ defaults:
 jobs:
   update-prices:
     runs-on: ubuntu-latest
+    # This job fetches a handful of quotes and pushes one commit; it has no
+    # business running for more than a couple of minutes. Left uncapped it
+    # inherits GitHub's 360-minute default, so a single hung fetch against an
+    # unresponsive Yahoo endpoint would burn 18% of the monthly allowance —
+    # 5x/weekday makes that a question of when, not if.
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
 

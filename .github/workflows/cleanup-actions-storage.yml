@@ -1,0 +1,141 @@
+# Actions storage is a quota, not a bucket. On the Free plan a private
+# repository gets 500 MB shared across artifacts and logs, and nothing here
+# expires quickly enough on its own: a release APK + AAB is ~16 MB retained for
+# 30 days, an iOS .ipa is ~15-25 MB, and debug APKs land on every labelled PR.
+# A handful of stale mobile builds is enough to fill it.
+#
+# When the quota fills, artifact UPLOAD starts failing, which marks otherwise
+# passing jobs as failed and blocks merges — a confusing failure to diagnose
+# from the error message alone. So this sweeps on a schedule rather than
+# waiting for it to happen.
+#
+# This matters more the moment the repository turns private: public repos get
+# free storage and minutes, private ones do not.
+
+name: Cleanup Actions Storage
+
+on:
+  schedule:
+    # Sundays, 03:00 UTC — well clear of the weekday price-update crons.
+    - cron: '0 3 * * 0'
+  workflow_dispatch:
+    inputs:
+      artifact_age_days:
+        description: Delete artifacts older than this many days
+        required: false
+        default: '14'
+      run_age_days:
+        description: Delete workflow runs older than this many days
+        required: false
+        default: '45'
+
+concurrency:
+  group: cleanup-actions-storage
+  cancel-in-progress: false
+
+permissions:
+  actions: write
+  contents: read
+
+jobs:
+  cleanup:
+    name: Sweep old artifacts and runs
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Delete old artifacts
+        uses: actions/github-script@v7
+        env:
+          ARTIFACT_AGE_DAYS: ${{ github.event.inputs.artifact_age_days || '14' }}
+        with:
+          script: |
+            const ageDays = Number(process.env.ARTIFACT_AGE_DAYS);
+            const cutoff = Date.now() - ageDays * 24 * 60 * 60 * 1000;
+
+            const artifacts = await github.paginate(
+              github.rest.actions.listArtifactsForRepo,
+              { owner: context.repo.owner, repo: context.repo.repo, per_page: 100 },
+            );
+
+            // Cost asymmetry: an Android artifact is a ~15 minute Linux rebuild,
+            // an iOS .ipa is a ~25 minute macOS rebuild billed at 10x. Deleting
+            // the newest .ipa to reclaim 20 MB is a bad trade, so the two most
+            // recent are always kept regardless of age.
+            const KEEP_RECENT_IOS = 2;
+            const protectedIds = new Set(
+              artifacts
+                .filter((a) => a.name.includes('ios-ipa'))
+                .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+                .slice(0, KEEP_RECENT_IOS)
+                .map((a) => a.id),
+            );
+
+            let deleted = 0;
+            let freed = 0;
+            let kept = 0;
+            for (const artifact of artifacts) {
+              if (artifact.expired) continue;
+              if (new Date(artifact.created_at).getTime() >= cutoff) continue;
+              if (protectedIds.has(artifact.id)) {
+                kept += 1;
+                core.info(`Keeping ${artifact.name} (recent iOS build, expensive to rebuild).`);
+                continue;
+              }
+              try {
+                await github.rest.actions.deleteArtifact({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  artifact_id: artifact.id,
+                });
+                deleted += 1;
+                freed += artifact.size_in_bytes;
+              } catch (error) {
+                // A concurrent expiry can delete it first. That is the outcome
+                // we wanted anyway, so never fail the sweep over it.
+                core.warning(`Could not delete artifact ${artifact.name}: ${error.message}`);
+              }
+            }
+
+            const freedMb = (freed / 1024 / 1024).toFixed(1);
+            core.info(`Deleted ${deleted} artifacts older than ${ageDays}d, freeing ${freedMb} MB. Kept ${kept} protected.`);
+            core.summary
+              .addHeading('Artifact cleanup', 3)
+              .addRaw(`Deleted **${deleted}** artifacts older than ${ageDays} days, freeing **${freedMb} MB**. Protected **${kept}** recent iOS build(s).`)
+              .write();
+
+      - name: Delete old workflow runs
+        uses: actions/github-script@v7
+        env:
+          RUN_AGE_DAYS: ${{ github.event.inputs.run_age_days || '45' }}
+        with:
+          script: |
+            const ageDays = Number(process.env.RUN_AGE_DAYS);
+            const cutoff = Date.now() - ageDays * 24 * 60 * 60 * 1000;
+
+            const runs = await github.paginate(
+              github.rest.actions.listWorkflowRunsForRepo,
+              { owner: context.repo.owner, repo: context.repo.repo, per_page: 100, status: 'completed' },
+            );
+
+            let deleted = 0;
+            for (const run of runs) {
+              // Never delete the run currently doing the deleting.
+              if (run.id === context.runId) continue;
+              if (new Date(run.created_at).getTime() >= cutoff) continue;
+              try {
+                await github.rest.actions.deleteWorkflowRun({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  run_id: run.id,
+                });
+                deleted += 1;
+              } catch (error) {
+                core.warning(`Could not delete run ${run.id}: ${error.message}`);
+              }
+            }
+
+            core.info(`Deleted ${deleted} workflow runs older than ${ageDays}d.`);
+            core.summary
+              .addHeading('Workflow run cleanup', 3)
+              .addRaw(`Deleted **${deleted}** completed runs older than ${ageDays} days.`)
+              .write();

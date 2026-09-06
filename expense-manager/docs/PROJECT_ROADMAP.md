@@ -76,6 +76,25 @@ artifact. (The script was validated against the known-broken v79 APK first.)
 ### Play Store status
 - MoneyIQ live on **Internal testing**; moving to **Closed testing** (needs 12 testers / 14 days for production access). Release via `v*.*.*` tag → `android-release.yml` (now targets **API 36**). Sideload test APKs via `android-debug.yml` (`gh workflow run android-debug.yml --ref <branch>`).
 
+### App Store status 🆕
+- **iOS shell exists as of 2026-09-07.** `@capacitor/ios` added, `ios/` generated per-build (gitignored like `android/`), and `.github/workflows/ios-release.yml` produces a signed `.ipa` on a `macos-15` runner with optional TestFlight upload. Full guide: **`docs/IOS_APP_STORE_PUBLISHING.md`**.
+- Trigger: **`ios-v*` tag or Run workflow** — deliberately NOT the shared `v*.*.*` tag Android uses. macOS runners bill at **10x**, so one iOS build is ~200–300 billable minutes; an Android release must never silently spend one.
+- `scripts/patch-ios-plist.mjs` injects the purpose strings (camera, photo library, Face ID) plus the `moneyiq://` scheme. `scripts/verify-ios-bundle.mjs` then re-checks them **in the built .ipa**, along with the web bundle — the same "the build is not evidence, the artifact is" principle as the Android Kotlin guard. Validated against deliberately-broken artifacts before being trusted.
+- **Not yet done:** Universal Links (needs `apple-app-site-association` on the web host + Associated Domains entitlement — deferred until hosting moves, see below). iOS voice (Epic V.4).
+
+### CI cost posture 🆕
+Rewritten 2026-09-07 ahead of the repo going private, applying the sibling project's measured lessons:
+- **Every job now has `timeout-minutes`.** Six of eight had none, inheriting GitHub's **360-minute** default — one wedged job was 18% of a monthly quota.
+- **Maestro E2E is opt-in and blocking.** It was a 45-min emulator run on *every* PR while being non-blocking: maximum cost for a signal nobody had to read. Now gated on the **`run-e2e`** label or Run workflow, and it fails the run when it fails. Day-to-day it is replaced by `npm run test:e2e:local`, which drives a hardware-accelerated emulator instead of CI's swiftshader.
+- **Artifacts upload only on failure** with 7-day retention; `cleanup-actions-storage.yml` sweeps weekly. A full artifact quota makes *uploads* fail, which marks passing jobs failed and blocks merges. The sweep protects the two newest `.ipa`s from age expiry because of the 10x rebuild cost.
+- **Concurrency groups everywhere**, cancelling superseded runs — except the two release workflows, where cancelling wastes a signed build and burns a version code Play/Apple will never accept again.
+
+### Hosting migration (prerequisite for going private) 🆕
+Decision 2026-09-07: move the web app off **GitHub Pages** to Vercel/Cloudflare Pages, then make the repo private.
+- **Why it is a prerequisite, not a follow-up:** Pages does not serve private repos on the Free plan. The Play Console privacy-policy and account-deletion URLs point at Pages, so flipping visibility first would 404 them and risk the listing being suspended.
+- Must move and be verified green **before** the flip: `privacy-policy.html`, `account-deletion.html`, `.well-known/assetlinks.json`, `prices.json`, and the PWA itself.
+- Then update: Play Console URLs, App Store Connect URL, the deep-link host in `patch-android-manifest.mjs`, and the CSP `connect-src` in `index.html`.
+
 ---
 
 ## 1a. Epic G — First-run setup wizard  🆕 (in dev on `vrk/onboarding-catalog`)
@@ -197,7 +216,7 @@ pattern here (`NotificationBridgePlugin`, `WidgetBridgePlugin`) and inherits `ve
 | **V.2.0 ✅ done — settled by source analysis, no build needed** | **Result: Web Speech's on-device API does not exist in the Android WebView.** See "V.2.0 spike result" below | none |
 | **V.2** | `SpeechBridgePlugin.kt`, `RECORD_AUDIO`, guard entry, prominent disclosure, 4 compliance docs | medium — native |
 | **V.3** | Hinglish via `EXTRA_ENABLE_LANGUAGE_SWITCH` + language-pack download | low |
-| **V.4** | iOS — **blocked**, no iOS shell yet | — |
+| **V.4** | iOS — unblocked: the iOS shell now exists (`@capacitor/ios` + `ios-release.yml`). Still needs `SFSpeechRecognizer` + `requiresOnDeviceRecognition` behind a native plugin, and **both** `NSMicrophoneUsageDescription` and `NSSpeechRecognitionUsageDescription` added together in `patch-ios-plist.mjs` — missing either crashes on first use and fails Guideline 5.1.1 | medium — native |
 
 ### V.2.0 spike result — why V.2 *must* be native
 Chromium source (not docs — MDN reports `"mirror"` for every WebView entry, which means

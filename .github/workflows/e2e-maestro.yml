@@ -10,6 +10,9 @@ name: E2E Maestro Flows
 on:
   pull_request:
     branches: [master]
+    # `labeled` is essential: the default types are opened/synchronize/reopened,
+    # so without it adding the run-e2e label would do nothing until the next push.
+    types: [opened, synchronize, reopened, labeled]
     paths:
       - 'expense-manager/src/**'
       - 'expense-manager/.maestro/**'
@@ -24,8 +27,33 @@ on:
         required: false
         default: ''
 
+# Booting an Android emulator twice for the same branch is pure waste; only the
+# newest run can still be relevant.
+concurrency:
+  group: e2e-maestro-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   maestro:
+    # No longer on every pull request.
+    #
+    # This job builds a debug APK and boots an emulator — by far the longest in
+    # the repo — while being non-blocking, so the most expensive signal here was
+    # also the one nobody had to read. Once this repository is private that is
+    # billed time as well.
+    #
+    # It now runs only when asked for, and is BLOCKING when it does:
+    #   - add the `run-e2e` label to a pull request, or
+    #   - Actions -> E2E Maestro Flows -> Run workflow
+    #
+    # Day-to-day the higher-fidelity check is the local runner
+    # (`npm run test:e2e:local`), which drives a real emulator on real hardware
+    # instead of a software-rendered one. Put its result in the PR description.
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'pull_request' &&
+       github.event.pull_request.draft == false &&
+       contains(github.event.pull_request.labels.*.name, 'run-e2e'))
     runs-on: ubuntu-latest
     timeout-minutes: 45
     defaults:
@@ -127,17 +155,23 @@ jobs:
             sleep 2
             kill $LOGCAT_PID 2>/dev/null || true
 
-      - name: Upload adb logcat on failure
-        if: always()
+      # Only keep diagnostics when there is something to diagnose. Uploading a
+      # logcat and a screenshot set on every green run fills the repository's
+      # artifact quota, and a full quota makes artifact upload fail — which
+      # marks otherwise-passing jobs as failed and blocks merges.
+      - name: Upload adb logcat
+        if: ${{ failure() || env.MAESTRO_FAILED == '1' }}
+        continue-on-error: true
         uses: actions/upload-artifact@v4
         with:
           name: adb-logcat-${{ github.sha }}
           path: adb-logcat.txt
           if-no-files-found: warn
-          retention-days: 14
+          retention-days: 7
 
       - name: Upload Maestro artifacts
-        if: always()
+        if: ${{ failure() || env.MAESTRO_FAILED == '1' }}
+        continue-on-error: true
         uses: actions/upload-artifact@v4
         with:
           name: maestro-artifacts-${{ github.sha }}
@@ -146,13 +180,19 @@ jobs:
             ~/.maestro/tests/**/screenshots/**
             ~/.maestro/tests/**/*.log
           if-no-files-found: warn
-          retention-days: 14
+          retention-days: 7
 
-      - name: Report Maestro result (non-blocking)
+      # Blocking, on purpose.
+      #
+      # This used to emit a ::warning:: and exit 0, so the run went green with
+      # the failure buried in the log. A job that cannot fail the run is a job
+      # nobody reads — and the same pattern on the web side of the sibling
+      # project let two real bugs ship past a green check.
+      #
+      # Now that the job only runs when explicitly requested, enforcing its
+      # result costs nothing: if you asked for E2E, you wanted the answer.
+      - name: Fail if any Maestro flow failed
         if: env.MAESTRO_FAILED == '1'
         run: |
-          echo "::warning::One or more Maestro flows failed. See uploaded artifacts (maestro-artifacts + adb-logcat)."
-          echo ""
-          echo "Note: Maestro E2E is currently non-blocking while we tune the CI emulator setup."
-          echo "The app is validated on real devices via the debug APK from android-debug workflow."
-          echo "Track: https://github.com/vikasreddykamalapuram/expense-manager/issues (filter: label:ci-flaky)"
+          echo "::error::One or more Maestro flows failed. See the uploaded artifacts (maestro-artifacts + adb-logcat)."
+          exit 1

@@ -1,0 +1,382 @@
+name: iOS Release IPA
+
+# Builds a signed iOS .ipa entirely inside a GitHub macOS runner:
+#   cap sync ios -> patch Info.plist -> pod install -> xcodebuild archive ->
+#   exportArchive -> verify the artifact -> (optionally) upload to TestFlight.
+#
+# This is the iOS counterpart to android-release.yml. It is the ONLY way to
+# produce an App Store build for this project: Xcode runs on macOS only, so a
+# Windows dev box can build the web bundle but never the .ipa.
+#
+# ⚠️ REQUIRES an active Apple Developer Program membership. Without it you
+#    cannot create the distribution certificate or provisioning profile below.
+#
+# Required repo secrets (Settings > Secrets and variables > Actions) —
+# see expense-manager/docs/IOS_APP_STORE_PUBLISHING.md §3 for the exact
+# commands that produce each value:
+#   APPLE_TEAM_ID                    - 10-char team id, e.g. AB12CD34EF
+#   IOS_DIST_CERT_P12_BASE64         - base64 of the Apple Distribution cert (.p12)
+#   IOS_DIST_CERT_PASSWORD           - password set when exporting the .p12
+#   IOS_PROVISIONING_PROFILE_BASE64  - base64 of the App Store .mobileprovision
+# Baked into the JS bundle at build time (same set as android-release.yml):
+#   VITE_GOOGLE_CLIENT_ID, VITE_MICROSOFT_CLIENT_ID,
+#   VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY
+# Only needed when upload_to_testflight = true:
+#   APPSTORE_API_KEY_ID, APPSTORE_API_ISSUER_ID, APPSTORE_API_PRIVATE_KEY_BASE64
+#
+# 💸 Cost note: macOS runners bill at a 10x multiplier on private repos. One
+#    build is ~20-30 min wall clock = ~200-300 billable minutes, i.e. 10-15% of
+#    the 2,000 min/month Free allowance PER BUILD. That is why this workflow is
+#    deliberately NOT wired to the shared `v*.*.*` release tag that Android
+#    uses — an Android release must not silently spend an iOS build. Trigger it
+#    explicitly, or with an `ios-v*` tag.
+
+on:
+  push:
+    tags: ['ios-v*']
+  workflow_dispatch:
+    inputs:
+      app_version:
+        description: 'Marketing version / CFBundleShortVersionString (blank = use package.json)'
+        type: string
+        required: false
+        default: ''
+      upload_to_testflight:
+        description: Upload the .ipa to App Store Connect (TestFlight) when done
+        type: boolean
+        default: false
+
+# Never cancel a running iOS build: at 10x billing, throwing away 20 minutes of
+# macOS time to start again is the most expensive thing this repo can do. This
+# is the opposite of the web CI setting, and deliberately so.
+concurrency:
+  group: ios-release-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build signed .ipa
+    runs-on: macos-15
+    # ~3x the observed runtime. Generous enough never to fire on a slow-but-
+    # healthy run, tight enough that a wedged job cannot burn the monthly
+    # allowance — GitHub's default of 360 minutes would be 3,600 billable.
+    timeout-minutes: 90
+    defaults:
+      run:
+        working-directory: expense-manager
+    env:
+      # Unique, monotonically increasing CFBundleVersion per run. App Store
+      # Connect rejects a build number it has already seen, and run_number is
+      # the only counter here that never goes backwards.
+      IOS_BUILD_NUMBER: ${{ github.run_number }}
+      VITE_GOOGLE_CLIENT_ID: ${{ secrets.VITE_GOOGLE_CLIENT_ID }}
+      VITE_MICROSOFT_CLIENT_ID: ${{ secrets.VITE_MICROSOFT_CLIENT_ID }}
+      VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+      VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # Fail in 5 seconds rather than 25 minutes. Every check below is a
+      # precondition for a step near the END of the job, so without this a
+      # missing secret costs a full archive before anyone finds out — at 10x.
+      - name: Guard required secrets
+        env:
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          IOS_DIST_CERT_P12_BASE64: ${{ secrets.IOS_DIST_CERT_P12_BASE64 }}
+          IOS_DIST_CERT_PASSWORD: ${{ secrets.IOS_DIST_CERT_PASSWORD }}
+          IOS_PROVISIONING_PROFILE_BASE64: ${{ secrets.IOS_PROVISIONING_PROFILE_BASE64 }}
+        run: |
+          missing=0
+          for s in APPLE_TEAM_ID IOS_DIST_CERT_P12_BASE64 IOS_DIST_CERT_PASSWORD IOS_PROVISIONING_PROFILE_BASE64; do
+            if [ -z "${!s}" ]; then echo "::error::Missing repo secret $s"; missing=1; fi
+          done
+          # These are inlined into the JS bundle. Missing them produces an .ipa
+          # that installs and launches but cannot sign in or sync at all — a
+          # failure that only shows up on a tester's device.
+          for s in VITE_SUPABASE_URL VITE_SUPABASE_ANON_KEY VITE_GOOGLE_CLIENT_ID; do
+            if [ -z "${!s}" ]; then echo "::error::Missing repo secret $s"; missing=1; fi
+          done
+          if [ "$missing" = "1" ]; then
+            echo "::error::See expense-manager/docs/IOS_APP_STORE_PUBLISHING.md section 3 for how to create these."
+            exit 1
+          fi
+          echo "All required secrets present."
+
+      - name: Select Xcode
+        run: |
+          sudo xcode-select -s /Applications/Xcode_16.app/Contents/Developer || true
+          xcodebuild -version
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: expense-manager/package-lock.json
+
+      - name: Install npm dependencies
+        run: npm ci
+
+      - name: Resolve version
+        id: version
+        run: |
+          INPUT="${{ github.event.inputs.app_version }}"
+          if [ -n "$INPUT" ]; then
+            VERSION="$INPUT"
+          elif [[ "${{ github.ref }}" == refs/tags/ios-v* ]]; then
+            # ios-v3.2.1 -> 3.2.1
+            VERSION="${GITHUB_REF_NAME#ios-v}"
+          else
+            VERSION=$(node -p "require('./package.json').version")
+          fi
+          echo "value=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "Marketing version: $VERSION (build $IOS_BUILD_NUMBER)"
+
+      - name: Build web bundle
+        run: npm run build:capacitor
+
+      # CocoaPods' spec repo is ~1 GB of git history and dominates a cold
+      # `pod install`. Keyed on the lockfile because Capacitor plugin versions
+      # are what determine the pods; Podfile.lock cannot be used as a key since
+      # ios/ is generated fresh each run and does not exist yet at this point.
+      - name: Cache CocoaPods specs
+        uses: actions/cache@v4
+        with:
+          path: ~/.cocoapods/repos
+          key: cocoapods-${{ runner.os }}-${{ hashFiles('expense-manager/package-lock.json') }}
+          restore-keys: |
+            cocoapods-${{ runner.os }}-
+
+      - name: Import signing certificate into a temporary keychain
+        env:
+          IOS_DIST_CERT_P12_BASE64: ${{ secrets.IOS_DIST_CERT_P12_BASE64 }}
+          IOS_DIST_CERT_PASSWORD: ${{ secrets.IOS_DIST_CERT_PASSWORD }}
+        run: |
+          KEYCHAIN="$RUNNER_TEMP/signing.keychain-db"
+          KEYCHAIN_PWD="$(uuidgen)"
+          echo "$IOS_DIST_CERT_P12_BASE64" | base64 -d > "$RUNNER_TEMP/dist.p12"
+
+          security create-keychain -p "$KEYCHAIN_PWD" "$KEYCHAIN"
+          security set-keychain-settings -lut 3600 "$KEYCHAIN"
+          security unlock-keychain -p "$KEYCHAIN_PWD" "$KEYCHAIN"
+          security import "$RUNNER_TEMP/dist.p12" -k "$KEYCHAIN" -P "$IOS_DIST_CERT_PASSWORD" \
+            -T /usr/bin/codesign -T /usr/bin/security -f pkcs12
+          # Lets codesign use the key without an interactive prompt, which would
+          # otherwise hang the runner until the job times out.
+          security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$KEYCHAIN_PWD" "$KEYCHAIN" >/dev/null
+          # Put our keychain first so xcodebuild finds the identity.
+          security list-keychains -d user -s "$KEYCHAIN" $(security list-keychains -d user | tr -d '"')
+
+          rm -f "$RUNNER_TEMP/dist.p12"
+          echo "KEYCHAIN=$KEYCHAIN" >> "$GITHUB_ENV"
+          security find-identity -v -p codesigning "$KEYCHAIN"
+
+      - name: Install provisioning profile
+        id: profile
+        env:
+          IOS_PROVISIONING_PROFILE_BASE64: ${{ secrets.IOS_PROVISIONING_PROFILE_BASE64 }}
+        run: |
+          PROFILE="$RUNNER_TEMP/app-store.mobileprovision"
+          echo "$IOS_PROVISIONING_PROFILE_BASE64" | base64 -d > "$PROFILE"
+
+          # Read the profile's UUID + Name out of its CMS wrapper.
+          PLIST="$RUNNER_TEMP/profile.plist"
+          security cms -D -i "$PROFILE" > "$PLIST"
+          UUID=$(/usr/libexec/PlistBuddy -c 'Print :UUID' "$PLIST")
+          NAME=$(/usr/libexec/PlistBuddy -c 'Print :Name' "$PLIST")
+          PROFILE_APP_ID=$(/usr/libexec/PlistBuddy -c 'Print :Entitlements:application-identifier' "$PLIST")
+
+          DEST="$HOME/Library/Developer/Xcode/UserData/Provisioning Profiles"
+          mkdir -p "$DEST"
+          cp "$PROFILE" "$DEST/$UUID.mobileprovision"
+
+          echo "Installed profile '$NAME' ($UUID) for $PROFILE_APP_ID"
+          echo "name=$NAME" >> "$GITHUB_OUTPUT"
+          echo "app_id=$PROFILE_APP_ID" >> "$GITHUB_OUTPUT"
+
+      - name: Add iOS platform
+        run: |
+          # ios/ is gitignored (generated, per-machine Xcode state), so it is
+          # created fresh on every run rather than restored from the repo.
+          if [ ! -d ios ]; then
+            npx cap add ios
+          fi
+
+      - name: Sync Capacitor and patch Info.plist
+        run: |
+          npx cap sync ios
+          node scripts/patch-ios-plist.mjs
+
+      - name: Install CocoaPods
+        working-directory: expense-manager/ios/App
+        run: |
+          # Try the cached spec repo first; only pay for a repo update if the
+          # cache was cold or a plugin needs a pod the cached specs predate.
+          pod install || pod install --repo-update
+
+      - name: Stamp version and build number
+        run: |
+          PLIST=ios/App/App/Info.plist
+          test -f "$PLIST" || { echo "::error::Info.plist not found at $PLIST"; exit 1; }
+          /usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString ${{ steps.version.outputs.value }}" "$PLIST"
+          /usr/libexec/PlistBuddy -c "Set :CFBundleVersion $IOS_BUILD_NUMBER" "$PLIST"
+          echo "CFBundleShortVersionString = $(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$PLIST")"
+          echo "CFBundleVersion            = $(/usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "$PLIST")"
+
+      - name: Resolve bundle id
+        id: xc
+        run: |
+          # Read from capacitor.config.ts, which is the single source of truth
+          # for the app id on both platforms. Falling back to a hardcoded string
+          # would let the two silently drift.
+          BUNDLE_ID=$(node -e "
+            const src = require('fs').readFileSync('capacitor.config.ts','utf8');
+            const m = src.match(/appId:\s*['\"]([^'\"]+)['\"]/);
+            if (!m) { console.error('appId not found in capacitor.config.ts'); process.exit(1); }
+            console.log(m[1]);
+          ")
+          echo "bundle_id=$BUNDLE_ID" >> "$GITHUB_OUTPUT"
+          echo "bundle id: $BUNDLE_ID"
+
+          # The provisioning profile is scoped to a specific app id. A mismatch
+          # fails deep inside codesign with a message that names neither value,
+          # so compare them here where the error can actually be actionable.
+          #
+          # `application-identifier` is "<TEAMID>.<bundle id>", so strip the team
+          # prefix before comparing. A wildcard profile yields "*" and matches
+          # anything — valid for development, though App Store distribution
+          # normally uses an explicit App ID.
+          PROFILE_APP_ID="${{ steps.profile.outputs.app_id }}"
+          PROFILE_BUNDLE="${PROFILE_APP_ID#*.}"
+          if [ "$PROFILE_BUNDLE" = "*" ]; then
+            echo "::warning::Provisioning profile is a wildcard (${PROFILE_APP_ID}). Skipping the bundle-id match."
+          elif [ "$PROFILE_BUNDLE" != "$BUNDLE_ID" ]; then
+            echo "::error::Provisioning profile is for '$PROFILE_BUNDLE' but capacitor.config.ts declares '$BUNDLE_ID'."
+            echo "::error::Create an App ID + App Store profile for $BUNDLE_ID, or fix appId. See docs/IOS_APP_STORE_PUBLISHING.md section 3."
+            exit 1
+          fi
+
+      - name: Archive
+        env:
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          set -o pipefail
+          xcodebuild archive \
+            -workspace ios/App/App.xcworkspace \
+            -scheme App \
+            -configuration Release \
+            -destination 'generic/platform=iOS' \
+            -archivePath "$RUNNER_TEMP/App.xcarchive" \
+            -allowProvisioningUpdates \
+            CODE_SIGN_STYLE=Manual \
+            DEVELOPMENT_TEAM="$APPLE_TEAM_ID" \
+            PROVISIONING_PROFILE_SPECIFIER="${{ steps.profile.outputs.name }}" \
+            CODE_SIGN_IDENTITY="Apple Distribution" \
+            OTHER_CODE_SIGN_FLAGS="--keychain $KEYCHAIN"
+
+      - name: Export .ipa
+        env:
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          cat > "$RUNNER_TEMP/ExportOptions.plist" <<PLIST
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+            <key>method</key><string>app-store-connect</string>
+            <key>teamID</key><string>${APPLE_TEAM_ID}</string>
+            <key>signingStyle</key><string>manual</string>
+            <key>uploadSymbols</key><true/>
+            <key>provisioningProfiles</key>
+            <dict>
+              <key>${{ steps.xc.outputs.bundle_id }}</key>
+              <string>${{ steps.profile.outputs.name }}</string>
+            </dict>
+          </dict>
+          </plist>
+          PLIST
+
+          xcodebuild -exportArchive \
+            -archivePath "$RUNNER_TEMP/App.xcarchive" \
+            -exportOptionsPlist "$RUNNER_TEMP/ExportOptions.plist" \
+            -exportPath "$RUNNER_TEMP/export"
+
+          ls -lh "$RUNNER_TEMP/export"
+
+      - name: Rename output
+        id: out
+        run: |
+          SRC=$(find "$RUNNER_TEMP/export" -name '*.ipa' | head -n1)
+          if [ -z "$SRC" ]; then echo "::error::No .ipa produced"; exit 1; fi
+          DEST="moneyiq-v${{ steps.version.outputs.value }}-${IOS_BUILD_NUMBER}.ipa"
+          cp "$SRC" "$DEST"
+          ls -lh "$DEST"
+          echo "file=$DEST" >> "$GITHUB_OUTPUT"
+
+      # A green xcodebuild does not prove the web bundle or the permission
+      # purpose strings shipped. Android learned this the hard way (months of
+      # APKs with no native code); check the real artifact, not the build log.
+      - name: Verify the .ipa contents
+        run: node scripts/verify-ios-bundle.mjs "${{ steps.out.outputs.file }}"
+
+      - name: Upload .ipa artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: moneyiq-ios-ipa-${{ github.run_number }}
+          path: expense-manager/${{ steps.out.outputs.file }}
+          if-no-files-found: error
+          # Longer than a debug APK on purpose: macOS bills at 10x, so
+          # re-running this build to recover a deleted .ipa is the single most
+          # expensive recovery in this repo. Two weeks covers an App Review cycle.
+          retention-days: 14
+
+      - name: Upload to App Store Connect (TestFlight)
+        if: ${{ github.event.inputs.upload_to_testflight == 'true' }}
+        env:
+          APPSTORE_API_KEY_ID: ${{ secrets.APPSTORE_API_KEY_ID }}
+          APPSTORE_API_ISSUER_ID: ${{ secrets.APPSTORE_API_ISSUER_ID }}
+          APPSTORE_API_PRIVATE_KEY_BASE64: ${{ secrets.APPSTORE_API_PRIVATE_KEY_BASE64 }}
+        run: |
+          for s in APPSTORE_API_KEY_ID APPSTORE_API_ISSUER_ID APPSTORE_API_PRIVATE_KEY_BASE64; do
+            if [ -z "${!s}" ]; then echo "::error::Missing repo secret $s (needed for TestFlight upload)"; exit 1; fi
+          done
+          # altool looks for the key in one of these well-known directories.
+          mkdir -p "$HOME/private_keys"
+          echo "$APPSTORE_API_PRIVATE_KEY_BASE64" | base64 -d > "$HOME/private_keys/AuthKey_${APPSTORE_API_KEY_ID}.p8"
+
+          xcrun altool --upload-app -f "${{ steps.out.outputs.file }}" -t ios \
+            --apiKey "$APPSTORE_API_KEY_ID" --apiIssuer "$APPSTORE_API_ISSUER_ID"
+
+          rm -f "$HOME/private_keys/AuthKey_${APPSTORE_API_KEY_ID}.p8"
+
+      # `always()` because a failed archive still leaves an unlocked keychain
+      # holding the distribution private key on a runner image.
+      - name: Clean up keychain
+        if: always()
+        run: security delete-keychain "$KEYCHAIN" || true
+
+      - name: Job summary
+        if: always()
+        run: |
+          {
+            echo "## 🍏 iOS build (Xcode on GitHub macOS runner)"
+            echo ""
+            echo "| | |"
+            echo "|---|---|"
+            echo "| Bundle id | \`${{ steps.xc.outputs.bundle_id }}\` |"
+            echo "| Marketing version | \`${{ steps.version.outputs.value }}\` |"
+            echo "| CFBundleVersion | \`$IOS_BUILD_NUMBER\` |"
+            echo "| File | \`${{ steps.out.outputs.file }}\` (see **Artifacts**) |"
+            echo "| Uploaded to TestFlight | \`${{ github.event.inputs.upload_to_testflight }}\` |"
+            echo ""
+            if [ "${{ github.event.inputs.upload_to_testflight }}" = "true" ]; then
+              echo "➡️ Check **App Store Connect → TestFlight** in ~5-15 min once Apple finishes processing."
+            else
+              echo "➡️ Download the \`.ipa\` artifact, then upload it with **Transporter.app**, or re-run with *upload_to_testflight* checked."
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"

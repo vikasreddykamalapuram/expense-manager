@@ -5,6 +5,14 @@ on:
     branches: [master]
     paths:
       - 'expense-manager/**'
+      # Documentation and store-listing copy cannot change the built site, so
+      # they must not spend a deploy. `!` negation is evaluated in order, so
+      # these subtract from the include above.
+      - '!expense-manager/**/*.md'
+      - '!expense-manager/docs/**'
+      - '!expense-manager/playstore/**'
+      - '!expense-manager/.maestro/**'
+      - '!expense-manager/android-templates/**'
   workflow_dispatch:
 
 permissions:
@@ -23,6 +31,9 @@ defaults:
 jobs:
   build:
     runs-on: ubuntu-latest
+    # ~4x the observed runtime. Without this the job inherits GitHub's
+    # 360-minute default, so one wedged build costs 18% of the monthly quota.
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
 
@@ -47,6 +58,7 @@ jobs:
   deploy:
     needs: build
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
