@@ -1272,13 +1272,13 @@
     },
     "^BSESN": {
       "symbol": "^BSESN",
-      "price": 74123.74,
+      "price": 74003.82,
       "previousClose": 74781.76,
-      "open": 74123.74,
+      "open": 74003.82,
       "dayHigh": 75436.44,
-      "dayLow": 74080.47,
-      "change": -658.02,
-      "changePercent": -0.88
+      "dayLow": 73994.03,
+      "change": -777.94,
+      "changePercent": -1.04
     },
     "^NSEI": {
       "symbol": "^NSEI",
@@ -1291,7 +1291,7 @@
       "changePercent": -1.19
     }
   },
-  "fetchedAt": "2026-09-15T10:08:53.157Z",
+  "fetchedAt": "2026-09-15T12:06:07.884Z",
   "marketStatus": "closed",
   "stats": {
     "total": 132,
