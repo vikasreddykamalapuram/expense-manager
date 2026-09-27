@@ -20,7 +20,7 @@
 <body>
 
 <h1>MoneyIQ — Privacy Policy</h1>
-<p class="muted">Last updated: 2026-08-08</p>
+<p class="muted">Last updated: 2026-09-27</p>
 
 <h2>Summary</h2>
 <p>MoneyIQ is a <strong>local-first</strong> personal-finance manager. Your data lives on your device by default. When you optionally sign in, a real-time synced copy is kept in a private database that only your account can read.</p>
@@ -36,7 +36,7 @@
 <p>The app stores everything you enter (transactions, accounts, budgets, portfolio, receipts, settings) locally in the browser's IndexedDB store. Uninstalling the app or clearing app data deletes it permanently. You can use the app fully offline, forever, without ever signing in.</p>
 
 <h2>Optional cloud sync (when you sign in)</h2>
-<p>You may optionally sign in with <strong>your own</strong> Google or Microsoft account to enable cross-device sync. When enabled, MoneyIQ uses a private Supabase Postgres database hosted by the developer to sync your data between your devices in real time.</p>
+<p>You may optionally sign in with <strong>your own</strong> Google or Apple account to enable cross-device sync. When enabled, MoneyIQ uses a private Supabase Postgres database hosted by the developer to sync your data between your devices in real time.</p>
 <p>Data that leaves your device when sync is on:</p>
 <ul>
   <li><strong>Account info:</strong> your email address and provider-issued user ID, used to identify your row in the sync database.</li>
@@ -53,7 +53,7 @@
 <p>You can turn sync off any time (<em>Settings → Cross-device sync → Sign out</em>), and delete your cloud data with <em>Settings → Advanced → Delete cloud sync data</em>, which removes all your rows from the sync database while your local data is preserved.</p>
 
 <h2>Optional local file backup (legacy)</h2>
-<p>An older backup feature lets you save an AES-256-GCM encrypted snapshot to your own Google Drive or OneDrive appdata folder. Only opaque ciphertext is uploaded; even Google/Microsoft cannot read it. This feature is optional and lives under <em>Settings → Advanced</em>.</p>
+<p>An older backup feature lets you save an AES-256-GCM encrypted snapshot to your own Google Drive appdata folder. Only opaque ciphertext is uploaded; even Google cannot read it. This feature is optional and lives under <em>Settings → Advanced</em>.</p>
 
 <h2>Optional crash reporting</h2>
 <p>If enabled, anonymous crash reports may be sent to Sentry to help fix bugs. Reports strip email, IP address, URL query strings, and free-text input. You can disable this at any time.</p>
