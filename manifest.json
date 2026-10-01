@@ -23,15 +23,31 @@
   "screenshots": [],
   "shortcuts": [
     {
-      "name": "Add Transaction",
-      "short_name": "Add",
-      "url": "/expense-manager/transactions?action=add",
+      "name": "Add expense",
+      "short_name": "Expense",
+      "description": "Record money going out",
+      "url": "/expense-manager/add?type=expense",
       "icons": [{ "src": "icons/icon-96x96.png", "sizes": "96x96" }]
     },
     {
-      "name": "Dashboard",
-      "short_name": "Dashboard",
-      "url": "/expense-manager/",
+      "name": "Add income",
+      "short_name": "Income",
+      "description": "Record money coming in",
+      "url": "/expense-manager/add?type=income",
+      "icons": [{ "src": "icons/icon-96x96.png", "sizes": "96x96" }]
+    },
+    {
+      "name": "Analytics",
+      "short_name": "Analytics",
+      "description": "Where the money went",
+      "url": "/expense-manager/analytics",
+      "icons": [{ "src": "icons/icon-96x96.png", "sizes": "96x96" }]
+    },
+    {
+      "name": "Budgets",
+      "short_name": "Budgets",
+      "description": "What is left to spend",
+      "url": "/expense-manager/budgets",
       "icons": [{ "src": "icons/icon-96x96.png", "sizes": "96x96" }]
     }
   ]
