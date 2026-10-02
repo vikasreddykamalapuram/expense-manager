@@ -20,80 +20,118 @@
 <body>
 
 <h1>MoneyIQ — Privacy Policy</h1>
-<p class="muted">Last updated: 2026-09-27</p>
+<p class="muted">Last updated: 2026-10-03 · Applies to the MoneyIQ app on iPhone, iPad, Android and the web.</p>
 
 <h2>Summary</h2>
-<p>MoneyIQ is a <strong>local-first</strong> personal-finance manager. Your data lives on your device by default. When you optionally sign in, a real-time synced copy is kept in a private database that only your account can read.</p>
-
-<h2>Data we do NOT collect</h2>
 <ul>
-  <li>Your bank credentials or SMS messages. (We do not read your SMS. We do not connect to your bank.)</li>
-  <li>Advertising identifiers. (There are no ads in MoneyIQ.)</li>
-  <li>Anything at all if you use the app without signing in.</li>
+  <li>MoneyIQ is a <strong>local-first</strong> personal-finance manager. Everything you enter is stored on your device, and the app works fully offline.</li>
+  <li>You do not need an account. If you never sign in, <strong>nothing you enter leaves your device</strong>.</li>
+  <li>If you choose to sign in and turn on sync, your financial data is <strong>encrypted on your device</strong>, with a passphrase only you know, before it is uploaded. We cannot read it.</li>
+  <li>No ads, no tracking, no analytics, and your data is never sold or shared.</li>
 </ul>
+
+<h2>Who we are</h2>
+<p>MoneyIQ is developed and operated by Vikas Kamalapuram, an individual developer ("we", "us"). Contact: <a href="mailto:vikasreddykamalapuram@gmail.com">vikasreddykamalapuram@gmail.com</a>.</p>
 
 <h2>Data stored on your device</h2>
-<p>The app stores everything you enter (transactions, accounts, budgets, portfolio, receipts, settings) locally in the browser's IndexedDB store. Uninstalling the app or clearing app data deletes it permanently. You can use the app fully offline, forever, without ever signing in.</p>
+<p>Everything you enter is stored in the app's private storage (an IndexedDB database) on your device: transactions, accounts, categories, budgets, portfolio, bill reminders, receipt images and settings. Uninstalling the app, or clearing its data, deletes it permanently.</p>
 
-<h2>Optional cloud sync (when you sign in)</h2>
-<p>You may optionally sign in with <strong>your own</strong> Google or Apple account to enable cross-device sync. When enabled, MoneyIQ uses a private Supabase Postgres database hosted by the developer to sync your data between your devices in real time.</p>
-<p>Data that leaves your device when sync is on:</p>
+<h2>Optional sign-in and cross-device sync</h2>
+<p>You can sign in with <strong>Apple</strong> or <strong>Google</strong> to keep your devices in sync. Sync uses a database hosted for us by Supabase. When you sign in, we receive the following from the sign-in provider:</p>
 <ul>
-  <li><strong>Account info:</strong> your email address and provider-issued user ID, used to identify your row in the sync database.</li>
-  <li><strong>Financial data:</strong> transactions, accounts, categories, budgets, recurring rules, stock transactions, bill reminders. This is uploaded in structured form so that changes on one device can appear on another.</li>
-  <li><strong>Sync metadata:</strong> device name (e.g. "Windows 7/28/2026") and last-sync timestamps.</li>
+  <li><strong>Email address.</strong> With Sign in with Apple you can choose "Hide My Email", and we then receive only a private relay address.</li>
+  <li><strong>Name</strong>, if the provider shares it. It is shown in the app.</li>
+  <li><strong>A user ID</strong> issued by the provider and by our database. It identifies your account.</li>
 </ul>
-<p>How it is protected:</p>
+<p>We never receive your Apple or Google password.</p>
+
+<p>When sync is turned on, the following is uploaded:</p>
 <ul>
-  <li><strong>In transit:</strong> TLS 1.3 between your device and Supabase.</li>
-  <li><strong>At rest:</strong> encrypted by Supabase (AES-256) on their managed Postgres instance.</li>
-  <li><strong>Isolation:</strong> every table has row-level security. Postgres will refuse to return any row whose <code>user_id</code> does not match the JWT of the requesting session. You cannot see anyone else's data and no one can see yours.</li>
-  <li><strong>No sale, no sharing:</strong> your data is never sold, shared, or used for advertising. The developer does not read your rows and there is no analytics on your financial content.</li>
+  <li><strong>Your financial data, end-to-end encrypted.</strong> Before anything leaves your device, the content of every record is encrypted with AES-256-GCM. The key is protected by your sync passphrase and by a recovery code shown to you once. Neither the passphrase nor the key is ever sent to us, so we cannot read your amounts, notes, categories, accounts or holdings. If you lose both your passphrase and your recovery code, we cannot recover your cloud data.</li>
+  <li><strong>What is not encrypted (metadata).</strong> To sync, the server needs to know some facts about each record. These are not encrypted:
+    <ul>
+      <li>how many records you have, and which profile each belongs to;</li>
+      <li>when each record was created, changed or deleted;</li>
+      <li>a random ID that the app generates for each installation, a device label such as "iOS 10/3/2026", and when each device last synced.</li>
+    </ul>
+    None of these reveal what a record contains.
+  </li>
 </ul>
-<p>You can turn sync off any time (<em>Settings → Cross-device sync → Sign out</em>), and delete your cloud data with <em>Settings → Advanced → Delete cloud sync data</em>, which removes all your rows from the sync database while your local data is preserved.</p>
+<p>How it is protected: TLS in transit; encryption at rest by our hosting provider; and row-level security, so the database only returns rows that belong to the signed-in account.</p>
+<p>You can stop syncing at any time by signing out: <em>Settings → Cloud &amp; Sync → Sign out</em>.</p>
 
-<h2>Optional local file backup (legacy)</h2>
-<p>An older backup feature lets you save an AES-256-GCM encrypted snapshot to your own Google Drive appdata folder. Only opaque ciphertext is uploaded; even Google cannot read it. This feature is optional and lives under <em>Settings → Advanced</em>.</p>
-
-<h2>Optional crash reporting</h2>
-<p>If enabled, anonymous crash reports may be sent to Sentry to help fix bugs. Reports strip email, IP address, URL query strings, and free-text input. You can disable this at any time.</p>
+<h2>Features that run only on your device</h2>
+<ul>
+  <li><strong>Voice entry</strong> (microphone and speech recognition): your speech is turned into text on the device. The audio and the transcript are never uploaded or stored.</li>
+  <li><strong>Receipt scanning</strong> (camera and photos): the image is read on the device. Images are never uploaded.</li>
+  <li><strong>App lock</strong> (Face ID, Touch ID or fingerprint): handled by your device's operating system. MoneyIQ never receives biometric data.</li>
+  <li><strong>Assistant</strong>: questions about your spending are answered on the device, from your own data.</li>
+  <li><strong>Reminders</strong>: bill and daily reminders are local notifications scheduled on the device. No server is involved.</li>
+</ul>
 
 <h2>Auto-detect transactions (optional, off by default)</h2>
-<p>MoneyIQ can help you capture transactions faster. Every source below is <strong>opt-in</strong>, runs <strong>entirely on your device</strong>, and produces suggestions in an in-app <strong>review queue</strong> — nothing is saved as a transaction, transmitted, or shared until you confirm it.</p>
+<p>Every source below is <strong>opt-in</strong> and runs <strong>entirely on your device</strong>. Each produces suggestions in an in-app <strong>review queue</strong>. Nothing is saved as a transaction, transmitted or shared until you confirm it.</p>
 <ul>
-  <li><strong>Shared messages:</strong> when you share a bank SMS or payment message into MoneyIQ from another app, we parse it on-device to pre-fill a transaction.</li>
-  <li><strong>Bank notifications (Android, opt-in):</strong> if you enable it and grant Android "notification access", the app reads transaction-style notifications on your device to suggest transactions. Non-financial notifications are ignored; only a short in-memory buffer is kept; notification content is never stored or uploaded.</li>
-  <li><strong>Gmail (read-only, opt-in):</strong> if you tap "Scan Gmail" and grant read-only access, the app reads previews of recent bank/payment emails on your device to suggest transactions. MoneyIQ's use of information received from Google APIs adheres to the <a href="https://developers.google.com/terms/api-services-user-data-policy">Google API Services User Data Policy</a>, including the <strong>Limited Use</strong> requirements: Gmail data is used only on-device for this feature, is never transferred to others, and is never used for advertising.</li>
+  <li><strong>Shared messages</strong> (all platforms): when you share a bank SMS or payment message into MoneyIQ, we read it on the device to pre-fill a transaction. On iPhone this works through a Shortcut you set up yourself.</li>
+  <li><strong>Bank notifications</strong> (Android only, opt-in): if you turn this on and grant Android "notification access", the app reads transaction-style notifications on the device to suggest transactions. Other notifications are ignored, only a short in-memory buffer is kept, and notification content is never stored or uploaded.</li>
+  <li><strong>Gmail, read-only</strong> (Android and web only, opt-in): if you tap "Scan Gmail" and grant read-only access, the app reads previews of recent bank and payment emails on the device to suggest transactions. MoneyIQ's use of information received from Google APIs adheres to the <a href="https://developers.google.com/terms/api-services-user-data-policy">Google API Services User Data Policy</a>, including the <strong>Limited Use</strong> requirements. Gmail data is used only on the device for this feature, is never transferred to others, and is never used for advertising.</li>
 </ul>
-<p>You can turn any of these off at any time in Settings → Notifications → Auto-detect.</p>
+<p>You can turn any of these off at any time in <em>Settings → Notifications → Auto-detect</em>.</p>
 
-<h2>Notifications</h2>
-<p>The app schedules local notifications on your device for daily reminders and bill due dates. These fire locally — no server is involved.</p>
+<h2>Optional legacy Google Drive backup</h2>
+<p>An older, optional feature lets Google users keep a copy of their data in the hidden app-data folder of <strong>their own</strong> Google Drive. The backup is a plain, <strong>unencrypted</strong> copy of your data. Older Drive sync data is encrypted, but its key is stored in the same folder. Either way it is protected by your Google account rather than by a passphrase. It goes directly from your device to your Drive: it is never sent to us, and we have no access to your Drive. It lives under <em>Settings → Cloud &amp; Sync → Advanced</em>, where you can also delete it. For encrypted sync, use the sign-in sync described above instead.</p>
 
-<h2>Permissions requested</h2>
+<h2>Stock prices</h2>
+<p>To show reference prices for stocks you record, the app downloads a public price file that we publish. Nothing about you or your holdings is sent.</p>
+
+<h2>Crash reporting</h2>
+<p>The app contains crash-reporting code (Sentry), but it is <strong>turned off in every published version</strong>, so no crash data is sent. If we ever turn it on, we will update this policy first.</p>
+
+<h2>What we do not do</h2>
 <ul>
-  <li><strong>Internet:</strong> to load the app, fetch live stock prices from a public GitHub-hosted file, and (if you enable it) sync with the MoneyIQ database.</li>
-  <li><strong>Biometric / Fingerprint:</strong> for app-lock, entirely on-device.</li>
-  <li><strong>Vibrate:</strong> for haptic feedback.</li>
-  <li><strong>Post notifications:</strong> to fire bill reminders you configure.</li>
-  <li><strong>Schedule exact alarms:</strong> to fire reminders on time.</li>
-  <li><strong>Notification access (optional, Android):</strong> only if you enable "Bank notifications" under Auto-detect. Used on-device to detect transactions; revocable anytime in system settings.</li>
-  <li><strong>Gmail read-only (optional):</strong> only if you tap "Scan Gmail". Read-only access used on-device to detect transactions; revocable in your Google Account permissions.</li>
-</ul>
-
-<h2>Data deletion</h2>
-<ul>
-  <li><strong>Local:</strong> uninstall the app, or <em>Settings → Advanced → Clear all data</em>.</li>
-  <li><strong>Cloud:</strong> <em>Settings → Advanced → Delete cloud sync data</em>. Or email the address below to request deletion.</li>
-  <li><strong>Account:</strong> Sign out on all devices, then use <em>Delete cloud sync data</em> to remove your rows.</li>
+  <li>No advertising and no advertising identifiers.</li>
+  <li>No tracking across other companies' apps or websites.</li>
+  <li>No analytics on your usage or your financial content.</li>
+  <li>We never sell, rent or share your data.</li>
+  <li>We do not connect to your bank, read your SMS inbox, or ask for bank credentials.</li>
 </ul>
 
-<h2>Contact</h2>
-<p>Questions or data deletion requests: <a href="mailto:vikasreddykamalapuram@gmail.com">vikasreddykamalapuram@gmail.com</a><br />
-Or file an issue at <a href="https://github.com/vikasreddykamalapuram/expense-manager/issues">github.com/vikasreddykamalapuram/expense-manager/issues</a>.</p>
+<h2>Permissions</h2>
+<ul>
+  <li><strong>Internet:</strong> to sign in, sync (if you turn it on) and fetch stock prices.</li>
+  <li><strong>Camera and photos:</strong> to scan a receipt. Processed on the device.</li>
+  <li><strong>Microphone and speech recognition:</strong> for voice entry. Processed on the device.</li>
+  <li><strong>Face ID / Touch ID / fingerprint:</strong> for the optional app lock.</li>
+  <li><strong>Notifications</strong> (and, on Android, exact alarms): for reminders you set.</li>
+  <li><strong>Notification access</strong> (Android, optional): only for "Bank notifications" under Auto-detect. You can revoke it in system settings.</li>
+  <li><strong>Gmail read-only</strong> (Android and web, optional): only when you tap "Scan Gmail". You can revoke it in your Google Account.</li>
+</ul>
+
+<h2>How long we keep data</h2>
+<ul>
+  <li><strong>On your device:</strong> until you delete it, clear the app's data or uninstall the app.</li>
+  <li><strong>In the cloud:</strong> for as long as your account exists. When you delete your account, your account and all synced records are deleted immediately. Copies in our hosting provider's routine backups expire within a short period.</li>
+</ul>
+
+<h2>Deleting your account and data</h2>
+<ul>
+  <li><strong>Delete your account from the app:</strong> <em>Settings → Data → Danger Zone → Delete Account</em>, then type <code>DELETE</code> to confirm. On phones, Settings is under <em>More</em>. This permanently deletes your account and every synced record, then erases the data on this device.</li>
+  <li><strong>If you never signed in:</strong> the same button erases everything on the device. Uninstalling the app does the same.</li>
+  <li><strong>If you can no longer open the app:</strong> email us from the address you signed in with. We delete your account within 30 days and confirm by email.</li>
+</ul>
+<p>Full details: <a href="./account-deletion.html">Account &amp; data deletion</a>.</p>
+
+<h2>Your rights</h2>
+<p>You can see and correct everything we hold by using the app. You can export it at any time (<em>Settings → Data → Export</em>) and delete it as described above. For any other request about your personal data, email us and we will respond within 30 days.</p>
+
+<h2>Children</h2>
+<p>MoneyIQ is not directed at children under 13, and we do not knowingly collect personal data from them.</p>
 
 <h2>Changes</h2>
-<p>We will update this page and bump the "Last updated" date if anything changes materially.</p>
+<p>If anything changes materially, we will update this page and its "Last updated" date before the change takes effect.</p>
+
+<h2>Contact</h2>
+<p><a href="mailto:vikasreddykamalapuram@gmail.com">vikasreddykamalapuram@gmail.com</a> · <a href="./support.html">Support</a></p>
 
 </body>
 </html>
