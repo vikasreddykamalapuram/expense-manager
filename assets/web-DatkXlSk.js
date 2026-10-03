@@ -1,1 +1,0 @@
-import{bP as n}from"./index-DYaGW3r2.js";import"./vendor-react-DQNjEyPG.js";import"./vendor-preload-DSsRDVUh.js";import"./vendor-dexie-CZmYyaPJ.js";class p extends n{async show(e){}async hide(e){}}export{p as SplashScreenWeb};

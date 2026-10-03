@@ -1,1 +1,0 @@
-import{bP as e}from"./index-DYaGW3r2.js";import"./vendor-react-DQNjEyPG.js";import"./vendor-preload-DSsRDVUh.js";import"./vendor-dexie-CZmYyaPJ.js";class s extends e{constructor(){super()}async checkSendIntentReceived(){return{title:""}}finish(){}}export{s as SendIntentWeb};
