@@ -1,0 +1,1 @@
+import{bP as e}from"./index-DYaGW3r2.js";import"./vendor-react-DQNjEyPG.js";import"./vendor-preload-DSsRDVUh.js";import"./vendor-dexie-CZmYyaPJ.js";class r extends e{async enable(){throw this.unimplemented("Not implemented on web.")}async disable(){throw this.unimplemented("Not implemented on web.")}}export{r as PrivacyScreenWeb};
