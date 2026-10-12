@@ -550,16 +550,6 @@
       "change": 6.3,
       "changePercent": 0.52
     },
-    "HDFCBANK": {
-      "symbol": "HDFCBANK",
-      "price": 704.9,
-      "previousClose": 707.25,
-      "open": 704.9,
-      "dayHigh": 711.85,
-      "dayLow": 700.35,
-      "change": -2.35,
-      "changePercent": -0.33
-    },
     "HEROMOTOCO": {
       "symbol": "HEROMOTOCO",
       "price": 4937,
@@ -1000,16 +990,6 @@
       "change": -11.4,
       "changePercent": -0.97
     },
-    "SAMMAANCAP": {
-      "symbol": "SAMMAANCAP",
-      "price": 132.44,
-      "previousClose": 126.44,
-      "open": 132.44,
-      "dayHigh": 133,
-      "dayLow": 126.55,
-      "change": 6,
-      "changePercent": 4.75
-    },
     "SBICARD": {
       "symbol": "SBICARD",
       "price": 558.7,
@@ -1291,11 +1271,11 @@
       "changePercent": -0.7
     }
   },
-  "fetchedAt": "2026-10-12T16:05:32.694Z",
+  "fetchedAt": "2026-10-12T19:19:41.660Z",
   "marketStatus": "closed",
   "stats": {
     "total": 132,
-    "success": 129,
-    "failed": 3
+    "success": 127,
+    "failed": 5
   }
 }
